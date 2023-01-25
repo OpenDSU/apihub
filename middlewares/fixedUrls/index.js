@@ -1,5 +1,5 @@
 const REQUEST_IDENTIFIER = "fixedurlrequest";
-const INTERVAL_TIME = 1*60*1000; //ms aka 1 minutes
+const INTERVAL_TIME = 5*1000; //ms aka 5 sec
 const DEFAULT_MAX_AGE = 10*60; //seconds aka 10 minutes
 
 module.exports = function(server){
@@ -92,10 +92,13 @@ module.exports = function(server){
     const registryHandler = getFsHandler(registryDir);
 
     let pendingRequests = {};
-    let intervalTracker;
     const taskRunner = {
         inProgress:{},
         getTask : function(callback){
+            if(Object.keys(taskRunner.inProgress).length > 0){
+                //the interval got executed faster than we finished the current task
+                return;
+            }
             taskRegistry.getNextTask((err, task)=>{
                 if(err){
                     //let's try again
@@ -188,6 +191,11 @@ module.exports = function(server){
                             if(err){
                                 console.log("Not able to persist fixed url", task);
                             }
+
+                            taskRunner.inProgress[task] = undefined;
+                            delete taskRunner.inProgress[task];
+                            //let's test if we have other tasks that need to be executed...
+                            taskRunner.executeTask();
                         });
                     }
                 });
@@ -197,7 +205,7 @@ module.exports = function(server){
         }
     }
 
-    intervalTracker = setInterval(taskRunner.executeTask, INTERVAL_TIME);
+    setInterval(taskRunner.executeTask, INTERVAL_TIME);
 
     fs.mkdir(cacheDir, {recursive: true}, (err)=>{
         if(err){
