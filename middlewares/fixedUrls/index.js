@@ -154,6 +154,8 @@ module.exports = function(server){
                 //executing the request
                 server.makeLocalRequest("GET", url, "", {}, function(err, result){
                     if(err){
+                        taskRunner.inProgress[task] = undefined;
+                        delete taskRunner.inProgress[task];
                         return taskRegistry.unregisterUrl(task, (err)=>{
                             if(err){
                                 console.log("Failed to remove a task that we weren't able to resolve");
@@ -217,7 +219,13 @@ module.exports = function(server){
             return path.join(cacheDir, fixedUrl);
         },
         set: function(fixedUrl, content, callback){
-            fs.writeFile(this.getFileName(fixedUrl), content, callback);
+            registryHandler.registerUrl(fixedUrl, (err)=>{
+                if(err){
+                    console.log("Failed to add fixedUrl to registryHandler", err);
+                }
+
+                fs.writeFile(this.getFileName(fixedUrl), content, callback);
+            });
         },
         get: function(fixedUrl, callback){
             fs.readFile(this.getFileName(fixedUrl), callback);
