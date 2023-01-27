@@ -74,10 +74,13 @@ function SecretsService(serverRootFolder) {
             }
 
             if (latestEncryptionKey !== encryptionKey) {
+                logger.info(0x501, "Secrets Encryption Key rotation detected");
                 writeSecrets(appName, decryptedSecret.toString(), err => {
                     if (err) {
+                        logger.info(0x501, `Re-encrypting Recovery Passphases on disk file ${getSecretFilePath(appName)} failed due to error: ${err}`);
                         return callback(err);
                     }
+                    logger.info(0x501, `Re-encrypting Recovery Passphases on disk file ${getSecretFilePath(appName)} completed`)
                     callback(undefined, decryptedSecret);
                 });
 
