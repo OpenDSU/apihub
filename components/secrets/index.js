@@ -70,7 +70,28 @@ function secrets(server) {
             response.end();
         });
     }
+    
+    const logEncryptionTest = () => {
+        const key = "presetEncryptionKeyForInitialLog";
+        const text = "TheQuickBrownFoxJumpedOverTheLazyDog";
 
+        logger.info(0x500, "Recovery Passphrase Encryption Check\nPlain text: " + text);
+        logger.info(0x500, "Preset encryption key: " + key);
+
+        const filePath = require("path").join(server.rootFolder, "initialEncryptionTest");
+        const encryptedText = require("opendsu").loadAPI("crypto").encrypt(text, key).toString("hex");
+
+        logger.info(0x500, "Writing encrypted file on disk: " + filePath);
+        logger.info(0x500, "Cipher text(file contents): " + encryptedText);
+
+        require("fs").writeFile(filePath, encryptedText, (err) => {
+            if (err) {
+                logger.info(0x500, "Failed to write file: " + filePath + " Error: " + err);
+            }
+        });
+    }
+
+    logEncryptionTest();
     server.put('/putSSOSecret/*', httpUtils.bodyParser);
     server.get("/getSSOSecret/:appName", getSSOSecret);
     server.put('/putSSOSecret/:appName', putSSOSecret);
