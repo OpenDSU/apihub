@@ -1,16 +1,27 @@
 const REQUEST_IDENTIFIER = "fixedurlrequest";
-const INTERVAL_TIME = 5 * 1000; //ms aka 5 sec
+const INTERVAL_TIME = 1 * 1000; //ms aka 1 sec
 const DEFAULT_MAX_AGE = 10 * 60; //seconds aka 10 minutes
-const TASKS_DATABASE_NAME = "tasks";
-const CACHE_DATABASE_NAME = "cache";
-const DATABASE_DELAY_TIMEOUT = 100;
+const TASKS_TABLE = "tasks";
+const HISTORY_TABLE = "history";
+const DATABASE = "FixedUrls.db";
+
+const LokiDatabase = require("loki-enclave-facade");
+const fsname = "fs";
+const fs = require(fsname);
+const pathname = "path";
+const path = require(pathname);
 
 module.exports = function (server) {
+
+    const workingDir = path.join(server.rootFolder, "external-volume", "fixed-urls");
+    const storage = path.join(workingDir, "storage");
+    const databasePersistence = path.join(workingDir, DATABASE);
+    let database;
 
     let watchedUrls = [];
     //we inject a helper function that can be called by different components or middleware to signal that their requests
     // can be watched by us
-    server.fixedUrlWatchUrl = function (url) {
+    server.allowFixedUrl = function (url) {
         if (!url) {
             throw new Error("Expected an Array of strings or single string representing url prefix");
         }
@@ -21,7 +32,7 @@ module.exports = function (server) {
         watchedUrls.push(url);
     }
 
-    function createBase64UrlSignature(req) {
+    function ensureURLUniformity(req) {
         let base = "https://non.relevant.url.com";
         //we add the base to get a valid url
         let converter = new URL(base + req.url);
@@ -29,24 +40,10 @@ module.exports = function (server) {
         converter.searchParams.sort();
         //we remove our artificial base
         let newString = converter.toString().replaceAll(base, "");
-        let base64 = Buffer.from(newString).toString("base64");
-        return base64;
+        return newString;
     }
 
-    function deserialize(base64serializedUrl) {
-        return Buffer.from(base64serializedUrl, 'base64').toString('ascii');
-    }
-
-    let fsname = "fs";
-    const fs = require(fsname);
-    let pathname = "path";
-    const path = require(pathname);
-
-    const workingDir = path.join(server.rootFolder, "external-volume", "fixed-urls");
-    const tasksDir = path.join(workingDir, "tasks");
-    const cacheDir = path.join(workingDir, "cache");
-
-    function writeFixedUrlContent(res, content) {
+    function respond(res, content) {
         res.write(content);
         res.statusCode = 200;
         const fixedURLExpiry = server.config.fixedURLExpiry || DEFAULT_MAX_AGE;
@@ -54,121 +51,145 @@ module.exports = function (server) {
         res.end();
     }
 
-    function getTaskRegistryHandler(rootFolder, databaseName) {
-        let LokiDatabase = require("loki-enclave-facade");
-        let database;
-
-        fs.mkdir(rootFolder, {recursive: true}, (err) => {
-            if (err) {
-                console.log("Failed to ensure folder structure due to", err);
-            }
-            database = new LokiDatabase(rootFolder + `/${databaseName}`, INTERVAL_TIME);
-        });
-
-        let instance = {rootFolder: rootFolder};
-        instance.registerUrl = function (base64serializedUrl, callback) {
-            if (!database) {
-                return setTimeout(function () {
-                    instance.registerUrl(base64serializedUrl, callback);
-                }, DATABASE_DELAY_TIMEOUT);
-            }
-            database.getRecord(undefined, TASKS_DATABASE_NAME, base64serializedUrl, function (err, record) {
-                let methodName = "insertRecord";
-                if (record) {
-                    methodName = "updateRecord";
-                }
-
-                database[methodName](undefined, TASKS_DATABASE_NAME, base64serializedUrl, {task: deserialize(base64serializedUrl)}, callback);
-            });
-        };
-        instance.unregisterUrl = function (base64serializedUrl, callback) {
-            if (!database) {
-                return setTimeout(function () {
-                    instance.unregisterUrl(base64serializedUrl, callback);
-                }, DATABASE_DELAY_TIMEOUT);
-            }
-            database.deleteRecord(undefined, TASKS_DATABASE_NAME, base64serializedUrl, callback);
-        };
-        instance.alreadyExists = function (base64serializedUrl, callback) {
-            if (!database) {
-                return setTimeout(function () {
-                    instance.registerUrl(base64serializedUrl, callback);
-                }, DATABASE_DELAY_TIMEOUT);
-            }
-            database.getRecord(undefined, TASKS_DATABASE_NAME, base64serializedUrl, callback);
-        };
-        instance.markTaskAsDone = function (base64serializedUrl, callback) {
-            this.unregisterUrl(base64serializedUrl, callback);
-        };
-        instance.getNextTask = function (callback) {
-            if (!database) {
-                return setTimeout(function () {
-                    instance.getNextTask(callback);
-                }, DATABASE_DELAY_TIMEOUT);
-            }
-            database.filter(undefined, TASKS_DATABASE_NAME, "__timestamp > 0", "asc", 1, function(err, tasks){
-                if(err || !tasks || tasks.length === 0){
-                    return callback(err || {message: "no task", code: 404});
-                }
-                callback(undefined, tasks[0].pk);
-            });
-        }
-
-        return instance;
+    function getIdentifier(fixedUrl){
+        return Buffer.from(fixedUrl).toString("base64");
     }
 
-    const taskRegistry = getTaskRegistryHandler(tasksDir, "FixedUrls.db");
+    const indexer = {
+        getFileName: function (fixedUrl) {
+            return path.join(storage, getIdentifier(fixedUrl));
+        },
+        persist:function(fixedUrl, content, callback){
+            fs.writeFile(indexer.getFileName(fixedUrl), content, callback);
+        },
+        get:function(fixedUrl, callback){
+            fs.readFile(indexer.getFileName(fixedUrl), callback);
+        },
+        clean:function(fixedUrl, callback){
+            fs.unlink(indexer.getFileName(fixedUrl), callback);
+        }
+    };
 
-    let pendingRequests = {};
-    const taskRunner = {
-        inProgress: {},
-        getTask: function (callback) {
-            if (Object.keys(taskRunner.inProgress).length > 0) {
-                //the interval got executed faster than we finished the current task
-                return;
-            }
-            taskRegistry.getNextTask((err, task) => {
-                if (err) {
-                    if(err.code !== 404){
-                        //404 aka no table
-                        //let's try again
-                        return taskRunner.getTask(callback);
-                    }
+    const taskRegistry = {
+        inProgress:{},
+        createModel:function(fixedUrl){
+            return {url: fixedUrl, pk: getIdentifier(fixedUrl)};
+        },
+        register:function(task, callback){
+            let newRecord = taskRegistry.createModel(task);
+            database.getRecord(undefined, HISTORY_TABLE, newRecord.pk, function (err, record){
+                if(err || !record){
+                    database.insertRecord(undefined, HISTORY_TABLE, newRecord.pk, newRecord, callback);
                 }
-                if (!task) {
-                    //we need to do anything when no task available
-                    return;
-                }
-                let fixedUrl = deserialize(task);
-                taskRunner.inProgress[task] = fixedUrl;
-                return callback(undefined, task);
+                return callback(undefined);
             });
         },
-        removePendingTask: function (fixedUrl, callback) {
-            if (this.inProgress[fixedUrl]) {
-                this.inProgress[fixedUrl] = undefined;
-                delete this.inProgress[fixedUrl];
-            }
-            //todo: it is oky to cancel requests that are waiting for the content ???
-            /*if(pendingRequests[fixedUrl]){
-                pendingRequests[fixedUrl] = [];
-            }*/
-
-            callback(undefined, true);
+        add:function(task, callback){
+            let newRecord = taskRegistry.createModel(task);
+            database.getRecord(undefined, TASKS_TABLE, newRecord.pk, function (err, record){
+                if(err || !record){
+                    database.insertRecord(undefined, TASKS_TABLE, newRecord.pk, newRecord, callback);
+                }
+                return callback(undefined);
+            });
         },
-        registerReq: function (fixedUrl, req, res) {
-            if (!pendingRequests[fixedUrl]) {
-                pendingRequests[fixedUrl] = [];
-            }
-            pendingRequests[fixedUrl].push({req, res});
+        remove:function(task, callback){
+            let toBeRemoved = taskRegistry.createModel(task);
+            database.getRecord(undefined, TASKS_TABLE, toBeRemoved.pk, function(err, record){
+                if(err || !record){
+                    return callback(undefined);
+                }
+                database.deleteRecord(undefined, TASKS_TABLE, toBeRemoved.pk, callback);
+            });
         },
-        executeTask: function () {
-            //todo: what happens if the interval is quicker the task resolving...?!
-            taskRunner.getTask((err, task) => {
-                let fixedUrl = taskRunner.inProgress[task];
+        getOneTask:function(callback){
+            database.filter(undefined, TASKS_TABLE, "__timestamp > 0", "asc", 1, function(err, task){
+                if(err){
+                    return callback(err);
+                }
+                if(task.length === 0){
+                    return callback(undefined);
+                }
+                task = task[0];
+                if(taskRegistry.inProgress[task.url]){
+                    //we already have this task in progress, we need to wait
+                    return callback(undefined);
+                }
+                taskRegistry.inProgress[task.url] = true;
+                callback(undefined, task);
+            });
+        },
+        isInProgress:function(task){
+            return !!taskRegistry.inProgress[task];
+        },
+        markAsDone:function(task, callback){
+            taskRegistry.inProgress[task] = undefined;
+            delete taskRegistry.inProgress[task];
+            taskRegistry.remove(task, callback);
+        },
+        isKnown:function(task, callback){
+            let target = taskRegistry.createModel(task);
+            database.getRecord(undefined, HISTORY_TABLE, target.pk, callback);
+        },
+        schedule:function(criteria, callback){
+            database.filter(undefined, HISTORY_TABLE, criteria, function(err, records){
+                if(err){
+                    return callback(err);
+                }
 
+                function createTask(){
+                    if(records.length === 0){
+                        return callback(undefined);
+                    }
+
+                    let record = records.pop();
+                    taskRegistry.add(record.url, function (err){
+                        if(err){
+                            return callback(err);
+                        }
+                        createTask();
+                    });
+                }
+
+                createTask();
+            });
+        },
+        cancel:function(criteria, callback){
+            database.filter(undefined, TASKS_TABLE, criteria, async function(err, tasks){
+                if(err){
+                    if(err.code === 404){
+                        return callback();
+                    }
+                    return callback(err);
+                }
+
+                try{
+                    let markAsDone = $$.promisify(taskRegistry.markAsDone);
+                    let clean = $$.promisify(indexer.clean);
+                    for(let task of tasks){
+                        let url = task.url;
+                        //by marking it as done the task is removed from pending and database also
+                        await markAsDone(url);
+                        await clean(url);
+                    }
+                }catch(err){
+                    return callback(err);
+                }
+
+                callback(undefined);
+            });
+        }
+    };
+    const taskRunner = {
+        execute:function(){
+            taskRegistry.getOneTask(function(err, task){
+                if(err || !task){
+                    return;
+                }
+
+                const fixedUrl = task.url;
                 //we need to do the request and save the result into the cache
-                let urlBase = `http://localhost`
+                let urlBase = `http://localhost`;
                 let url = urlBase;
                 if (!fixedUrl.startsWith("/")) {
                     url += "/";
@@ -185,9 +206,7 @@ module.exports = function (server) {
                 //executing the request
                 server.makeLocalRequest("GET", url, "", {}, function (err, result) {
                     if (err) {
-                        taskRunner.inProgress[task] = undefined;
-                        delete taskRunner.inProgress[task];
-                        return taskRegistry.unregisterUrl(task, (err) => {
+                        return taskRegistry.markAsDone(task.url, (err)=>{
                             if (err) {
                                 console.log("Failed to remove a task that we weren't able to resolve");
                             }
@@ -195,151 +214,134 @@ module.exports = function (server) {
                     }
                     //got result... we need to store it for future requests, and we need to resolve any pending request waiting for it
                     if (result) {
-
                         //let's resolve as fast as possible any pending request for the current task
-                        let pendingList = pendingRequests[task];
-                        if (pendingList) {
-                            for (let index of pendingList) {
-                                let pending = pendingList[index];
-                                try {
-                                    writeFixedUrlContent(pending.res, result);
-                                } catch (err) {
-                                    //we ignore any errors that we may get due to timeouts or any reason
-                                }
-                            }
+                        taskRunner.resolvePendingReq(task.url, result);
+
+                        if(!taskRegistry.isInProgress(task.url)){
+                            //if somebody canceled the task before we finished the request we stop!
+                            return ;
                         }
 
-                        if (!taskRunner.inProgress[task]) {
-                            //it means that the task was removed before we were able to resolve it
-                            return;
-                        }
-
-                        taskRegistry.markTaskAsDone(task, (err) => {
-                            if (err) {
-                                console.log("May be not really important, but ... Not able to mark as done task ", task);
-                            }
-                        });
-
-                        fixedUrlCache.set(task, result, function (err) {
+                        indexer.persist(task.url, result, function (err) {
                             if (err) {
                                 console.log("Not able to persist fixed url", task);
                             }
 
-                            taskRunner.inProgress[task] = undefined;
-                            delete taskRunner.inProgress[task];
+                            taskRegistry.markAsDone(task.url, (err) => {
+                                if (err) {
+                                    console.log("May be not really important, but ... Not able to mark as done task ", task);
+                                }
+                            });
+
                             //let's test if we have other tasks that need to be executed...
-                            taskRunner.executeTask();
+                            taskRunner.execute();
                         });
                     }
                 });
-
-
-            });
+            })
+        },
+        pendingRequests:{},
+        registerReq: function(url, req, res){
+            if(!taskRunner.pendingRequests[url]){
+                taskRunner.pendingRequests[url] = [];
+            }
+            taskRunner.pendingRequests[url].push({req, res});
+        },
+        resolvePendingReq: function(url, content){
+            let pending = taskRunner.pendingRequests[url];
+            if(!pending){
+                return;
+            }
+            while(pending.length>0){
+                let delayed = pending.shift();
+                try{
+                    respond(delayed.res, content);
+                }catch(err){
+                    //we ignore any errors at this stage... timeouts, client aborts etc.
+                }
+            }
         }
-    }
+    };
 
-    setInterval(taskRunner.executeTask, INTERVAL_TIME);
-
-    fs.mkdir(cacheDir, {recursive: true}, (err) => {
+    fs.mkdir(storage, {recursive: true}, (err) => {
         if (err) {
             console.log("Failed to ensure folder structure due to", err);
         }
+        database = new LokiDatabase(databasePersistence, INTERVAL_TIME);
+
+        setInterval(taskRunner.execute, INTERVAL_TIME);
     });
 
-    function getTaskResultStore(rootFolder, databaseName){
-
-        let LokiDatabase = require("loki-enclave-facade");
-        let database;
-
-        fs.mkdir(rootFolder, {recursive: true}, (err) => {
-            if (err) {
-                console.log("Failed to ensure folder structure due to", err);
-            }
-            database = new LokiDatabase(rootFolder + `/${databaseName}`, INTERVAL_TIME);
-        });
-
-        let instance = {
-            getFileName: function (fixedUrl) {
-                return path.join(cacheDir, fixedUrl);
-            },
-            set: function (fixedUrl, content, callback) {
-                if (!database) {
-                    return setTimeout(function () {
-                        instance.set(fixedUrl, content, callback);
-                    }, DATABASE_DELAY_TIMEOUT);
-                }
-                let filePath = instance.getFileName(fixedUrl);
-                database.insertRecord(undefined, CACHE_DATABASE_NAME, fixedUrl, {file: filePath}, function(err){
-                    if(err){
-                        return callback(err);
-                    }
-                    fs.writeFile(filePath, content, callback);
-                });
-            },
-            get: function (fixedUrl, callback) {
-                if (!database) {
-                    return setTimeout(function () {
-                        instance.get(fixedUrl, callback);
-                    }, DATABASE_DELAY_TIMEOUT);
-                }
-                database.getRecord(undefined, CACHE_DATABASE_NAME, fixedUrl, function(err, record){
-                    if(err){
-                        return callback(err);
-                    }
-                    fs.readFile(record.file, callback);
-                });
-            },
-            remove: function (fixedUrl, callback) {
-                if (!database) {
-                    return setTimeout(function () {
-                        instance.remove(fixedUrl, callback);
-                    }, DATABASE_DELAY_TIMEOUT);
-                }
-                database.deleteRecord(undefined, CACHE_DATABASE_NAME, fixedUrl, function(err){
-                    if(err){
-                        return callback(err);
-                    }
-                    fs.unlink(instance.getFileName(fixedUrl), callback);
-                });
-            }
+    server.put("/registerFixedURLs", require("./../../utils/middlewares").bodyReaderMiddleware);
+    server.put("/registerFixedURLs", function register(req, res, next){
+        if(!database){
+            return setTimeout(()=>{
+                register(req, res, next);
+            }, 100);
+        }
+        let body = req.body;
+        try{
+            body = JSON.parse(body);
+        }catch(err){
+            console.log(err);
         }
 
-        return instance;
-    }
-    const fixedUrlCache = getTaskResultStore(cacheDir, "FixedUrls.db");
+        if(!Array.isArray(body)){
+            body = [body];
+        }
 
-    server.put("/registerFixedUrl/:relativeUrlBase64", function (req, res) {
-        taskRegistry.registerUrl(req.params.relativeUrlBase64, (err) => {
-            res.statusCode = 200;
-            if (err) {
-                console.log("Caught an error during registration of a fixedUrl", err);
-                res.statusCode = 500;
+        function recursiveRegistry(){
+            if(body.length === 0){
+                res.statusCode = 200;
+                res.end();
+                return;
             }
-            return res.end();
+            let fixedUrl = body.pop();
+            taskRegistry.register(fixedUrl, function(err){
+                if(err){
+                    res.statusCode = 500;
+                    return res.end(err.message);
+                }
+                recursiveRegistry();
+            });
+        }
+
+        recursiveRegistry();
+    });
+
+    server.put("/activateFixedURL", require("./../../utils/middlewares").bodyReaderMiddleware);
+    server.put("/activateFixedURL", function activate(req, res, next){
+        if(!database){
+            return setTimeout(()=>{
+                activate(req, res, next);
+            }, 100);
+        }
+        taskRegistry.schedule(req.body.toString(), function (err){
+            if(err){
+                console.log(err);
+                res.statusCode = 500;
+                return res.end();
+            }
+            res.statusCode = 200;
+            res.end();
         });
     });
 
-    server.put("/unregisterFixedUrl/:relativeUrlBase64", function (req, res) {
-        const task = req.params.relativeUrlBase64;
-        taskRunner.removePendingTask(task, (err) => {
-            if (err) {
-                //we can ignore all the errors during unregister
+    server.put("/deactivateFixedURL", require("./../../utils/middlewares").bodyReaderMiddleware);
+    server.put("/deactivateFixedURL", function deactivate(req, res, next){
+        if(!database){
+            return setTimeout(()=>{
+                deactivate(req, res, next);
+            }, 100);
+        }
+        taskRegistry.cancel(req.body.toString(), function (err){
+            if(err){
+                console.log(err);
+                res.statusCode = 500;
+                return res.end();
             }
-            //first we remove eventual task that may be in progress or waiting to be executed
-            taskRegistry.unregisterUrl(task, (err) => {
-                if (err) {
-                    //we can ignore all the errors during unregister
-                }
-                //we remove any fixed url cache
-                fixedUrlCache.remove(task, (err) => {
-                    if (err) {
-                        //we can ignore all the errors during unregister
-                    }
-
-                    res.statusCode = 200;
-                    return res.end();
-                });
-            });
+            res.statusCode = 200;
+            res.end();
         });
     });
 
@@ -368,23 +370,25 @@ module.exports = function (server) {
             return next();
         }
 
-
         //if we reached this line of code means that we need to do our "thing"
-        let fixedUrl = createBase64UrlSignature(req);
-        taskRegistry.alreadyExists(fixedUrl, (err, known) => {
-            if (!known) {
+        let fixedUrl = ensureURLUniformity(req);
+        if(taskRegistry.isInProgress(fixedUrl)){
+            //there is a task for it... let's wait
+            return taskRunner.registerReq(fixedUrl, req, res);
+        }
+
+        taskRegistry.isKnown(fixedUrl, (err, known) => {
+            if (known) {
                 //there is no task in progress for this url... let's test even more...
-                return fixedUrlCache.get(fixedUrl, (err, content) => {
+                return indexer.get(fixedUrl, (err, content) => {
                     if (err) {
                         //no current task and no cache... let's move on to resolving the req
                         return next();
                     }
-                    //known fixed url let's write to the client
-                    writeFixedUrlContent(res, content);
+                    //known fixed url let's respond to the client
+                    respond(res, content);
                 });
             }
-            //there is a task for it... let's wait
-            taskRunner.registerReq(fixedUrl, req, res);
         });
     });
 }
