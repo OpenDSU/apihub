@@ -1,6 +1,6 @@
 const REQUEST_IDENTIFIER = "fixedurlrequest";
 const INTERVAL_TIME = 1 * 1000; //ms aka 1 sec
-const DEFAULT_MAX_AGE = 10 * 60; //seconds aka 10 minutes
+const DEFAULT_MAX_AGE = 10; //seconds aka 10 sec
 const TASKS_TABLE = "tasks";
 const HISTORY_TABLE = "history";
 const DATABASE = "FixedUrls.db";
