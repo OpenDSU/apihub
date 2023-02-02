@@ -389,6 +389,7 @@ module.exports = function (server) {
                     respond(res, content);
                 });
             }
+            next();
         });
     });
 }
