@@ -170,7 +170,14 @@ module.exports = function (server) {
                         let url = task.url;
                         //by marking it as done the task is removed from pending and database also
                         await markAsDone(url);
-                        await clean(url);
+                        try{
+                            await clean(url);
+                        }catch(err){
+                            //we ignore any errors related to file not found...
+                            if(err.code !== "ENOENT"){
+                                throw err;
+                            }
+                        }
                     }
                 }catch(err){
                     return callback(err);
