@@ -255,7 +255,7 @@ function setRequestKeySSIFromSSAppToken(request, response, next) {
     const { keySSI } = request.params;
     const ssappTokenCookieValue = getSSappTokenCookieValue(request);
     if (ssappTokenCookieValue[keySSI]) {
-        logger.info(`Found match for walletAnchorId ${keySSI} to sReadSSI ${ssappTokenCookieValue[keySSI]}`);
+        logger.info(`Found match for walletAnchorId ${keySSI}`);
         request.keySSI = ssappTokenCookieValue[keySSI];
         request.walletAnchorId = keySSI;
     }
