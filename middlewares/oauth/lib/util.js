@@ -3,7 +3,6 @@ const crypto = openDSU.loadAPI("crypto");
 const http = openDSU.loadAPI("http");
 const fs = require("fs");
 const errorMessages = require("./errorMessages");
-const path = require("path");
 
 let publicKey;
 
