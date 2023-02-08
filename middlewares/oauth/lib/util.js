@@ -3,9 +3,130 @@ const crypto = openDSU.loadAPI("crypto");
 const http = openDSU.loadAPI("http");
 const fs = require("fs");
 const errorMessages = require("./errorMessages");
-let currentEncryptionKey;
-let previousEncryptionKey;
+
 let publicKey;
+
+const PREVIOUS_ENCRYPTION_KEY_FILE = "previousEncryptionKey.secret";
+const CURRENT_ENCRYPTION_KEY_FILE = "currentEncryptionKey.secret";
+
+function KeyManager(storage, rotationInterval){
+    let current;
+    let previous;
+
+    function getPath(filename){
+        const path = require("path");
+        return path.join(storage, filename);
+    }
+
+    function persist(filename, key, callback){
+        fs.writeFile(getPath(filename), key, callback);
+    }
+
+    function getAge(lastModificationTime){
+        let timestamp = new Date().getTime();
+        return timestamp - lastModificationTime;
+    }
+
+    function checkIfExpired(lastModificationTime){
+        return getAge(lastModificationTime) > rotationInterval;
+    }
+
+    function tic(){
+        fs.stat(getPath(PREVIOUS_ENCRYPTION_KEY_FILE), (err, stats)=>{
+            if(stats && checkIfExpired(stats.mtime)){
+                this.rotate();
+            }
+
+            if(err || !stats){
+                //for any error we try as soon as possible again
+                setTimeout(tic, 0);
+            }
+        });
+    }
+
+    function generateKey(){
+        return crypto.generateRandom(32);
+    }
+
+    this.init = ()=>{
+        let stats;
+        try {
+            stats = fs.statSync(getPath(CURRENT_ENCRYPTION_KEY_FILE));
+            if(stats){
+                if(checkIfExpired(stats.mtime)){
+                    throw new Error("Current key is to old");
+                }
+                current = fs.readFileSync(getPath(CURRENT_ENCRYPTION_KEY_FILE));
+                previous = fs.readFileSync(getPath(PREVIOUS_ENCRYPTION_KEY_FILE));
+                // let's schedule a quick check of key age
+                setTimeout(tic, getAge(stats.mtime));
+            }else{
+                throw new Error("Initialization required");
+            }
+        } catch (e) {
+            //for any reason we try to ensure folder structure...
+            fs.mkdirSync(storage, {recursive: true});
+
+            this.rotate();
+        }
+
+        //we split the "big" interval in smaller intervals
+        setInterval(tic, Math.round(rotationInterval/12));
+    }
+
+    this.getCurrentEncryptionKey = ()=>{
+        return current;
+    }
+
+    this.getPreviousEncryptionKey = ()=>{
+        return previous;
+    }
+
+    this.rotate = ()=>{
+        if(!current && !previous){
+            current = generateKey();
+            return persist(CURRENT_ENCRYPTION_KEY_FILE, current, (err)=>{
+                if(err){
+                    console.log("Failed to persist key");
+                }
+            });
+        }
+        previous = current;
+        current = generateKey();
+
+        function saveState(lastGeneratedKey){
+            if(lastGeneratedKey !== current){
+                //we weren't able to save the state until a new rotation
+                return;
+            }
+            persist(PREVIOUS_ENCRYPTION_KEY_FILE, previous, (err)=>{
+                if(err){
+                    console.log("Caught error during key rotation", err);
+                    return saveState(lastGeneratedKey);
+                }
+                persist(CURRENT_ENCRYPTION_KEY_FILE, current, (err)=>{
+                    if(err){
+                        console.log("Caught error during key rotation", err);
+                        saveState(lastGeneratedKey);
+                    }
+                    console.log("Successful key rotation");
+                });
+            });
+        }
+
+        saveState(current);
+    }
+
+    this.init();
+    return this;
+}
+
+let keyManager;
+function initializeKeyManager(storage, rotationInterval){
+    if(!keyManager){
+        keyManager =  new KeyManager(storage, rotationInterval);
+    }
+}
 
 function pkce() {
     const codeVerifier = crypto.generateRandom(32).toString('hex');
@@ -71,68 +192,23 @@ function parseAccessToken(rawAccessToken) {
     }
 }
 
-function getEncryptionKey(encryptionKeyPath, callback) {
-    fs.readFile(encryptionKeyPath, (err, _encKey) => {
-        if (err) {
-            _encKey = crypto.generateRandom(32);
-            fs.writeFile(encryptionKeyPath, _encKey, (err) => callback(undefined, _encKey));
-            return
-        }
-
-        callback(undefined, _encKey);
-    });
-}
-
-function getCurrentEncryptionKey(currentEncryptionKeyPath, callback) {
-    if (currentEncryptionKey) {
-        return callback(undefined, currentEncryptionKey);
+function getCurrentEncryptionKey(callback) {
+    if(!keyManager){
+        return callback(new Error("keyManager not instantiated"));
     }
 
-    getEncryptionKey(currentEncryptionKeyPath, (err, _currentEncryptionKey) => {
-        if (err) {
-            return callback(err);
-        }
-
-        currentEncryptionKey = _currentEncryptionKey;
-        callback(undefined, currentEncryptionKey);
-    });
+    return callback(undefined, keyManager.getCurrentEncryptionKey());
 }
 
-function getPreviousEncryptionKey(previousEncryptionKeyPath, callback) {
-    if (previousEncryptionKey) {
-        return callback(undefined, previousEncryptionKey);
+function getPreviousEncryptionKey(callback) {
+    if(!keyManager){
+        return callback(new Error("keyManager not instantiated"));
     }
 
-    getEncryptionKey(previousEncryptionKeyPath, (err, _previousEncryptionKey) => {
-        if (err) {
-            return callback(err);
-        }
-
-        previousEncryptionKey = _previousEncryptionKey;
-        callback(undefined, previousEncryptionKey);
-    });
+    return callback(undefined, keyManager.getPreviousEncryptionKey());
 }
 
-function rotateKey(currentEncryptionKeyPath, previousEncryptionKeyPath, callback) {
-    // fs.copyFile(currentEncryptionKeyPath, previousEncryptionKeyPath, (err) => {
-    fs.readFile(currentEncryptionKeyPath, (err, currentEncryptionKey) => {
-        let newEncryptionKey = crypto.generateRandom(32);
-        currentEncryptionKey = newEncryptionKey;
-        if (err) {
-            return fs.writeFile(currentEncryptionKeyPath, newEncryptionKey, callback);
-        }
-
-        fs.writeFile(previousEncryptionKeyPath, currentEncryptionKey, (err) => {
-            if (err) {
-                return callback(err);
-            }
-
-            fs.writeFile(currentEncryptionKeyPath, newEncryptionKey, callback);
-        });
-    })
-}
-
-function encryptTokenSet(currentEncryptionKeyPath, tokenSet, callback) {
+function encryptTokenSet(tokenSet, callback) {
     const accessTokenPayload = {
         date: Date.now(),
         token: tokenSet.access_token
@@ -144,7 +220,7 @@ function encryptTokenSet(currentEncryptionKeyPath, tokenSet, callback) {
     }
 
 
-    getCurrentEncryptionKey(currentEncryptionKeyPath, (err, encryptionKey) => {
+    getCurrentEncryptionKey((err, encryptionKey) => {
         if (err) {
             return callback(err);
         }
@@ -164,8 +240,8 @@ function encryptTokenSet(currentEncryptionKeyPath, tokenSet, callback) {
     })
 }
 
-function encryptLoginInfo(currentEncryptionKeyPath, loginInfo, callback) {
-    getCurrentEncryptionKey(currentEncryptionKeyPath, (err, encryptionKey) => {
+function encryptLoginInfo(loginInfo, callback) {
+    getCurrentEncryptionKey((err, encryptionKey) => {
         if (err) {
             return callback(err);
         }
@@ -181,13 +257,13 @@ function encryptLoginInfo(currentEncryptionKeyPath, loginInfo, callback) {
     })
 }
 
-function encryptAccessToken(currentEncryptionKeyPath, accessToken, callback) {
+function encryptAccessToken(accessToken, callback) {
     const accessTokenTimestamp = Date.now();
     const accessTokenPayload = {
         date: accessTokenTimestamp, token: accessToken
     }
 
-    getCurrentEncryptionKey(currentEncryptionKeyPath, (err, currentEncryptionKey) => {
+    getCurrentEncryptionKey((err, currentEncryptionKey) => {
         if (err) {
             return callback(err);
         }
@@ -214,8 +290,8 @@ function decryptData(encryptedData, encryptionKey, callback) {
     callback(undefined, plainData);
 }
 
-function decryptDataWithCurrentKey(encryptionKeyPath, encryptedData, callback) {
-    getCurrentEncryptionKey(encryptionKeyPath, (err, currentEncryptionKey) => {
+function decryptDataWithCurrentKey(encryptedData, callback) {
+    getCurrentEncryptionKey((err, currentEncryptionKey) => {
         if (err) {
             return callback(err);
         }
@@ -224,8 +300,8 @@ function decryptDataWithCurrentKey(encryptionKeyPath, encryptedData, callback) {
     })
 }
 
-function decryptDataWithPreviousKey(encryptionKeyPath, encryptedData, callback) {
-    getPreviousEncryptionKey(encryptionKeyPath, (err, previousEncryptionKey) => {
+function decryptDataWithPreviousKey(encryptedData, callback) {
+    getPreviousEncryptionKey((err, previousEncryptionKey) => {
         if (err) {
             return callback(err);
         }
@@ -234,7 +310,7 @@ function decryptDataWithPreviousKey(encryptionKeyPath, encryptedData, callback) 
     })
 }
 
-function decryptAccessTokenCookie(currentEncryptionKeyPath, previousEncryptionKeyPath, accessTokenCookie, callback) {
+function decryptAccessTokenCookie(accessTokenCookie, callback) {
     function parseAccessTokenCookie(accessTokenCookie, callback) {
         let parsedAccessTokenCookie;
         try {
@@ -246,9 +322,9 @@ function decryptAccessTokenCookie(currentEncryptionKeyPath, previousEncryptionKe
         callback(undefined, parsedAccessTokenCookie);
     }
 
-    decryptDataWithCurrentKey(currentEncryptionKeyPath, decodeCookie(accessTokenCookie), (err, plainAccessTokenCookie) => {
+    decryptDataWithCurrentKey(decodeCookie(accessTokenCookie), (err, plainAccessTokenCookie) => {
         if (err) {
-            decryptDataWithPreviousKey(previousEncryptionKeyPath, decodeCookie(accessTokenCookie), (err, plainAccessTokenCookie) => {
+            decryptDataWithPreviousKey(decodeCookie(accessTokenCookie), (err, plainAccessTokenCookie) => {
                 if (err) {
                     return callback(err);
                 }
@@ -264,8 +340,8 @@ function decryptAccessTokenCookie(currentEncryptionKeyPath, previousEncryptionKe
     })
 }
 
-function getDecryptedAccessToken(currentEncryptionKeyPath, previousEncryptionKeyPath, accessTokenCookie, callback) {
-    decryptAccessTokenCookie(currentEncryptionKeyPath, previousEncryptionKeyPath, accessTokenCookie, (err, decryptedAccessTokenCookie) => {
+function getDecryptedAccessToken(accessTokenCookie, callback) {
+    decryptAccessTokenCookie(accessTokenCookie, (err, decryptedAccessTokenCookie) => {
         if (err) {
             return callback(err);
         }
@@ -285,8 +361,8 @@ function getSSODetectedIdFromDecryptedToken(decryptedToken) {
     return SSODetectedId;
 }
 
-function getSSODetectedIdFromEncryptedToken(currentEncryptionKeyPath, previousEncryptionKeyPath, accessTokenCookie, callback) {
-    getDecryptedAccessToken(currentEncryptionKeyPath, previousEncryptionKeyPath, accessTokenCookie, (err, token) => {
+function getSSODetectedIdFromEncryptedToken( accessTokenCookie, callback) {
+    getDecryptedAccessToken(accessTokenCookie, (err, token) => {
         if (err) {
             return callback(err);
         }
@@ -295,14 +371,14 @@ function getSSODetectedIdFromEncryptedToken(currentEncryptionKeyPath, previousEn
     })
 }
 
-function decryptRefreshTokenCookie(currentEncryptionKeyPath, previousEncryptionKeyPath, encryptedRefreshToken, callback) {
+function decryptRefreshTokenCookie(encryptedRefreshToken, callback) {
     if (!encryptedRefreshToken) {
         return callback(Error(errorMessages.REFRESH_TOKEN_UNDEFINED));
     }
 
-    decryptDataWithCurrentKey(currentEncryptionKeyPath, encryptedRefreshToken, (err, refreshToken) => {
+    decryptDataWithCurrentKey(encryptedRefreshToken, (err, refreshToken) => {
         if (err) {
-            decryptDataWithPreviousKey(previousEncryptionKeyPath, encryptedRefreshToken, (err, refreshToken) => {
+            decryptDataWithPreviousKey(encryptedRefreshToken, (err, refreshToken) => {
                 if (err) {
                     err.message = errorMessages.REFRESH_TOKEN_DECRYPTION_FAILED;
                     return callback(err);
@@ -351,8 +427,8 @@ function validateAccessToken(jwksEndpoint, accessToken, callback) {
     })
 }
 
-function validateEncryptedAccessToken(currentEncryptionKeyPath, previousEncryptionKeyPath, jwksEndpoint, accessTokenCookie, sessionTimeout, callback) {
-    decryptAccessTokenCookie(currentEncryptionKeyPath, previousEncryptionKeyPath, accessTokenCookie, (err, decryptedAccessTokenCookie) => {
+function validateEncryptedAccessToken(jwksEndpoint, accessTokenCookie, sessionTimeout, callback) {
+    decryptAccessTokenCookie(accessTokenCookie, (err, decryptedAccessTokenCookie) => {
         if (err) {
             return callback(Error(errorMessages.ACCESS_TOKEN_DECRYPTION_FAILED));
         }
@@ -364,8 +440,8 @@ function validateEncryptedAccessToken(currentEncryptionKeyPath, previousEncrypti
     })
 }
 
-function decryptLoginInfo(currentEncryptionKeyPath, previousEncryptionKeyPath, encryptedLoginInfo, callback) {
-    decryptDataWithCurrentKey(currentEncryptionKeyPath, decodeCookie(encryptedLoginInfo), (err, loginContext) => {
+function decryptLoginInfo(encryptedLoginInfo, callback) {
+    decryptDataWithCurrentKey(decodeCookie(encryptedLoginInfo), (err, loginContext) => {
         function parseLoginContext(loginContext, callback) {
             let parsedLoginContext;
             try {
@@ -378,7 +454,7 @@ function decryptLoginInfo(currentEncryptionKeyPath, previousEncryptionKeyPath, e
         }
 
         if (err) {
-            decryptDataWithPreviousKey(previousEncryptionKeyPath, decodeCookie(encryptedLoginInfo), (err, loginContext) => {
+            decryptDataWithPreviousKey(decodeCookie(encryptedLoginInfo), (err, loginContext) => {
                 if (err) {
                     return callback(err);
                 }
@@ -408,13 +484,13 @@ function getUrlsToSkip() {
     return urlsToSkip;
 }
 
-function updateAccessTokenExpiration(currentEncryptionKeyPath, previousEncryptionKeyPath, accessTokenCookie, callback) {
-    decryptAccessTokenCookie(currentEncryptionKeyPath, previousEncryptionKeyPath, accessTokenCookie, (err, decryptedTokenCookie)=>{
+function updateAccessTokenExpiration(accessTokenCookie, callback) {
+    decryptAccessTokenCookie(accessTokenCookie, (err, decryptedTokenCookie)=>{
         if (err) {
             return callback(err);
         }
 
-        encryptAccessToken(currentEncryptionKeyPath, decryptedTokenCookie.token, callback);
+        encryptAccessToken(decryptedTokenCookie.token, callback);
     })
 }
 
@@ -425,7 +501,7 @@ module.exports = {
     encodeCookie,
     decodeCookie,
     parseCookies,
-    getEncryptionKey,
+    initializeKeyManager,
     parseAccessToken,
     encryptTokenSet,
     encryptAccessToken,
@@ -437,7 +513,6 @@ module.exports = {
     validateAccessToken,
     validateEncryptedAccessToken,
     getUrlsToSkip,
-    rotateKey,
     getSSODetectedIdFromDecryptedToken,
     getSSODetectedIdFromEncryptedToken,
     getSSOUserIdFromDecryptedToken,
