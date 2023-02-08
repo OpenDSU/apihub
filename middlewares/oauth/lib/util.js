@@ -193,18 +193,6 @@ function parseAccessToken(rawAccessToken) {
     }
 }
 
-function getEncryptionKey(encryptionKeyPath, callback) {
-    fs.readFile(encryptionKeyPath, (err, _encKey) => {
-        if (err) {
-            _encKey = crypto.generateRandom(32);
-            fs.writeFile(encryptionKeyPath, _encKey, (err) => callback(undefined, _encKey));
-            return
-        }
-
-        callback(undefined, _encKey);
-    });
-}
-
 function getCurrentEncryptionKey(callback) {
     if(!keyManager){
         return callback(new Error("keyManager not instantiated"));
@@ -515,7 +503,6 @@ module.exports = {
     decodeCookie,
     parseCookies,
     initializeKeyManager,
-    getEncryptionKey,
     parseAccessToken,
     encryptTokenSet,
     encryptAccessToken,
