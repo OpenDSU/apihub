@@ -1,7 +1,7 @@
 const logger = $$.getLogger("HttpServer", "apihub");
 
 process.on('uncaughtException', err => {
-	logger.critical('There was an uncaught error', err);
+	logger.critical('There was an uncaught error', err, err.message, err.stack);
 });
 
 process.on('SIGTERM', (signal)=>{
