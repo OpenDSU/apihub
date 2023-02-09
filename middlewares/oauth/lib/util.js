@@ -41,7 +41,7 @@ function KeyManager(storage, rotationInterval){
 
     let self = this;
     function tic(){
-        fs.stat(getPath(PREVIOUS_ENCRYPTION_KEY_FILE), (err, stats)=>{
+        fs.stat(getPath(CURRENT_ENCRYPTION_KEY_FILE), (err, stats)=>{
             if(stats && checkIfExpired(stats.mtime)){
                 self.rotate();
             }
@@ -54,6 +54,7 @@ function KeyManager(storage, rotationInterval){
     }
 
     function generateKey(){
+        logger.debug("generating new key");
         return crypto.generateRandom(32);
     }
 
@@ -101,6 +102,7 @@ function KeyManager(storage, rotationInterval){
 
     this.rotate = ()=>{
         if(!current && !previous){
+            logger.info("No current or previous key, there we generate current ant persist");
             current = generateKey();
             return persist(CURRENT_ENCRYPTION_KEY_FILE, current, (err)=>{
                 if(err){
@@ -110,7 +112,6 @@ function KeyManager(storage, rotationInterval){
         }
         logger.debug("saving current key as previous");
         previous = current;
-        logger.debug("generation new current key");
         current = generateKey();
 
         function saveState(lastGeneratedKey){
