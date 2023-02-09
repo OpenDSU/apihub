@@ -13,28 +13,37 @@ function KeyManager(storage, rotationInterval){
     let current;
     let previous;
 
+    const logger = $$.getLogger("OAuthMiddleware", "oauth/keyManager");
+
     function getPath(filename){
         const path = require("path");
         return path.join(storage, filename);
     }
 
     function persist(filename, key, callback){
+        logger.debug("Writing", filename);
         fs.writeFile(getPath(filename), key, callback);
     }
 
     function getAge(lastModificationTime){
         let timestamp = new Date().getTime();
-        return timestamp - lastModificationTime;
+        let converted = new Date(lastModificationTime).getTime();
+        let age = timestamp - converted;
+        //logger.debug("age seems to be", age);
+        return age;
     }
 
     function checkIfExpired(lastModificationTime){
-        return getAge(lastModificationTime) > rotationInterval;
+        let res = getAge(lastModificationTime) > rotationInterval;
+        logger.debug("expired", res);
+        return res;
     }
 
+    let self = this;
     function tic(){
         fs.stat(getPath(PREVIOUS_ENCRYPTION_KEY_FILE), (err, stats)=>{
             if(stats && checkIfExpired(stats.mtime)){
-                this.rotate();
+                self.rotate();
             }
 
             if(err || !stats){
@@ -53,14 +62,17 @@ function KeyManager(storage, rotationInterval){
         try {
             stats = fs.statSync(getPath(CURRENT_ENCRYPTION_KEY_FILE));
             if(stats){
+                logger.debug("mtime of current encryption key is", stats.mtime);
                 if(checkIfExpired(stats.mtime)){
                     throw new Error("Current key is to old");
                 }
+                logger.info("Loading encryption keys");
                 current = fs.readFileSync(getPath(CURRENT_ENCRYPTION_KEY_FILE));
                 previous = fs.readFileSync(getPath(PREVIOUS_ENCRYPTION_KEY_FILE));
                 // let's schedule a quick check of key age
                 setTimeout(tic, getAge(stats.mtime));
             }else{
+                logger.info("Initializing...");
                 throw new Error("Initialization required");
             }
         } catch (e) {
@@ -87,29 +99,32 @@ function KeyManager(storage, rotationInterval){
             current = generateKey();
             return persist(CURRENT_ENCRYPTION_KEY_FILE, current, (err)=>{
                 if(err){
-                    console.log("Failed to persist key");
+                    logger.error("Failed to persist key");
                 }
             });
         }
+        logger.debug("saving current key as previous");
         previous = current;
+        logger.debug("generation new current key");
         current = generateKey();
 
         function saveState(lastGeneratedKey){
             if(lastGeneratedKey !== current){
+                logger.error("Unable to persist keys until a new rotation time achieved");
                 //we weren't able to save the state until a new rotation
                 return;
             }
             persist(PREVIOUS_ENCRYPTION_KEY_FILE, previous, (err)=>{
                 if(err){
-                    console.log("Caught error during key rotation", err);
+                    logger.debug("Caught error during key rotation", err);
                     return saveState(lastGeneratedKey);
                 }
                 persist(CURRENT_ENCRYPTION_KEY_FILE, current, (err)=>{
                     if(err){
-                        console.log("Caught error during key rotation", err);
+                        logger.debug("Caught error during key rotation", err);
                         saveState(lastGeneratedKey);
                     }
-                    console.log("Successful key rotation");
+                    logger.info("Successful key rotation");
                 });
             });
         }
