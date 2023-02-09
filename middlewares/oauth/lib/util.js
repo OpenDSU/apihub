@@ -68,7 +68,12 @@ function KeyManager(storage, rotationInterval){
                 }
                 logger.info("Loading encryption keys");
                 current = fs.readFileSync(getPath(CURRENT_ENCRYPTION_KEY_FILE));
-                previous = fs.readFileSync(getPath(PREVIOUS_ENCRYPTION_KEY_FILE));
+                try{
+                    previous = fs.readFileSync(getPath(PREVIOUS_ENCRYPTION_KEY_FILE));
+                }catch(e){
+                    logger.debug("Caught an error during previous key loading. This could mean that a restart was performed before any rotation and the previous key file doesn't exit.", err.message, err.code);
+                }
+
                 // let's schedule a quick check of key age
                 setTimeout(tic, getAge(stats.mtime));
             }else{
