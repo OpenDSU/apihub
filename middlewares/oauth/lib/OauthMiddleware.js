@@ -156,6 +156,11 @@ function OAuthMiddleware(server) {
       return;
     }
 
+    //this if is meant to help debugging "special" situation of wrong localhost req being checked with sso even if localhostAuthorization is disabled
+    if (!config.getConfig("enableLocalhostAuthorization") && req.headers.host.indexOf("localhost") !== -1){
+      logger.debug("SSO verification activated on 'local' request", "host header", req.headers.headers.host, JSON.stringify(req.headers));
+    }
+
     if (isCallbackPhaseActive()) {
       return loginCallbackRoute(req, res);
     }
