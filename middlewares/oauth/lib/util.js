@@ -72,7 +72,7 @@ function KeyManager(storage, rotationInterval){
                 try{
                     previous = fs.readFileSync(getPath(PREVIOUS_ENCRYPTION_KEY_FILE));
                 }catch(e){
-                    logger.debug("Caught an error during previous key loading. This could mean that a restart was performed before any rotation and the previous key file doesn't exit.", err.message, err.code);
+                    logger.debug("Caught an error during previous key loading. This could mean that a restart was performed before any rotation and the previous key file doesn't exit.", e.message, e.code);
                 }
 
                 // let's schedule a quick check of key age
@@ -82,6 +82,7 @@ function KeyManager(storage, rotationInterval){
                 throw new Error("Initialization required");
             }
         } catch (e) {
+            logger.debug(e.message);
             //for any reason we try to ensure folder structure...
             fs.mkdirSync(storage, {recursive: true});
 
