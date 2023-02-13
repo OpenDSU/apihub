@@ -29,9 +29,10 @@ const templates = {
 
 const TENANT_NAME = process.env.TENANT_NAME || "nvs";
 const companies = [TENANT_NAME];
+const SUBDOMAIN_COMMON_PREFIX = process.env.SUBDOMAIN_COMMON_PREFIX || "";
 
 function getCompanyDNSDomain(name){
-    return name+"."+dnsDomain;
+    return SUBDOMAIN_COMMON_PREFIX+name+"."+dnsDomain;
 }
 
 function getCompanySubDomain(name) {
