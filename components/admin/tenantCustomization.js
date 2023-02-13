@@ -111,17 +111,17 @@ async function registerTemplate(path, content) {
         vaultDomain: cloneVaultDomain,
     };
 
-    /*if(ADMIN_DNS_DOMAIN){
+    if(ADMIN_DNS_DOMAIN){
         for(let prop in companyVars){
             await storeVariable(ADMIN_DNS_DOMAIN, prop, companyVars[prop]);
         }
-    }*/
+    }
 
     for(let i=0; i<companies.length; i++){
         let companyName = companies[i];
 
-        //await createDomain(getCompanySubDomain(companyName), cloneMainDomain);
-        //await createDomain(getCompanyVaultDomain(companyName), cloneVaultDomain);
+        await createDomain(getCompanySubDomain(companyName), cloneMainDomain);
+        await createDomain(getCompanyVaultDomain(companyName), cloneVaultDomain);
 
         let companyDNS = getCompanyDNSDomain(companyName);
         let companyVars = getCompanyVars(companyName);
