@@ -219,8 +219,17 @@ module.exports = function (server) {
                         return taskRegistry.markAsDone(task.url, (err)=>{
                             if (err) {
                                 console.log("Failed to remove a task that we weren't able to resolve");
+                                return;
                             }
-                        });
+                            //if failed we add the task back to the end of the queue...
+                            setTimeout(()=>{
+                                taskRegistry.add(task.url,(err)=>{
+                                    if(err){
+                                        console.log("Failed to reschedule the task", task.url, err.message, err.code, err);
+                                    }
+                                });
+                            }, 100);
+                        })
                     }
                     //got result... we need to store it for future requests, and we need to resolve any pending request waiting for it
                     if (result) {
