@@ -197,7 +197,7 @@ module.exports = function (server) {
                 console.info("Executing task for url", task.url);
                 const fixedUrl = task.url;
                 //we need to do the request and save the result into the cache
-                let urlBase = `http://localhost`;
+                let urlBase = `http://127.0.0.1`;
                 let url = urlBase;
                 if (!fixedUrl.startsWith("/")) {
                     url += "/";
