@@ -64,7 +64,7 @@ function Server(sslOptions) {
 
         const options = {
             hostname : '127.0.0.1',
-            port : hostName,
+            port : server.address().port,
             path,
             method,
             headers
