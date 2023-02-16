@@ -194,6 +194,7 @@ module.exports = function (server) {
                     return;
                 }
 
+                console.info("Executing task for url", task.url);
                 const fixedUrl = task.url;
                 //we need to do the request and save the result into the cache
                 let urlBase = `http://localhost`;
@@ -211,8 +212,10 @@ module.exports = function (server) {
                 url = converter.toString().replace(urlBase, "");
 
                 //executing the request
+
                 server.makeLocalRequest("GET", url, "", {}, function (err, result) {
                     if (err) {
+                        console.error("caught an error during fetching fixedUrl", err.message, err.code, err);
                         return taskRegistry.markAsDone(task.url, (err)=>{
                             if (err) {
                                 console.log("Failed to remove a task that we weren't able to resolve");
@@ -225,6 +228,7 @@ module.exports = function (server) {
                         taskRunner.resolvePendingReq(task.url, result);
 
                         if(!taskRegistry.isInProgress(task.url)){
+                            console.info("Looks that somebody canceled the task before we were able to resolve.");
                             //if somebody canceled the task before we finished the request we stop!
                             return ;
                         }
