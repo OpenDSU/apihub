@@ -55,9 +55,16 @@ function Server(sslOptions) {
         }
 
         const protocol =  require(this.protocol);
+
+        let hostName = "127.0.0.1";
+        if(process.env.BDNS_ROOT_HOSTS){
+            let hostUrl = new URL(process.env.BDNS_ROOT_HOSTS);
+            hostName = hostUrl.hostname;
+        }
+
         const options = {
-            hostname : 'localhost',
-            port : server.address().port,
+            hostname : '127.0.0.1',
+            port : hostName,
             path,
             method,
             headers
