@@ -110,6 +110,7 @@ const defaultConfig = {
     "enableRequestLogger": true,
     "enableJWTAuthorisation": false,
     "enableLocalhostAuthorization": false,
+    "enableErrorCloaking": false,
     "skipJWTAuthorisation": [
         "/leaflet-wallet",
         "/config",

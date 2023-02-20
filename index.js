@@ -212,7 +212,9 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 				new LoggerMiddleware(server);
 			}
 
-			genericErrorMiddleware(server);
+			if(conf.enableErrorCloaking){
+				genericErrorMiddleware(server);
+			}
 			requestEnhancements(server);
 			Throttler(server);
 			FixedUrls(server);
