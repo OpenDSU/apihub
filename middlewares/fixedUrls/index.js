@@ -44,10 +44,10 @@ module.exports = function (server) {
     }
 
     function respond(res, content) {
-        res.write(content);
         res.statusCode = 200;
         const fixedURLExpiry = server.config.fixedURLExpiry || DEFAULT_MAX_AGE;
         res.setHeader("cache-control", `max-age=${fixedURLExpiry}`);
+        res.write(content);
         res.end();
     }
 
