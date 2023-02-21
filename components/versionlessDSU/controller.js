@@ -4,14 +4,12 @@ const config = require("../../config");
 
 const logger = $$.getLogger("controller", "apihub/versionlessDSU");
 
-let rootFolderPath;
 let versionlessDSUFolderPath;
 
 const VERSIONLESS_DSU_PATH_PREFIX = "/versionlessdsu/";
 
 async function init(server) {
     logger.debug(`[VersionlessDSU] Registering VersionlessDSU component`);
-    rootFolderPath = server.rootFolder;
     versionlessDSUFolderPath = path.join(server.rootFolder, config.getConfig("externalStorage"), "versionlessdsu");
     logger.debug(`[VersionlessDSU] Ensuring VersionlessDSU folder (${versionlessDSUFolderPath}) is created`);
     try {
