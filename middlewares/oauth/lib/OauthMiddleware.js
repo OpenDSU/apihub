@@ -75,14 +75,15 @@ function OAuthMiddleware(server) {
         }
 
         printDebugLog("Access token", tokenSet.access_token);
+        printDebugLog("Id token", tokenSet.id_token);
         util.encryptTokenSet(tokenSet, (err, encryptedTokenSet) => {
           if (err) {
             return sendUnauthorizedResponse(req, res, "Unable to encrypt access token", err);
           }
 
-          const {payload} = util.parseAccessToken(tokenSet.access_token);
+          const {payload} = util.parseAccessToken(tokenSet.id_token);
           printDebugLog("Access token payload", payload);
-          const SSODetectedId = util.getSSODetectedIdFromDecryptedToken(tokenSet.access_token);
+          const SSODetectedId = util.getSSODetectedIdFromDecryptedToken(tokenSet.id_token);
           printDebugLog("SSODetectedId", SSODetectedId);
           res.writeHead(301, {
             Location: "/",
@@ -104,8 +105,7 @@ function OAuthMiddleware(server) {
       client_id: oauthConfig.client.clientId,
     };
     res.writeHead(301, {
-      Location: urlModule.format(logoutUrl),
-      "Set-Cookie": `sessionExpiryTime=; Path=/`
+      Location: urlModule.format(logoutUrl)
     });
     res.end();
   }

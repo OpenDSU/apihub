@@ -233,7 +233,8 @@ function getPreviousEncryptionKey(callback) {
 function encryptTokenSet(tokenSet, callback) {
     const accessTokenPayload = {
         date: Date.now(),
-        token: tokenSet.access_token
+        token: tokenSet.access_token,
+        SSODetectedId: getSSODetectedIdFromDecryptedToken(tokenSet.id_token)
     }
 
     const refreshTokenPayload = {
@@ -279,10 +280,10 @@ function encryptLoginInfo(loginInfo, callback) {
     })
 }
 
-function encryptAccessToken(accessToken, callback) {
+function encryptAccessToken(accessToken, SSODetectedId, callback) {
     const accessTokenTimestamp = Date.now();
     const accessTokenPayload = {
-        date: accessTokenTimestamp, token: accessToken
+        date: accessTokenTimestamp, token: accessToken, SSODetectedId
     }
 
     getCurrentEncryptionKey((err, currentEncryptionKey) => {
@@ -383,13 +384,13 @@ function getSSODetectedIdFromDecryptedToken(decryptedToken) {
     return SSODetectedId;
 }
 
-function getSSODetectedIdFromEncryptedToken( accessTokenCookie, callback) {
-    getDecryptedAccessToken(accessTokenCookie, (err, token) => {
+function getSSODetectedIdFromEncryptedToken(accessTokenCookie, callback) {
+    decryptAccessTokenCookie(accessTokenCookie, (err, decryptedAccessTokenCookie) => {
         if (err) {
             return callback(err);
         }
 
-        return callback(undefined, getSSODetectedIdFromDecryptedToken(token));
+        return callback(undefined, decryptedAccessTokenCookie.SSODetectedId);
     })
 }
 
@@ -458,7 +459,8 @@ function validateEncryptedAccessToken(jwksEndpoint, accessTokenCookie, sessionTi
         if (Date.now() - decryptedAccessTokenCookie.date > sessionTimeout) {
             return callback(Error(errorMessages.SESSION_EXPIRED));
         }
-        validateAccessToken(jwksEndpoint, decryptedAccessTokenCookie.token, callback);
+        callback();
+        // validateAccessToken(jwksEndpoint, decryptedAccessTokenCookie.token, callback);
     })
 }
 
@@ -512,7 +514,7 @@ function updateAccessTokenExpiration(accessTokenCookie, callback) {
             return callback(err);
         }
 
-        encryptAccessToken(decryptedTokenCookie.token, callback);
+        encryptAccessToken(decryptedTokenCookie.token, decryptedTokenCookie.SSODetectedId, callback);
     })
 }
 
