@@ -110,6 +110,28 @@ function WebClient(oauthConfig) {
             });
         });
     }
+
+    this.getUserInfo = (accessToken, callback)=>{
+        const options = {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        }
+        http.doGet(oauthConfig.issuer.userInfoEndpoint, options, (err, userInfo) => {
+            if (err) {
+                return callback(err);
+            }
+
+            try {
+                userInfo = JSON.parse(userInfo);
+            } catch (e) {
+                return callback(e);
+            }
+
+            callback(undefined, userInfo);
+        });
+    }
 }
 
 

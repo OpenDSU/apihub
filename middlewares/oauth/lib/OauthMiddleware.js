@@ -80,17 +80,19 @@ function OAuthMiddleware(server) {
           if (err) {
             return sendUnauthorizedResponse(req, res, "Unable to encrypt access token", err);
           }
-
-          const {payload} = util.parseAccessToken(tokenSet.id_token);
-          printDebugLog("Access token payload", payload);
-          const SSODetectedId = util.getSSODetectedIdFromDecryptedToken(tokenSet.id_token);
-          printDebugLog("SSODetectedId", SSODetectedId);
-          res.writeHead(301, {
-            Location: "/",
-            "Set-Cookie": [`accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${payload.sub}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0`],
-            "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+          util.getSSODetectedIdAndUserId(tokenSet, (err, {SSODetectedId, SSOUserId})=>{
+            if (err) {
+              printDebugLog("Unable to get SSODetectedId");
+              return sendUnauthorizedResponse(req, res, "Unable to get token set", err);
+            }
+            printDebugLog("SSODetectedId", SSODetectedId);
+            res.writeHead(301, {
+              Location: "/",
+              "Set-Cookie": [`accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0`],
+              "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+            });
+            res.end();
           });
-          res.end();
         })
       });
     });

@@ -3,6 +3,7 @@ const crypto = openDSU.loadAPI("crypto");
 const http = openDSU.loadAPI("http");
 const fs = require("fs");
 const errorMessages = require("./errorMessages");
+const config = require("../../../config");
 
 let publicKey;
 
@@ -230,36 +231,44 @@ function getPreviousEncryptionKey(callback) {
     return callback(undefined, keyManager.getPreviousEncryptionKey());
 }
 
+const SSODetectedIdsAndUserIds = {};
 function encryptTokenSet(tokenSet, callback) {
-    const accessTokenPayload = {
-        date: Date.now(),
-        token: tokenSet.access_token,
-        SSODetectedId: getSSODetectedIdFromDecryptedToken(tokenSet.id_token)
-    }
-
-    const refreshTokenPayload = {
-        date: Date.now(),
-        token: tokenSet.refresh_token
-    }
-
-
-    getCurrentEncryptionKey((err, encryptionKey) => {
+    delete SSODetectedIdsAndUserIds[tokenSet.access_token];
+    getSSODetectedIdAndUserId(tokenSet, (err, {SSODetectedId, SSOUserId})=>{
         if (err) {
             return callback(err);
         }
 
-        let encryptedTokenSet;
-        try {
-            let encryptedAccessToken = crypto.encrypt(JSON.stringify(accessTokenPayload), encryptionKey);
-            let encryptedRefreshToken = crypto.encrypt(JSON.stringify(refreshTokenPayload), encryptionKey);
-            encryptedTokenSet = {
-                encryptedAccessToken: encodeCookie(encryptedAccessToken),
-                encryptedRefreshToken: encodeCookie(encryptedRefreshToken)
-            }
-        } catch (e) {
-            return callback(e);
+        const accessTokenPayload = {
+            date: Date.now(),
+            token: tokenSet.access_token,
+            SSODetectedId
         }
-        callback(undefined, encryptedTokenSet);
+
+        const refreshTokenPayload = {
+            date: Date.now(),
+            token: tokenSet.refresh_token
+        }
+
+
+        getCurrentEncryptionKey((err, encryptionKey) => {
+            if (err) {
+                return callback(err);
+            }
+
+            let encryptedTokenSet;
+            try {
+                let encryptedAccessToken = crypto.encrypt(JSON.stringify(accessTokenPayload), encryptionKey);
+                let encryptedRefreshToken = crypto.encrypt(JSON.stringify(refreshTokenPayload), encryptionKey);
+                encryptedTokenSet = {
+                    encryptedAccessToken: encodeCookie(encryptedAccessToken),
+                    encryptedRefreshToken: encodeCookie(encryptedRefreshToken)
+                }
+            } catch (e) {
+                return callback(e);
+            }
+            callback(undefined, encryptedTokenSet);
+        })
     })
 }
 
@@ -373,15 +382,44 @@ function getDecryptedAccessToken(accessTokenCookie, callback) {
     })
 }
 
-function getSSOUserIdFromDecryptedToken(decryptedToken) {
-    const {payload} = parseAccessToken(decryptedToken);
-    return payload.sub;
+function getSSODetectedIdFromObj(obj) {
+    return obj.email || obj.preferred_username || obj.upn || obj.sub;
 }
 
-function getSSODetectedIdFromDecryptedToken(decryptedToken) {
-    const {payload} = parseAccessToken(decryptedToken);
-    const SSODetectedId = payload.email || payload.preferred_username || payload.upn || payload.sub;
-    return SSODetectedId;
+function getSSODetectedIdAndUserId(tokenSet, callback) {
+    let parsedToken;
+    let payload;
+    const cachedSSODetectedIdObj = SSODetectedIdsAndUserIds[tokenSet.access_token];
+    if(cachedSSODetectedIdObj){
+        return callback(undefined, cachedSSODetectedIdObj);
+    }
+    try {
+        parsedToken = parseAccessToken(tokenSet.id_token);
+        payload = parsedToken.payload;
+        const res =  {
+            SSOUserId: payload.sub,
+            SSODetectedId: getSSODetectedIdFromObj(payload)
+        }
+        SSODetectedIdsAndUserIds[tokenSet.access_token] = res;
+        return callback(undefined, res);
+    } catch (e) {
+        const config = require("../../../config");
+        const oauthConfig = config.getConfig("oauthConfig");
+        const WebClient = require("./WebClient");
+        const webClient = new WebClient(oauthConfig);
+        webClient.getUserInfo(tokenSet.access_token, (err, userInfo) => {
+            if (err) {
+                return callback(err);
+            }
+
+            const res =  {
+                SSOUserId: userInfo.sub,
+                SSODetectedId: getSSODetectedIdFromObj(userInfo)
+            }
+            SSODetectedIdsAndUserIds[tokenSet.access_token] = res;
+            return callback(undefined, res);
+        })
+    }
 }
 
 function getSSODetectedIdFromEncryptedToken(accessTokenCookie, callback) {
@@ -509,7 +547,7 @@ function getUrlsToSkip() {
 }
 
 function updateAccessTokenExpiration(accessTokenCookie, callback) {
-    decryptAccessTokenCookie(accessTokenCookie, (err, decryptedTokenCookie)=>{
+    decryptAccessTokenCookie(accessTokenCookie, (err, decryptedTokenCookie) => {
         if (err) {
             return callback(err);
         }
@@ -537,8 +575,7 @@ module.exports = {
     validateAccessToken,
     validateEncryptedAccessToken,
     getUrlsToSkip,
-    getSSODetectedIdFromDecryptedToken,
+    getSSODetectedIdAndUserId,
     getSSODetectedIdFromEncryptedToken,
-    getSSOUserIdFromDecryptedToken,
     updateAccessTokenExpiration
 }
