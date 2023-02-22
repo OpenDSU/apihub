@@ -16,7 +16,7 @@ const defaultSettings = {
 	mq_client_timeout: 60 * 1000,//sec
 	// not sure about the response.setTimeout(msecs[, callback]) available on nodejs docs
 
-	mq_throttling: 2, //2 per second
+	mq_throttling: 100, //100 per second
 	mq_allow_unregistered_did: false
 }
 
@@ -192,7 +192,8 @@ async function MQHub(server, signalAsyncLoading, doneLoading) {
 					}
 				}
 			}
-		}catch(err){
+		} catch (err) {
+			logger.debug('setupDomainSpecificHandlers ignored error', err);
 			//we ignore any errors;
 		}
 
