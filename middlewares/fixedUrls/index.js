@@ -191,12 +191,12 @@ module.exports = function (server) {
         status:function(){
             database.getAllRecords(undefined, TASKS_TABLE, (err, scheduledTasks)=>{
                 if(!err){
-                    logger.debug(`No. of scheduled tasks: ${scheduledTasks.length}`);
+                    logger.debug(`Number of scheduled tasks: ${scheduledTasks.length}`);
                 }
             });
             database.getAllRecords(undefined, HISTORY_TABLE, (err, tasks)=>{
                 if(!err){
-                    logger.debug(`No. of registered tasks: ${tasks.length}`);
+                    logger.debug(`Number of fixed urls: ${tasks.length}`);
                 }
             });
         }
@@ -304,7 +304,7 @@ module.exports = function (server) {
                 }
             }
 
-            logger.debug(`No. of requests that are in pending: ${counter}`);
+            logger.debug(`Number of requests that are in pending: ${counter}`);
             taskRegistry.status();
         }
     };
