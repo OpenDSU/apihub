@@ -123,6 +123,8 @@ function WebClient(oauthConfig) {
                 return callback(err);
             }
 
+            util.printDebugLog("Raw user info:", userInfo);
+            util.printDebugLog("typeof user info:", typeof userInfo);
             try {
                 userInfo = JSON.parse(userInfo);
             } catch (e) {

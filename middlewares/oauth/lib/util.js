@@ -3,7 +3,7 @@ const crypto = openDSU.loadAPI("crypto");
 const http = openDSU.loadAPI("http");
 const fs = require("fs");
 const errorMessages = require("./errorMessages");
-const config = require("../../../config");
+const logger = $$.getLogger("OAuthMiddleware", "util.js");
 
 let publicKey;
 
@@ -556,6 +556,14 @@ function updateAccessTokenExpiration(accessTokenCookie, callback) {
     })
 }
 
+function printDebugLog(...args) {
+    const config = require("../../../config");
+    const oauthConfig = config.getConfig("oauthConfig");
+    if (oauthConfig.debugLogEnabled) {
+        logger.debug(...args);
+    }
+}
+
 module.exports = {
     pkce,
     pkceChallenge,
@@ -577,5 +585,6 @@ module.exports = {
     getUrlsToSkip,
     getSSODetectedIdAndUserId,
     getSSODetectedIdFromEncryptedToken,
-    updateAccessTokenExpiration
+    updateAccessTokenExpiration,
+    printDebugLog
 }
