@@ -60,6 +60,14 @@ function Logger(server) {
             }
         });
 
+        req.on("error", (err)=>{
+            //clearing the timer
+            if (timer) {
+                clearInterval(timer);
+            }
+            logger.info(`Request closed by client`, `${method}:${url}`, err?err.message:"", err);
+        });
+
         res.on('finish', () => {
             //clearing the timer
             if (timer) {
