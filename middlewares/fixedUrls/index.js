@@ -10,6 +10,7 @@ const fsname = "fs";
 const fs = require(fsname);
 const pathname = "path";
 const path = require(pathname);
+const logger = $$.getLogger("FixedUrl", "apihub/logger");
 
 module.exports = function (server) {
 
@@ -112,6 +113,7 @@ module.exports = function (server) {
                 }
                 task = task[0];
                 if(taskRegistry.inProgress[task.url]){
+                    logger.debug(`${task.url} is in progress.`);
                     //we already have this task in progress, we need to wait
                     return callback(undefined);
                 }
@@ -185,6 +187,18 @@ module.exports = function (server) {
 
                 callback(undefined);
             });
+        },
+        status:function(){
+            database.getAllRecords(undefined, TASKS_TABLE, (err, scheduledTasks)=>{
+                if(!err){
+                    logger.debug(`No. of scheduled tasks: ${scheduledTasks.length}`);
+                }
+            });
+            database.getAllRecords(undefined, HISTORY_TABLE, (err, tasks)=>{
+                if(!err){
+                    logger.debug(`No. of registered tasks: ${tasks.length}`);
+                }
+            });
         }
     };
     const taskRunner = {
@@ -194,7 +208,7 @@ module.exports = function (server) {
                     return;
                 }
 
-                console.info("Executing task for url", task.url);
+                logger.info("Executing task for url", task.url);
                 const fixedUrl = task.url;
                 //we need to do the request and save the result into the cache
                 let urlBase = `http://127.0.0.1`;
@@ -215,17 +229,17 @@ module.exports = function (server) {
 
                 server.makeLocalRequest("GET", url, "", {}, function (err, result) {
                     if (err) {
-                        console.error("caught an error during fetching fixedUrl", err.message, err.code, err);
+                        logger.error("caught an error during fetching fixedUrl", err.message, err.code, err);
                         return taskRegistry.markAsDone(task.url, (err)=>{
                             if (err) {
-                                console.log("Failed to remove a task that we weren't able to resolve");
+                                logger.log("Failed to remove a task that we weren't able to resolve");
                                 return;
                             }
                             //if failed we add the task back to the end of the queue...
                             setTimeout(()=>{
                                 taskRegistry.add(task.url,(err)=>{
                                     if(err){
-                                        console.log("Failed to reschedule the task", task.url, err.message, err.code, err);
+                                        logger.log("Failed to reschedule the task", task.url, err.message, err.code, err);
                                     }
                                 });
                             }, 100);
@@ -237,19 +251,19 @@ module.exports = function (server) {
                         taskRunner.resolvePendingReq(task.url, result);
 
                         if(!taskRegistry.isInProgress(task.url)){
-                            console.info("Looks that somebody canceled the task before we were able to resolve.");
+                            logger.info("Looks that somebody canceled the task before we were able to resolve.");
                             //if somebody canceled the task before we finished the request we stop!
                             return ;
                         }
 
                         indexer.persist(task.url, result, function (err) {
                             if (err) {
-                                console.log("Not able to persist fixed url", task);
+                                logger.log("Not able to persist fixed url", task);
                             }
 
                             taskRegistry.markAsDone(task.url, (err) => {
                                 if (err) {
-                                    console.log("May be not really important, but ... Not able to mark as done task ", task);
+                                    logger.log("May be not really important, but ... Not able to mark as done task ", task);
                                 }
                             });
 
@@ -280,16 +294,29 @@ module.exports = function (server) {
                     //we ignore any errors at this stage... timeouts, client aborts etc.
                 }
             }
+        },
+        status: function(){
+            let pendingReq = Object.keys(taskRunner.pendingRequests);
+            let counter = 0;
+            for(let pendingUrl of pendingReq){
+                if(taskRunner.pendingRequests[pendingUrl]){
+                    counter += taskRunner.pendingRequests[pendingUrl].length;
+                }
+            }
+
+            logger.debug(`No. of requests that are in pending: ${counter}`);
+            taskRegistry.status();
         }
     };
 
     fs.mkdir(storage, {recursive: true}, (err) => {
         if (err) {
-            console.log("Failed to ensure folder structure due to", err);
+            logger.error("Failed to ensure folder structure due to", err);
         }
         database = new LokiDatabase(databasePersistence, INTERVAL_TIME);
 
         setInterval(taskRunner.execute, INTERVAL_TIME);
+        setInterval(taskRunner.status, 1*60*1000);//each minute
     });
 
     server.put("/registerFixedURLs", require("./../../utils/middlewares").bodyReaderMiddleware);
@@ -303,7 +330,7 @@ module.exports = function (server) {
         try{
             body = JSON.parse(body);
         }catch(err){
-            console.log(err);
+            logger.log(err);
         }
 
         if(!Array.isArray(body)){
@@ -338,7 +365,7 @@ module.exports = function (server) {
         }
         taskRegistry.schedule(req.body.toString(), function (err){
             if(err){
-                console.log(err);
+                logger.log(err);
                 res.statusCode = 500;
                 return res.end();
             }
@@ -356,7 +383,7 @@ module.exports = function (server) {
         }
         taskRegistry.cancel(req.body.toString(), function (err){
             if(err){
-                console.log(err);
+                logger.log(err);
                 res.statusCode = 500;
                 return res.end();
             }
