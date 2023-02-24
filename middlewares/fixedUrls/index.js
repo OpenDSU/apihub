@@ -1,4 +1,4 @@
-const REQUEST_IDENTIFIER = "fixedurlrequest";
+const TAG_FIXED_URL_REQUEST = "fixedurlrequest";
 const INTERVAL_TIME = 1 * 1000; //ms aka 1 sec
 const DEFAULT_MAX_AGE = 10; //seconds aka 10 sec
 const TASKS_TABLE = "tasks";
@@ -117,12 +117,24 @@ module.exports = function (server) {
                     //we already have this task in progress, we need to wait
                     return callback(undefined);
                 }
-                taskRegistry.inProgress[task.url] = true;
+                taskRegistry.markInProgress(task.url);
                 callback(undefined, task);
             });
         },
         isInProgress:function(task){
             return !!taskRegistry.inProgress[task];
+        },
+        isScheduled:function(task, callback){
+            let tobeChecked = taskRegistry.createModel(task);
+            database.getRecord(undefined, TASKS_TABLE, tobeChecked.pk, function(err, task){
+                if(err || !task){
+                    return callback(undefined, undefined);
+                }
+                callback(undefined, task);
+            });
+        },
+        markInProgress:function(task){
+            taskRegistry.inProgress[task] = true;
         },
         markAsDone:function(task, callback){
             taskRegistry.inProgress[task] = undefined;
@@ -189,89 +201,95 @@ module.exports = function (server) {
             });
         },
         status:function(){
+            let inProgressCounter = Object.keys(taskRegistry.inProgress);
+            logger.debug(`Number of tasks that are in progress: ${inProgressCounter ? inProgressCounter.length : 0}`);
+
             database.getAllRecords(undefined, TASKS_TABLE, (err, scheduledTasks)=>{
                 if(!err){
-                    logger.debug(`Number of scheduled tasks: ${scheduledTasks.length}`);
+                    logger.debug(`Number of scheduled tasks: ${scheduledTasks ? scheduledTasks.length : 0}`);
                 }
             });
             database.getAllRecords(undefined, HISTORY_TABLE, (err, tasks)=>{
                 if(!err){
-                    logger.debug(`Number of fixed urls: ${tasks.length}`);
+                    logger.debug(`Number of fixed urls: ${tasks ? tasks.length : 0}`);
                 }
             });
         }
     };
     const taskRunner = {
+        doItNow:function(task){
+            logger.info("Executing task for url", task.url);
+            const fixedUrl = task.url;
+            //we need to do the request and save the result into the cache
+            let urlBase = `http://127.0.0.1`;
+            let url = urlBase;
+            if (!fixedUrl.startsWith("/")) {
+                url += "/";
+            }
+            url += fixedUrl;
+
+            //let's create an url object from our string
+            let converter = new URL(url);
+            //we inject the request identifier
+            converter.searchParams.append(TAG_FIXED_URL_REQUEST, "true");
+            //this new url will contain our flag that prevents resolving in our middleware
+            url = converter.toString().replace(urlBase, "");
+
+            //executing the request
+
+            server.makeLocalRequest("GET", url, "", {}, function (err, result) {
+                if (err) {
+                    logger.error("caught an error during fetching fixedUrl", err.message, err.code, err);
+                    return taskRegistry.markAsDone(task.url, (err)=>{
+                        if (err) {
+                            logger.log("Failed to remove a task that we weren't able to resolve");
+                            return;
+                        }
+                        //if failed we add the task back to the end of the queue...
+                        setTimeout(()=>{
+                            taskRegistry.add(task.url,(err)=>{
+                                if(err){
+                                    logger.log("Failed to reschedule the task", task.url, err.message, err.code, err);
+                                }
+                            });
+                        }, 100);
+                    })
+                }
+                //got result... we need to store it for future requests, and we need to resolve any pending request waiting for it
+                if (result) {
+                    //let's resolve as fast as possible any pending request for the current task
+                    taskRunner.resolvePendingReq(task.url, result);
+
+                    if(!taskRegistry.isInProgress(task.url)){
+                        logger.info("Looks that somebody canceled the task before we were able to resolve.");
+                        //if somebody canceled the task before we finished the request we stop!
+                        return ;
+                    }
+
+                    indexer.persist(task.url, result, function (err) {
+                        if (err) {
+                            logger.error("Not able to persist fixed url", task);
+                        }
+
+                        taskRegistry.markAsDone(task.url, (err) => {
+                            if (err) {
+                                logger.warn("Failed to mark request as done in database", task);
+                            }
+                        });
+
+                        //let's test if we have other tasks that need to be executed...
+                        taskRunner.execute();
+                    });
+                }
+            });
+        },
         execute:function(){
             taskRegistry.getOneTask(function(err, task){
                 if(err || !task){
                     return;
                 }
 
-                logger.info("Executing task for url", task.url);
-                const fixedUrl = task.url;
-                //we need to do the request and save the result into the cache
-                let urlBase = `http://127.0.0.1`;
-                let url = urlBase;
-                if (!fixedUrl.startsWith("/")) {
-                    url += "/";
-                }
-                url += fixedUrl;
-
-                //let's create an url object from our string
-                let converter = new URL(url);
-                //we inject the request identifier
-                converter.searchParams.append(REQUEST_IDENTIFIER, "true");
-                //this new url will contain our flag that prevents resolving in our middleware
-                url = converter.toString().replace(urlBase, "");
-
-                //executing the request
-
-                server.makeLocalRequest("GET", url, "", {}, function (err, result) {
-                    if (err) {
-                        logger.error("caught an error during fetching fixedUrl", err.message, err.code, err);
-                        return taskRegistry.markAsDone(task.url, (err)=>{
-                            if (err) {
-                                logger.log("Failed to remove a task that we weren't able to resolve");
-                                return;
-                            }
-                            //if failed we add the task back to the end of the queue...
-                            setTimeout(()=>{
-                                taskRegistry.add(task.url,(err)=>{
-                                    if(err){
-                                        logger.log("Failed to reschedule the task", task.url, err.message, err.code, err);
-                                    }
-                                });
-                            }, 100);
-                        })
-                    }
-                    //got result... we need to store it for future requests, and we need to resolve any pending request waiting for it
-                    if (result) {
-                        //let's resolve as fast as possible any pending request for the current task
-                        taskRunner.resolvePendingReq(task.url, result);
-
-                        if(!taskRegistry.isInProgress(task.url)){
-                            logger.info("Looks that somebody canceled the task before we were able to resolve.");
-                            //if somebody canceled the task before we finished the request we stop!
-                            return ;
-                        }
-
-                        indexer.persist(task.url, result, function (err) {
-                            if (err) {
-                                logger.log("Not able to persist fixed url", task);
-                            }
-
-                            taskRegistry.markAsDone(task.url, (err) => {
-                                if (err) {
-                                    logger.log("May be not really important, but ... Not able to mark as done task ", task);
-                                }
-                            });
-
-                            //let's test if we have other tasks that need to be executed...
-                            taskRunner.execute();
-                        });
-                    }
-                });
+                taskRunner.doItNow(task);
             })
         },
         pendingRequests:{},
@@ -412,8 +430,8 @@ module.exports = function (server) {
             return next();
         }
 
-        if (req.query && req.query[REQUEST_IDENTIFIER]) {
-            //this REQUEST_IDENTIFIER query param is set by our runner, and we should let this request to be executed
+        if (req.query && req.query[TAG_FIXED_URL_REQUEST]) {
+            //this TAG_FIXED_URL_REQUEST query param is set by our runner, and we should let this request to be executed
             return next();
         }
 
@@ -424,19 +442,30 @@ module.exports = function (server) {
             return taskRunner.registerReq(fixedUrl, req, res);
         }
 
-        taskRegistry.isKnown(fixedUrl, (err, known) => {
-            if (known) {
-                //there is no task in progress for this url... let's test even more...
-                return indexer.get(fixedUrl, (err, content) => {
-                    if (err) {
-                        //no current task and no cache... let's move on to resolving the req
-                        return next();
-                    }
-                    //known fixed url let's respond to the client
-                    respond(res, content);
-                });
+        taskRegistry.isScheduled(fixedUrl, (err, task)=>{
+            if(task){
+                logger.debug(`There is a scheduled task for this ${fixedUrl}`);
+                taskRunner.registerReq(fixedUrl, req, res);
+                taskRegistry.markInProgress(fixedUrl);
+                taskRunner.doItNow(task);
+                return;
             }
-            next();
+
+            taskRegistry.isKnown(fixedUrl, (err, known) => {
+                if (known) {
+                    //there is no task in progress for this url... let's test even more...
+                    return indexer.get(fixedUrl, (err, content) => {
+                        if (err) {
+                            logger.warn(`Failed to load content for fixedUrl; highly improbable, check your configurations!`);
+                            //no current task and no cache... let's move on to resolving the req
+                            return next();
+                        }
+                        //known fixed url let's respond to the client
+                        respond(res, content);
+                    });
+                }
+                next();
+            });
         });
     });
 }
