@@ -69,7 +69,22 @@ function Server(sslOptions) {
             method,
             headers
         };
+
+        let timer = setTimeout(()=>{
+            let error = new Error("Forced timeout for local request");
+            error.rootCause = "network";
+            let cb = callback;
+            callback = ()=>{
+                console.warn("Canceled request still got a result");
+            };
+            cb(error);
+        }, 1*60*1000)//after one minute
+
         const req = protocol.request(options, response => {
+            if(timer){
+                clearTimeout(timer);
+                timer = undefined;
+            }
 
             if (response.statusCode < 200 || response.statusCode >= 300) {
 
