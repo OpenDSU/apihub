@@ -55,12 +55,13 @@ function SecretsService(serverRootFolder) {
         const latestEncryptionKey = encryptionKeys[0].trim();
         let decryptedSecret;
         const _decryptSecretRecursively = (index) => {
-            const encryptionKey = encryptionKeys[index].trim();
             if (typeof encryptionKey === "undefined") {
                 logger.error(`Failed to decrypt secret. Invalid encryptionKey.`);
                 callback(createError(500, `Failed to decrypt secret`));
                 return;
             }
+
+            const encryptionKey = encryptionKeys[index].trim();
             let bufferEncryptionKey = encryptionKey;
             if (!$$.Buffer.isBuffer(bufferEncryptionKey)) {
                 bufferEncryptionKey = $$.Buffer.from(bufferEncryptionKey, "base64");
@@ -77,10 +78,10 @@ function SecretsService(serverRootFolder) {
                 logger.info(0x501, "Secrets Encryption Key rotation detected");
                 writeSecrets(appName, decryptedSecret.toString(), err => {
                     if (err) {
-                        logger.info(0x501, `Re-encrypting Recovery Passphases on disk file ${getSecretFilePath(appName)} failed due to error: ${err}`);
+                        logger.info(0x501, `Re-encrypting Recovery Passphrases on disk file ${getSecretFilePath(appName)} failed due to error: ${err}`);
                         return callback(err);
                     }
-                    logger.info(0x501, `Re-encrypting Recovery Passphases on disk file ${getSecretFilePath(appName)} completed`)
+                    logger.info(0x501, `Re-encrypting Recovery Passphrases on disk file ${getSecretFilePath(appName)} completed`)
                     callback(undefined, decryptedSecret);
                 });
 
