@@ -25,31 +25,31 @@ function sendVersionlessDSUContent(parsedDSUContent, response) {
     response.end();
 }
 
-function getAnchorIdFromRequest(request) {
+function getFilePathFromRequest(request) {
     const {url} = request;
-    let anchorIdStartIndex = url.indexOf(VERSIONLESS_DSU_PATH_PREFIX);
-    if(anchorIdStartIndex === -1) {
+    let filePathStartIndex = url.indexOf(VERSIONLESS_DSU_PATH_PREFIX);
+    if(filePathStartIndex === -1) {
         return null;
     }
 
-    anchorIdStartIndex += VERSIONLESS_DSU_PATH_PREFIX.length;
-    let anchorId = url.substring(anchorIdStartIndex);
+    filePathStartIndex += VERSIONLESS_DSU_PATH_PREFIX.length;
+    let filePath = url.substring(filePathStartIndex);
 
-    // encode anchorId in order to escape special characters
+    // encode filePath in order to escape special characters
     const pskcrypto = require("pskcrypto");
-    anchorId = pskcrypto.pskBase58Encode(anchorId);
+    filePath = pskcrypto.pskBase58Encode(filePath);
 
-    return anchorId;
+    return filePath;
 }
 
 async function handleGetVersionlessDSURequest(request, response) {
-    const anchorId = getAnchorIdFromRequest(request);
-    if(!anchorId) {
-        logger.error("[VersionlessDSU] AnchorId not specified");
+    const filePath = getFilePathFromRequest(request);
+    if(!filePath) {
+        logger.error("[VersionlessDSU] FilePath not specified");
         response.statusCode = 400;
         return response.end();
     }
-    const versionlessDSUFilePath = path.join(versionlessDSUFolderPath, anchorId);
+    const versionlessDSUFilePath = path.join(versionlessDSUFolderPath, filePath);
 
     const fs = require("fs");
     try {
@@ -65,14 +65,14 @@ async function handleGetVersionlessDSURequest(request, response) {
 }
 
 async function handlePutVersionlessDSURequest(request, response) {
-    const anchorId = getAnchorIdFromRequest(request);
-    if(!anchorId) {
-        logger.error("[VersionlessDSU] AnchorId not specified");
+    const filePath = getFilePathFromRequest(request);
+    if(!filePath) {
+        logger.error("[VersionlessDSU] FilePath not specified");
         response.statusCode = 400;
         return response.end();
     }
 
-    const versionlessDSUFilePath = path.join(versionlessDSUFolderPath, anchorId);
+    const versionlessDSUFilePath = path.join(versionlessDSUFolderPath, filePath);
 
     const dsu = request.body;
     if (!dsu || typeof dsu !== "object") {
