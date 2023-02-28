@@ -74,6 +74,7 @@ async function updateAnchor(action, request, response) {
 function getReadingHandler(response) {
     return (err, result) => {
         if (err) {
+            console.error("Could not retrieve anchor", err);
             return response.send(500, "Could not retrieve anchor");
         }
 
