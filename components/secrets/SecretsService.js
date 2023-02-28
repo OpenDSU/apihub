@@ -55,13 +55,14 @@ function SecretsService(serverRootFolder) {
         const latestEncryptionKey = encryptionKeys[0].trim();
         let decryptedSecret;
         const _decryptSecretRecursively = (index) => {
+            let encryptionKey = encryptionKeys[index];
             if (typeof encryptionKey === "undefined") {
                 logger.error(`Failed to decrypt secret. Invalid encryptionKey.`);
                 callback(createError(500, `Failed to decrypt secret`));
                 return;
             }
 
-            const encryptionKey = encryptionKeys[index].trim();
+            encryptionKey = encryptionKey.trim();
             let bufferEncryptionKey = encryptionKey;
             if (!$$.Buffer.isBuffer(bufferEncryptionKey)) {
                 bufferEncryptionKey = $$.Buffer.from(bufferEncryptionKey, "base64");
