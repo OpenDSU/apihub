@@ -27,7 +27,7 @@ class FS{
                 return callback(err);
             }
             if (anchorValues.length === 0) {
-                return callback(anchorValues);
+                return callback(undefined, anchorValues);
             }
 
             callback(undefined, anchorValues.map(el => el.getIdentifier()));

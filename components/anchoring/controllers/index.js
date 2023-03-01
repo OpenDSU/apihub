@@ -83,6 +83,11 @@ function getReadingHandler(response) {
             return response.send(404);
         }
 
+        if(Array.isArray(result) && result.length === 0){
+            logger.info(0x01, `Anchor not found`);
+            return response.send(404);
+        }
+
         if (typeof result === "object") {
             response.setHeader("Content-Type", "application/json");
         }

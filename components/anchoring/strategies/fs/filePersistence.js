@@ -45,7 +45,7 @@ function FilePersistenceStrategy(rootFolder, configuredPath) {
             }
             fileOperations.fileExist(anchorId, (err, exists) => {
                 if (err) {
-                    return callback(undefined, []);
+                    return callback(err);
                 }
                 if (!exists) {
                     return callback(undefined, []);
