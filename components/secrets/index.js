@@ -48,8 +48,8 @@ function secrets(server) {
     const getUserIdFromDID = (did, appName) => {
         const crypto = require("opendsu").loadAPI("crypto");
         const decodedDID = crypto.decodeBase58(did);
-        const splitDecodedDID = decodedDID.split(":");
-        let name = splitDecodedDID.slice(3).join(":");
+        const splitDecodedDID = decodedDID.toString().split(":");
+        let name = splitDecodedDID.slice(4).join(":");
         let userId = name.slice(appName.length + 1);
         return userId;
     }
