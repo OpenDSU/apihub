@@ -148,6 +148,9 @@ module.exports = function (server) {
         schedule:function(criteria, callback){
             database.filter(undefined, HISTORY_TABLE, criteria, function(err, records){
                 if(err){
+                    if(err.code === 404){
+                        return callback();
+                    }
                     return callback(err);
                 }
 
@@ -430,6 +433,8 @@ module.exports = function (server) {
             return next();
         }
 
+
+
         if (req.query && req.query[TAG_FIXED_URL_REQUEST]) {
             //this TAG_FIXED_URL_REQUEST query param is set by our runner, and we should let this request to be executed
             return next();
@@ -442,30 +447,53 @@ module.exports = function (server) {
             return taskRunner.registerReq(fixedUrl, req, res);
         }
 
-        taskRegistry.isScheduled(fixedUrl, (err, task)=>{
-            if(task){
-                logger.debug(`There is a scheduled task for this ${fixedUrl}`);
-                taskRunner.registerReq(fixedUrl, req, res);
-                taskRegistry.markInProgress(fixedUrl);
-                taskRunner.doItNow(task);
-                return;
-            }
-
-            taskRegistry.isKnown(fixedUrl, (err, known) => {
-                if (known) {
-                    //there is no task in progress for this url... let's test even more...
-                    return indexer.get(fixedUrl, (err, content) => {
-                        if (err) {
-                            logger.warn(`Failed to load content for fixedUrl; highly improbable, check your configurations!`);
-                            //no current task and no cache... let's move on to resolving the req
-                            return next();
-                        }
-                        //known fixed url let's respond to the client
-                        respond(res, content);
-                    });
+        function resolveURL(){
+            taskRegistry.isScheduled(fixedUrl, (err, task)=>{
+                if(task){
+                    logger.debug(`There is a scheduled task for this ${fixedUrl}`);
+                    taskRunner.registerReq(fixedUrl, req, res);
+                    taskRegistry.markInProgress(fixedUrl);
+                    taskRunner.doItNow(task);
+                    return;
                 }
-                next();
+
+                taskRegistry.isKnown(fixedUrl, (err, known) => {
+                    if (known) {
+                        //there is no task in progress for this url... let's test even more...
+                        return indexer.get(fixedUrl, (err, content) => {
+                            if (err) {
+                                logger.warn(`Failed to load content for fixedUrl; highly improbable, check your configurations!`);
+                                //no current task and no cache... let's move on to resolving the req
+                                return next();
+                            }
+                            //known fixed url let's respond to the client
+                            respond(res, content);
+                        });
+                    }
+                    next();
+                });
             });
+        }
+
+        taskRegistry.isKnown(fixedUrl, (err, known) => {
+            //if reached this point it might be a fixed url that is not known yet, and it should get registered and scheduled for resolving...
+            //this case could catch params combinations that are not captured...
+            if (!known) {
+                return taskRegistry.register(fixedUrl, (err)=>{
+                    if(err){
+                        //this should not happen... but even if it happens we log and go on with the execution
+                        console.error(err);
+                    }
+                    taskRegistry.add(fixedUrl, (err)=>{
+                        if(err){
+                            //this should not happen... but even if it happens we log and go on with the execution
+                            console.error(err);
+                        }
+                        resolveURL();
+                    });
+                });
+            }
+            resolveURL();
         });
     });
 }
