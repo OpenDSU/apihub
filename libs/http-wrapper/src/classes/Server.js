@@ -87,8 +87,9 @@ function Server(sslOptions) {
             }
 
             if (response.statusCode < 200 || response.statusCode >= 300) {
-
-                return callback(new Error("Failed to execute command. StatusCode " + response.statusCode));
+                let err = new Error("Failed to execute command. StatusCode " + response.statusCode);
+                err.httpCode = response.statusCode;
+                return callback(err);
             }
             let data = [];
             response.on('data', chunk => {

@@ -44,8 +44,12 @@ module.exports = function (server) {
         return newString;
     }
 
-    function respond(res, content) {
-        res.statusCode = 200;
+    function respond(res, content, statusCode) {
+        if(statusCode){
+            res.statusCode = statusCode;
+        }else{
+            res.statusCode = 200;
+        }
         const fixedURLExpiry = server.config.fixedURLExpiry || DEFAULT_MAX_AGE;
         res.setHeader("cache-control", `max-age=${fixedURLExpiry}`);
         res.write(content);
@@ -240,9 +244,19 @@ module.exports = function (server) {
 
             //executing the request
 
-            server.makeLocalRequest("GET", url, "", {}, function (err, result) {
-                if (err) {
-                    logger.error("caught an error during fetching fixedUrl", err.message, err.code, err);
+            server.makeLocalRequest("GET", url, "", {}, function (error, result) {
+                if (error) {
+                    logger.error("caught an error during fetching fixedUrl", error.message, error.code, error);
+                    if(error.httpCode && error.httpCode > 300){
+                        //missing data
+                        taskRunner.resolvePendingReq(task.url, "", error.httpCode);
+                        return taskRegistry.markAsDone(task.url, (err)=> {
+                            if (err) {
+                                logger.log("Failed to remove a task that we weren't able to resolve");
+                                return;
+                            }
+                        });
+                    }
                     return taskRegistry.markAsDone(task.url, (err)=>{
                         if (err) {
                             logger.log("Failed to remove a task that we weren't able to resolve");
@@ -283,6 +297,13 @@ module.exports = function (server) {
                         //let's test if we have other tasks that need to be executed...
                         taskRunner.execute();
                     });
+                }else{
+                    taskRegistry.markAsDone(task.url, (err) => {
+                        if (err) {
+                            logger.warn("Failed to mark request as done in database", task);
+                        }
+                        taskRunner.resolvePendingReq(task.url, result, 204);
+                    });
                 }
             });
         },
@@ -302,7 +323,7 @@ module.exports = function (server) {
             }
             taskRunner.pendingRequests[url].push({req, res});
         },
-        resolvePendingReq: function(url, content){
+        resolvePendingReq: function(url, content, statusCode){
             let pending = taskRunner.pendingRequests[url];
             if(!pending){
                 return;
@@ -310,7 +331,7 @@ module.exports = function (server) {
             while(pending.length>0){
                 let delayed = pending.shift();
                 try{
-                    respond(delayed.res, content);
+                    respond(delayed.res, content, statusCode);
                 }catch(err){
                     //we ignore any errors at this stage... timeouts, client aborts etc.
                 }
