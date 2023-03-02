@@ -191,6 +191,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			const Throttler = require('./middlewares/throttler');
 			const OAuth = require('./middlewares/oauth');
 			const FixedUrls = require('./middlewares/fixedUrls');
+			const SimpleLock = require('./middlewares/SimpleLock');
 			const ResponseHeaderMiddleware = require('./middlewares/responseHeader');
 			const genericErrorMiddleware = require('./middlewares/genericErrorMiddleware');
 			const requestEnhancements = require('./middlewares/requestEnhancements');
@@ -218,6 +219,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			requestEnhancements(server);
 			Throttler(server);
 			FixedUrls(server);
+			SimpleLock(server);
 
             if(conf.enableJWTAuthorisation) {
                 new AuthorisationMiddleware(server);
