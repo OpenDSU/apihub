@@ -59,7 +59,15 @@ module.exports = function (server) {
     }
 
     function cleanLockFiles(id, callback){
-        fs.rm(getLockFolderPath(id), { recursive: true, force: true }, callback);
+        fs.rm(getLockFolderPath(id), { recursive: true, force: true }, (err)=>{
+            if(err){
+                if(err.code === "ENOENT"){
+                    return callback(undefined);
+                }
+                return callback(err);
+            }
+            return callback(undefined);
+        });
     }
 
     function checkIfLockExists(id, secret, callback){
@@ -69,15 +77,21 @@ module.exports = function (server) {
             }
             logger.debug("lockData.expire", lockData.expire, Date.now(), Number(lockData.expire) < Date.now());
             if(!lockData.expire || Number(lockData.expire) < Date.now()){
-                return callback(undefined, false);
+                return cleanLockFiles(id, (err)=> {
+                    if (err) {
+                        return callback(err);
+                    }
+                    return callback(undefined, false);
+                });
             }
 
-            cleanLockFiles(id, (err)=>{
-                if(err){
-                    return callback(err);
-                }
-                return callback(undefined, true);
-            });
+            if(lockData.expire){
+                logger.debug("cleaning lock files, time to expire", Number(lockData.expire) < Date.now());
+            }
+
+            logger.debug("cleaning lock files", lockData);
+            return callback(undefined, true);
+
         });
     }
 
@@ -97,12 +111,12 @@ module.exports = function (server) {
             fs.mkdir(getLockFolderPath(id), {recursive: true}, (err)=>{
                 if(err){
                     logger.error("Failed to write lock", err);
-                    return callback(undefined, false);
+                    return callback(err);
                 }
                 fs.writeFile(getLockFilePath(id), JSON.stringify(constructLockData(secret, period)), (err)=>{
                     if(err){
                         logger.error("Failed to write lock", err);
-                        return callback(undefined, false);
+                        return callback(err);
                     }
                     callback(undefined, true);
                 });
