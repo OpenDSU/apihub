@@ -67,12 +67,15 @@ module.exports = function (server) {
             return path.join(storage, getIdentifier(fixedUrl));
         },
         persist:function(fixedUrl, content, callback){
+            logger.debug("Persisting url", fixedUrl);
             fs.writeFile(indexer.getFileName(fixedUrl), content, callback);
         },
         get:function(fixedUrl, callback){
+            logger.debug("Reading url", fixedUrl);
             fs.readFile(indexer.getFileName(fixedUrl), callback);
         },
         clean:function(fixedUrl, callback){
+            logger.debug("Cleaning url", fixedUrl);
             fs.unlink(indexer.getFileName(fixedUrl), callback);
         }
     };
@@ -143,6 +146,7 @@ module.exports = function (server) {
             taskRegistry.inProgress[task] = true;
         },
         markAsDone:function(task, callback){
+            logger.debug(`Marking task ${task} as done`);
             taskRegistry.inProgress[task] = undefined;
             delete taskRegistry.inProgress[task];
             taskRegistry.remove(task, callback);
@@ -178,7 +182,7 @@ module.exports = function (server) {
             });
         },
         cancel:function(criteria, callback){
-            database.filter(undefined, TASKS_TABLE, criteria, async function(err, tasks){
+            database.filter(undefined, HISTORY_TABLE, criteria, async function(err, tasks){
                 if(err){
                     if(err.code === 404){
                         return callback();
@@ -252,6 +256,14 @@ module.exports = function (server) {
                     if(error.httpCode && error.httpCode > 300){
                         //missing data
                         taskRunner.resolvePendingReq(task.url, "", error.httpCode);
+                        logger.debug("Cleaning url because of the resolving error", error);
+                        indexer.clean(task.url, (err)=>{
+                            if(err){
+                                if(err.code !== "ENOENT"){
+                                    logger.error("Failed to clean url", err);
+                                }
+                            }
+                        });
                         return taskRegistry.markAsDone(task.url, (err)=> {
                             if (err) {
                                 logger.log("Failed to remove a task that we weren't able to resolve");
@@ -287,7 +299,7 @@ module.exports = function (server) {
 
                     indexer.persist(task.url, result, function (err) {
                         if (err) {
-                            logger.error("Not able to persist fixed url", task);
+                            logger.error("Not able to persist fixed url", task, err);
                         }
 
                         taskRegistry.markAsDone(task.url, (err) => {
