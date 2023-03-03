@@ -47,7 +47,9 @@ module.exports = function (server) {
     function respond(res, content, statusCode) {
         if(statusCode){
             res.statusCode = statusCode;
+            logger.audit(0x102, `Responding to url ${res.req.url} with status code ${statusCode}`);
         }else{
+            logger.audit(0x101, `Successful serving url ${res.req.url}`);
             res.statusCode = 200;
         }
         const fixedURLExpiry = server.config.fixedURLExpiry || DEFAULT_MAX_AGE;
