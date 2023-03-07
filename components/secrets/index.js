@@ -55,9 +55,8 @@ function secrets(server) {
     }
 
     const deleteSSOSecret = (request, response) => {
-        let did = request.params.did;
         let appName = request.params.appName;
-        let userId = getUserIdFromDID(did, appName);
+        let userId = request.headers["user-id"];
 
         secretsService.deleteSecret(appName, userId, err => {
             if (err) {
@@ -96,7 +95,7 @@ function secrets(server) {
     server.get("/getSSOSecret/:appName", getSSOSecret);
     server.put('/putSSOSecret/:appName', putSSOSecret);
     server.delete("/deactivateSSOSecret/:appName/:did", deleteSSOSecret);
-    server.delete("/removeSSOSecret/:appName/:did", deleteSSOSecret);
+    server.delete("/removeSSOSecret/:appName", deleteSSOSecret);
 }
 
 module.exports = secrets;
