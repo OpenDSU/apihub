@@ -113,8 +113,8 @@ module.exports = function (server) {
                 if(err || !record){
                     return callback(undefined);
                 }
-                if(record.counter){
-                    record.counter--;
+                if(record.counter && record.counter > 1){
+                    record.counter = 1;
                     return database.updateRecord(undefined, TASKS_TABLE, toBeRemoved.pk, record, callback);
                 }
 
