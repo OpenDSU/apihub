@@ -98,9 +98,13 @@ module.exports = function (server) {
             let newRecord = taskRegistry.createModel(task);
             database.getRecord(undefined, TASKS_TABLE, newRecord.pk, function (err, record){
                 if(err || !record){
-                    database.insertRecord(undefined, TASKS_TABLE, newRecord.pk, newRecord, callback);
+                    return database.insertRecord(undefined, TASKS_TABLE, newRecord.pk, newRecord, callback);
                 }
-                return callback(undefined);
+                if(!record.counter){
+                    record.counter = 0;
+                }
+                record.counter++;
+                return database.updateRecord(undefined, TASKS_TABLE, record.pk, record, callback)
             });
         },
         remove:function(task, callback){
@@ -109,6 +113,11 @@ module.exports = function (server) {
                 if(err || !record){
                     return callback(undefined);
                 }
+                if(record.counter){
+                    record.counter--;
+                    return database.updateRecord(undefined, TASKS_TABLE, toBeRemoved.pk, record, callback);
+                }
+
                 database.deleteRecord(undefined, TASKS_TABLE, toBeRemoved.pk, callback);
             });
         },
