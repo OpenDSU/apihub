@@ -322,7 +322,9 @@ function AdminService(exposeAllApis) {
 
 function getAdminService() {
     if (!internalServerRef) {
-        throw new Error("AdminComponentHandler is not enabled!");
+        let error = new Error("AdminComponentHandler is not enabled!");
+        error.rootCause = "disabled-by-config";
+        throw error;
     }
 
     return new AdminService();

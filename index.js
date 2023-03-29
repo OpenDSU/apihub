@@ -48,6 +48,27 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 	const server = new Server(sslConfig);
 	server.config = conf;
 	server.rootFolder = rootFolder;
+
+	let permanentWarnings = [];
+	server.registerPermanentWarning = (componentName, error)=>{
+		permanentWarnings.push({componentName, error});
+	}
+
+	let displayPermanentWarnings = function(){
+		for (let warning of permanentWarnings){
+			let {error, componentName} = warning;
+			logger.warning(`Component ${componentName} has an permanent warning!`, error);
+		}
+	}
+
+	server.use((req, res, next)=>{
+		if(permanentWarnings.length){
+			logger.warning("The server seems to be in a wrong state!", `${permanentWarnings.length} warning(s):`);
+			displayPermanentWarnings();
+		}
+		next();
+	});
+
 	let listenCallback = (err) => {
 		if (err) {
 			logger.error(err);
@@ -249,28 +270,40 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
             try{
                 middlewareImplementation = require(componentPath);
             } catch(e){
-                throw e;
+				server.registerPermanentWarning(componentName, e);
+				if(callback){
+					callback();
+				}
+				return;
             }
-			let asyncLodingComponent = false;
-			const calledByAsynLoadingComponent = (cb)=>{
-				asyncLodingComponent = true;
+			let asyncLoadingComponent = false;
+			const calledByAsyncLoadingComponent = (cb)=>{
+				asyncLoadingComponent = true;
 				//if the component calls before returning this function means that needs more time, is doing async calls etc.
 			}
 
 			let arguments = [server];
 
 			if(callback) {
-				arguments.push(calledByAsynLoadingComponent);
+				arguments.push(calledByAsyncLoadingComponent);
 				arguments.push(callback);
 			}
 
-            if (typeof componentConfig.function !== 'undefined') {
-                middlewareImplementation[componentConfig.function](...arguments);
-            } else {
-                middlewareImplementation(...arguments);
-            }
+			try{
+				if (typeof componentConfig.function !== 'undefined') {
+					middlewareImplementation[componentConfig.function](...arguments);
+				} else {
+					middlewareImplementation(...arguments);
+				}
+			}catch(err){
+				server.registerPermanentWarning(componentName, err);
+				if(callback){
+					callback();
+				}
+				return;
+			}
 
-			if(!asyncLodingComponent && callback){
+			if(!asyncLoadingComponent && callback){
 				callback();
 			}
         }

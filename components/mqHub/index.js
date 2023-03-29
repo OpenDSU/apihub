@@ -193,8 +193,9 @@ async function MQHub(server, signalAsyncLoading, doneLoading) {
 				}
 			}
 		} catch (err) {
-			logger.debug('setupDomainSpecificHandlers ignored error', err);
-			//we ignore any errors;
+			if(err.rootCause && err.rootCause !== "disabled-by-config"){
+				logger.warning('Failed to enable mq handler for virtual domains', err);
+			}
 		}
 
 		for (let i = 0; i < confDomains.length; i++) {
