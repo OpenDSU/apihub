@@ -19,7 +19,6 @@ function Server(sslOptions) {
 
     };
 
-
     this.get = function getReq(reqUrl, reqResolver) {
         middleware.use("GET", reqUrl, reqResolver);
     };
@@ -39,6 +38,11 @@ function Server(sslOptions) {
     this.options = function optionsReq(reqUrl, reqResolver) {
         middleware.use("OPTIONS", reqUrl, reqResolver);
     };
+
+    this.head = function getReq(reqUrl, reqResolver) {
+        middleware.use("HEAD", reqUrl, reqResolver);
+    };
+
     this.makeLocalRequest = function (method,path, body,headers, callback)
     {
         if (typeof headers === "function")

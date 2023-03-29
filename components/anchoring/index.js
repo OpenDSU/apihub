@@ -1,3 +1,4 @@
+const {getAllVersions, getLastVersion} = require("./controllers");
 
 function Anchoring(server) {
     function requestServerMiddleware(request, response, next) {
@@ -34,8 +35,10 @@ function Anchoring(server) {
     server.put(`/anchor/:domain/create-or-update-multiple-anchors`, createOrUpdateMultipleAnchors);
 
     server.get(`/anchor/:domain/get-all-versions/:anchorId`, getAllVersions);
+    server.head(`/anchor/:domain/get-all-versions/:anchorId`, server.getHeadHandler(getAllVersions));
 
     server.get(`/anchor/:domain/get-last-version/:anchorId`, getLastVersion);
+    server.head(`/anchor/:domain/get-last-version/:anchorId`, server.getHeadHandler(getLastVersion));
 }
 
 module.exports = Anchoring;

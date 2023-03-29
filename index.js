@@ -49,6 +49,20 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 	server.config = conf;
 	server.rootFolder = rootFolder;
 
+	server.getHeadHandler = function(handler){
+		return function(req, res, next){
+			res.write = function(){
+
+			}
+			let originalEnd = res.end;
+			res.end = function(){
+				originalEnd.call(res);
+			}
+
+			handler(req, res, next);
+		}
+	}
+
 	let permanentWarnings = [];
 	server.registerPermanentWarning = (componentName, error)=>{
 		permanentWarnings.push({componentName, error});
