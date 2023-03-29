@@ -166,6 +166,9 @@ function StaticServer(server) {
             setMimeTypeOnResponse(req.url, res);
 
             res.setHeader('Cache-Control', 'no-store');
+            if(req.method === "HEAD"){
+                return res.end();
+            }
             res.end(content);
         });
     }
@@ -197,6 +200,9 @@ function StaticServer(server) {
         // instruct to not store response into cache
         res.setHeader('Cache-Control', 'no-store');
         res.statusCode = 200;
+        if(res.req.method === "HEAD"){
+            return res.end();
+        }
         stream.pipe(res);
         stream.on('finish', () => {
             res.end();
@@ -209,8 +215,8 @@ function StaticServer(server) {
             urlPrefix = undefined;
         }
 
-        if (req.method !== method) {
-            //we resolve only GET requests
+        if (req.method !== method && req.method !== "HEAD") {
+            //we resolve only GET and HEAD requests
             return callback(true);
         }
 
@@ -256,6 +262,9 @@ function StaticServer(server) {
                         }
                         res.statusCode = 200;
                         res.setHeader('Cache-Control', 'no-store');
+                        if(req.method === "HEAD"){
+                            return res.end();
+                        }
                         res.end(content);
                     });
                 }
