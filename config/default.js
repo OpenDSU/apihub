@@ -8,7 +8,7 @@ const defaultConfig = {
     "zeromqForwardAddress": "tcp://127.0.0.1:5001",
     "preventRateLimit": false,
     // staticServer needs to load last
-    "activeComponents": ["config", "mq", "enclave","secrets", "notifications", "filesManager", "bdns", "bricking", "anchoring", "bricksFabric", "contracts", "dsu-wizard", 'debugLogger', "mainDSU", "cloudWallet", "stream", "staticServer"],
+    "activeComponents": ["config", "mq", "enclave","secrets", "notifications", "filesManager", "bdns", "bricking", "anchoring", "bricksFabric", "contracts", "dsu-wizard", 'debugLogger', "mainDSU", "cloudWallet", "versionlessDSU", "stream", "staticServer"],
     "componentsConfig": {
         "mq":{
             "module": "./components/mqHub",
@@ -82,6 +82,9 @@ const defaultConfig = {
         },
         "stream": {
             "module": "./components/stream"
+        },
+        "versionlessDSU": {
+            "module": "./components/versionlessDSU"
         },
         "requestForwarder":{
             "module": "./components/requestForwarder"
