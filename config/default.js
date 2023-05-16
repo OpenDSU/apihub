@@ -8,17 +8,12 @@ const defaultConfig = {
     "zeromqForwardAddress": "tcp://127.0.0.1:5001",
     "preventRateLimit": false,
     // staticServer needs to load last
-    "activeComponents": ["config", "mq", "enclave","secrets", "notifications", "filesManager", "bdns", "bricking", "anchoring", "bricksFabric", "contracts", "dsu-wizard", 'debugLogger', "mainDSU", "cloudWallet", "versionlessDSU", "stream", "staticServer"],
+    "activeComponents": ["config", "mq", "secrets", "notifications", "filesManager", "bdns", "bricking", "anchoring", "bricksFabric", "contracts", "dsu-wizard", 'debugLogger', "mainDSU", "cloudWallet", "versionlessDSU", "stream", "staticServer"],
     "componentsConfig": {
         "mq":{
             "module": "./components/mqHub",
             "function": "MQHub",
             "connectionTimeout": 10000
-        },
-        "enclave":{
-            "module": "./components/enclave",
-            "function": "LokiEnclaveFacade",
-            "storageFolder": './external-volume/config/enclave'
         },
         "secrets":{
             "module": "./components/secrets"
