@@ -378,7 +378,7 @@ module.exports = function (server) {
         if (err) {
             logger.error("Failed to ensure folder structure due to", err);
         }
-        database = new LokiDatabase(databasePersistence, INTERVAL_TIME);
+        database = new LokiDatabase(databasePersistence, INTERVAL_TIME, LokiDatabase.prototype.Adaptors.FS);
 
         setInterval(taskRunner.execute, INTERVAL_TIME);
         setInterval(taskRunner.status, 1*60*1000);//each minute
