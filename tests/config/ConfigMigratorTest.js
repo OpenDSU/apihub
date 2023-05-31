@@ -18,28 +18,13 @@ const initialConfig = {
         "virtualMQ",
         "messaging",
         "notifications",
-        "filesManager",
         "bdns",
-        "bricksFabric",
         "bricking",
         "anchoring",
-        "dsu-wizard",
-        "gtin-dsu-wizard",
-        "epi-mapping-engine",
         "debugLogger",
         "staticServer",
     ],
     endpointsConfig: {
-        "epi-mapping-engine": {
-            module: "./../../gtin-resolver",
-            function: "getEPIMappingEngineForAPIHUB",
-            options: {
-                walletSSI: "#validWalletSSIHere",
-            },
-        },
-        "gtin-dsu-wizard": {
-            module: "./../../gtin-dsu-wizard",
-        },
         bricking: {
             domains: {
                 epi: {
@@ -177,28 +162,13 @@ const expectedConfig = {
         "virtualMQ",
         "messaging",
         "notifications",
-        "filesManager",
         "bdns",
-        "bricksFabric",
         "bricking",
         "anchoring",
-        "dsu-wizard",
-        "gtin-dsu-wizard",
-        "epi-mapping-engine",
         "debugLogger",
         "staticServer",
     ],
     componentsConfig: {
-        "epi-mapping-engine": {
-            module: "./../../gtin-resolver",
-            function: "getEPIMappingEngineForAPIHUB",
-            options: {
-                walletSSI: "#validWalletSSIHere",
-            },
-        },
-        "gtin-dsu-wizard": {
-            module: "./../../gtin-dsu-wizard",
-        },
         bricking: {},
         anchoring: {},
     },

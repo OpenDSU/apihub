@@ -8,7 +8,7 @@ const defaultConfig = {
     "zeromqForwardAddress": "tcp://127.0.0.1:5001",
     "preventRateLimit": false,
     // staticServer needs to load last
-    "activeComponents": ["config", "mq", "secrets", "notifications", "filesManager", "bdns", "bricking", "anchoring", "bricksFabric", 'debugLogger', "mainDSU", "cloudWallet", "versionlessDSU", "stream", "staticServer"],
+    "activeComponents": ["config", "mq", "secrets", "notifications", "bdns", "bricking", "anchoring", 'debugLogger', "mainDSU", "cloudWallet", "versionlessDSU", "stream", "staticServer"],
     "componentsConfig": {
         "mq":{
             "module": "./components/mqHub",
@@ -22,30 +22,11 @@ const defaultConfig = {
             "module": "./components/keySsiNotifications",
             "workingDirPath": "./external-volume/notifications"
         },
-        "dsu-wizard": {
-            "module": "dsu-wizard",
-            "function": "initWizard",
-            "storage": "./external-volume/dsu-wizard/transactions",
-            "workers": 5,
-            "bundle": "./../opendsu-sdk/psknode/bundles/openDSU.js"
-        },
         "bdns": {
             "module": "./components/bdns",
         },
         "bricking": {
             "module": "./components/bricking",
-        },
-        "filesManager": {
-            "module": "./components/fileManager"
-        },
-        "bricksFabric": {
-            "module": "./components/bricksFabric",
-            "path": "./",
-            "bricksFabricStrategy": "BrickStorage",
-            "bricksFabricStrategyOption": {
-                "timeout": 15000,
-                "transactionsPerBlock": 5
-            }
         },
         "anchoring": {
             "module": "./components/anchoring",

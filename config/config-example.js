@@ -9,7 +9,7 @@ const defaultConfig = {
     "zeromqForwardAddress": "tcp://127.0.0.1:5001",
     "preventRateLimit": false,
     // staticServer needs to load last
-    "activeComponents": ["virtualMQ", "messaging", "notifications", "filesManager", "bricks", "anchoring", "bricksFabric", "dsu-wizard", "staticServer"],
+    "activeComponents": ["virtualMQ", "messaging", "notifications", "bricks", "anchoring", "staticServer"],
     "componentsConfig": {
         "messaging": {
             "module": "./components/mqManager",
@@ -29,19 +29,8 @@ const defaultConfig = {
             "signatureHeaderName": "x-signature",
             "enableSignatureCheck": true
         },
-        "dsu-wizard": {
-            "module": "dsu-wizard",
-            "function": "initWizard"
-        },
         "bricks": {
             "module": "./components/bricks",           
-        },
-        "filesManager": {
-            "module": "./components/fileManager"
-        },
-        "bricksFabric":{
-          "module" : "./components/bricksFabric",
-            "path": "./",         
         },
         "anchoring": {
             "module": "./components/anchoring",            
@@ -77,7 +66,7 @@ const defaultConfig = {
       "/receive-message",
       "/files",
       "/notifications",
-      "/mq",
+      "/mq"
     ],
 };
 
