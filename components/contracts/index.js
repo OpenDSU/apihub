@@ -1,3 +1,7 @@
+module.exports = {};
+return;
+//experiemental feature, will be removed from now
+
 const {
     ensureContractConstitutionIsPresent,
     getNodeWorkerBootScript,

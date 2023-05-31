@@ -8,6 +8,7 @@ async function boot(validatorDID, serverUrl, domain, domainConfig, rootFolder, s
 
     const worker_threads = "worker_threads";
     const { parentPort } = require(worker_threads);
+
     const bricksledger = require("bricksledger");
 
     try {

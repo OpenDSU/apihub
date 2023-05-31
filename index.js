@@ -19,12 +19,11 @@ const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
 	// Remove mock
 	require('./components/admin');
 	require('./components/config');
-	require('./components/contracts');
 	require('./components/bricking');
 	require('./components/anchoring');
 	require('./components/bdns');
-	require('./components/fileManager');
-	require('./components/bricksFabric');
+	/*require('./components/fileManager');
+	require('./components/bricksFabric');*/
 	require('./components/staticServer');
 	require('./components/keySsiNotifications');
 	require('./components/debugLogger');

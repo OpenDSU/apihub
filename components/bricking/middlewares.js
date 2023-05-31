@@ -9,11 +9,12 @@ async function requestFSBrickStorageMiddleware(request, response, next) {
         return response.send(404, message);
     }
 
+    /*
     request.fsBrickStorage = require("bricksledger").createFSBrickStorage(
         domainName,
         domainConfig.path,
         request.server.rootFolder
-    );
+    ); */
 
     next();
 }
