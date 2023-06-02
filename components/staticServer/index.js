@@ -226,8 +226,12 @@ function StaticServer(server) {
             }
         }
 
-        const rootFolder = server.rootFolder;
         const path = require("swarmutils").path;
+        let rootFolder = server.rootFolder;
+        if(componentsConfig&&componentsConfig.staticServer&&componentsConfig.staticServer.root){
+            rootFolder = path.resolve(componentsConfig.staticServer.root);
+        }
+
         let requestedUrl = new URL(req.url, `http://${req.headers.host}`);
         let requestedUrlPathname = requestedUrl.pathname;
         if (urlPrefix) {
