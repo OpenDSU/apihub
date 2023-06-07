@@ -3,7 +3,8 @@ const URL_PREFIX = "/mq";
 //known implementations for the MQ adapters
 const adapterImpls = {
 	local: require("./adapters/localMQAdapter.js"),
-	solace: require("./adapters/solaceMQAdapter.js")
+	solace: require("./adapters/solaceMQAdapter.js"),
+	loki: require("./adapters/lokiMQAdapter.js")
 };
 
 //just to expose the possibility to add new implementations for the adapters
