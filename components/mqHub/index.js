@@ -159,7 +159,7 @@ async function MQHub(server, signalAsyncLoading, doneLoading) {
 		let domainConfig = config.getDomainConfig(domain);
 
 		if (domainConfig && domainConfig.enable && domainConfig.enable.indexOf("mq") !== -1) {
-			const adapterTypeName = domainConfig["mq_type"] || "local";
+			const adapterTypeName = domainConfig["mq_type"] || "loki";
 			const adapter = adapterImpls[adapterTypeName];
 			if (!adapter) {
 				logger.info(0x03, `Not able to recognize the mq_type < ${adapterTypeName} > from the domain < ${domain} > config.`);
