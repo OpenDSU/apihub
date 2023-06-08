@@ -1,4 +1,5 @@
 const DATABASE_NAME = "adminEnclave";
+const DATABASE_PERSISTENCE_TIMEOUT = 100;
 
 const DOMAINS_TABLE = "domains";
 const ADMINS_TABLE = "admins";
@@ -23,7 +24,7 @@ function getMainDomainStorageFile() {
 function getEnclave() {
     const storageFolder = require("path").join(getStorageFolder(), DATABASE_NAME);
     const Enclave = require("loki-enclave-facade");
-    return new Enclave(storageFolder);
+    return new Enclave(storageFolder, DATABASE_PERSISTENCE_TIMEOUT, Enclave.prototype.Adaptors.FS);
 }
 
 function getMainDomain(callback) {
