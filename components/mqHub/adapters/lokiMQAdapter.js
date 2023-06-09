@@ -4,7 +4,7 @@ function LokiMQAdapter(server, prefix, domain, configuration) {
     const path = require("path");
     let storage = config.getConfig('componentsConfig', 'mqs', 'storage');
     if (typeof storage === "undefined") {
-        storage = path.join(server.rootFolder, "external-volume", "mqs", domain);
+        storage = path.join(server.rootFolder, "external-volume", "mqs", domain, "messages");
     } else {
         storage = path.join(path.resolve(storage), domain);
     }
@@ -19,7 +19,7 @@ function LokiMQAdapter(server, prefix, domain, configuration) {
 
     const settings = {
         mq_fsMessageMaxSize: 10 * 1024,
-        mq_fsQueueLength: 100
+        mq_fsQueueLength: 10000
     };
 
     Object.assign(settings, configuration);
