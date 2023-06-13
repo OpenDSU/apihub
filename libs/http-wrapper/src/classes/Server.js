@@ -169,7 +169,15 @@ function Server(sslOptions) {
            } else {
                return server[prop];
            }
-       }
+       },
+        set(target, prop, value){
+           if(server.hasOwnProperty(prop)){
+               server[prop] = value;
+               return true;
+           }
+           target[prop]=value;
+           return true;
+        }
     });
 }
 
