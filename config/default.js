@@ -85,7 +85,7 @@ const defaultConfig = {
         "tokenValuePerTime": 10,
         "unitOfTime": 100
     },
-    "enableInstallationDetails": true,
+    "enableInstallationDetails": false,
     "enableRequestLogger": true,
     "enableJWTAuthorisation": false,
     "enableLocalhostAuthorization": false,
