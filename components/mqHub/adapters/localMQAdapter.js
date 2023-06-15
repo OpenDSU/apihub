@@ -6,6 +6,7 @@ function LocalMQAdapter(server, prefix, domain, configuration) {
 	const FILENAME_DELIMITER = "_special_mqs_delimiter_";
 
 	let storage = config.getConfig('componentsConfig', 'mqs', 'storage');
+	let domainConfig = config.getDomainConfig(domain);
 	if (typeof storage === "undefined") {
 		storage = path.join(server.rootFolder, "external-volume", "mqs", domain);
 	} else {
@@ -14,8 +15,8 @@ function LocalMQAdapter(server, prefix, domain, configuration) {
 
 	const settings = {
 		mq_fsStrategyStorageFolder: storage,
-		mq_fsMessageMaxSize: 10 * 1024,
-		mq_fsQueueLength: 100
+		mq_messageMaxSize: domainConfig["mq_messageMaxSize"] || 10 * 1024,
+		mq_queueLength: domainConfig["mq_queueLength"] || 10000
 	};
 
 	const MQAdapterMixin = require("./MQAdapterMixin");

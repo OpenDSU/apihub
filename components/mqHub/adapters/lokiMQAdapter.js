@@ -1,6 +1,7 @@
 function LokiMQAdapter(server, prefix, domain, configuration) {
     const logger = $$.getLogger("LokiMQAdapter", "apihub/mqHub");
     const config = require("../../../config");
+    let domainConfig = config.getDomainConfig(domain);
     const path = require("path");
     let storage = config.getConfig('componentsConfig', 'mqs', 'storage');
     if (typeof storage === "undefined") {
@@ -18,8 +19,8 @@ function LokiMQAdapter(server, prefix, domain, configuration) {
     const lokiEnclaveFacadeInstance = new LokiEnclaveFacade(storage);
 
     const settings = {
-        mq_fsMessageMaxSize: 10 * 1024,
-        mq_fsQueueLength: 10000
+        mq_messageMaxSize: domainConfig["mq_messageMaxSize"] || 10 * 1024,
+        mq_queueLength: domainConfig["mq_queueLength"] || 10000
     };
 
     Object.assign(settings, configuration);

@@ -7,8 +7,8 @@ function MQAdapterMixin(target, server, prefix, domain, configuration) {
     const readBody = utils.streams.readStringFromStream;
 
     const settings = {
-        mq_fsMessageMaxSize: 10 * 1024,
-        mq_fsQueueLength: 100
+        mq_messageMaxSize: domainConfig["mq_messageMaxSize"] || 10 * 1024,
+        mq_queueLength: domainConfig["mq_queueLength"] || 10000
     };
 
     Object.assign(settings, configuration);
@@ -87,7 +87,7 @@ function MQAdapterMixin(target, server, prefix, domain, configuration) {
                 subscribers[queueName] = [];
             }
 
-            const capacityLimit = Number(settings.mq_fsQueueLength);
+            const capacityLimit = Number(settings.mq_queueLength);
 
             if(capacity > capacityLimit){
                 const err = new Error("Queue size exceeded!");
@@ -152,8 +152,8 @@ function MQAdapterMixin(target, server, prefix, domain, configuration) {
                 return send(response, 500);
             }
 
-            if (typeof settings.mq_fsMessageMaxSize !== "undefined") {
-                const messageMaxSize = Number(settings.mq_fsMessageMaxSize);
+            if (typeof settings.mq_messageMaxSize !== "undefined") {
+                const messageMaxSize = Number(settings.mq_messageMaxSize);
                 try {
                     let messageAsBuffer = Buffer.from(message);
                     if (messageAsBuffer.length > messageMaxSize) {
