@@ -3,6 +3,7 @@ function MQAdapterMixin(target, server, prefix, domain, configuration) {
 
     const subscribers = {};
     const config = require("../../../config");
+    let domainConfig = config.getDomainConfig(domain);
     const utils = require('./../../../utils');
     const readBody = utils.streams.readStringFromStream;
 
