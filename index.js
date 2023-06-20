@@ -235,7 +235,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			const requestEnhancements = require('./middlewares/requestEnhancements');
 
 			server.use(function gracefulTerminationWatcher(req, res, next) {
-				const allowedUrls = ["/installation-details", "/ready-probe"];
+				const allowedUrls = [/*"/installation-details", "/ready-probe"*/];
 				if(process.shuttingDown && allowedUrls.indexOf(req.url) === -1){
 					//uncaught exception was caught so server is shutting down gracefully and not accepting any requests
 					res.statusCode = 503;
