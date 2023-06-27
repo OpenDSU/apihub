@@ -63,8 +63,9 @@ class FSBrickStorage {
     async addBrickAsync(data) {
         const fs = require("fs");
         const crypto = require("opendsu").loadAPI("crypto");
+console.time("SHA")
         const hash = crypto.sha256(data);
-
+console.timeEnd("SHA");
         // TODO: use workers from OpenDSU apiSpace
         // const pool = workers.createPool() or (pool probably should be at FSBrickStorage ctor level)
         // await $$.promisify(pool.runSyncFunction)("crypto", "sha256", data);
@@ -78,8 +79,9 @@ console.timeEnd("mkdir");
 
         const brickPath = fsBrickPathsManager.resolveBrickPath(this.domain, hash);
 console.timeEnd("bricking");
+console.time("writeFile");
         await $$.promisify(fs.writeFile)(brickPath, data);
-
+console.timeEnd("writeFile");
         return hash;
     }
 
