@@ -68,12 +68,16 @@ class FSBrickStorage {
         // TODO: use workers from OpenDSU apiSpace
         // const pool = workers.createPool() or (pool probably should be at FSBrickStorage ctor level)
         // await $$.promisify(pool.runSyncFunction)("crypto", "sha256", data);
-
+console.time("bricking")
         const brickDirPath = fsBrickPathsManager.resolveBrickDirname(this.domain, hash);
+console.log("BrickDirPath", brickDirPath);
+console.time("mkdir");
         await $$.promisify(fs.mkdir)(brickDirPath, { recursive: true });
-        await $$.promisify(fs.access)(brickDirPath);
+console.timeEnd("mkdir");
+        //await $$.promisify(fs.access)(brickDirPath);
 
         const brickPath = fsBrickPathsManager.resolveBrickPath(this.domain, hash);
+console.timeEnd("bricking");
         await $$.promisify(fs.writeFile)(brickPath, data);
 
         return hash;
