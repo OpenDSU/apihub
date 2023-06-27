@@ -50,7 +50,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 	server.timeout = conf.timeout || (60 * 1000) + 1000;
 	server.requestTimeout = conf.requestTimeout || 300 * 1000;
 	
-	server.keepAliveTimeout = conf.keepAliveTimeout || (10 * 1000) + 1000;
+	server.keepAliveTimeout = conf.keepAliveTimeout || (60 * 1000) + 1000;
 
 	server.getHeadHandler = function(handler){
 		return function(req, res, next){
