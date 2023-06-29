@@ -1,7 +1,8 @@
 const path = require("path");
 const fs = require("fs");
 const config = require("../../config");
-
+const openDSU = require("opendsu");
+const crypto = openDSU.loadAPI("crypto");
 const logger = $$.getLogger("controller", "apihub/versionlessDSU");
 
 let versionlessDSUFolderPath;
@@ -35,11 +36,8 @@ function getFilePathFromRequest(request) {
     filePathStartIndex += VERSIONLESS_DSU_PATH_PREFIX.length;
     let filePath = url.substring(filePathStartIndex);
 
-    // encode filePath in order to escape special characters
-    const pskcrypto = require("pskcrypto");
-    filePath = pskcrypto.pskBase58Encode(filePath);
-
-    return filePath;
+    const filePathHash = crypto.sha256(filePath);
+    return path.join(versionlessDSUFolderPath, filePathHash.substring(0, 2), filePathHash);
 }
 
 async function handleGetVersionlessDSURequest(request, response) {
@@ -49,16 +47,15 @@ async function handleGetVersionlessDSURequest(request, response) {
         response.statusCode = 400;
         return response.end();
     }
-    const versionlessDSUFilePath = path.join(versionlessDSUFolderPath, filePath);
 
     const fs = require("fs");
     try {
-        const fileContent = await $$.promisify(fs.readFile)(versionlessDSUFilePath);
-        logger.debug(`[VersionlessDSU] Reading existing versionlessDSU from ${versionlessDSUFilePath}`);
+        const fileContent = await $$.promisify(fs.readFile)(filePath);
+        logger.debug(`[VersionlessDSU] Reading existing versionlessDSU from ${filePath}`);
         response.setHeader('content-type', "application/octet-stream"); // required in order for opendsu http fetch to properly work
         return sendVersionlessDSUContent(fileContent, response);
     } catch (error) {
-        logger.error(`[VersionlessDSU] Failed to read/parse versionlessDSU from ${versionlessDSUFilePath}`, error);
+        logger.error(`[VersionlessDSU] Failed to read/parse versionlessDSU from ${getFilePathFromRequest}`, error);
         response.statusCode = 500;
         response.end();
     }
@@ -72,8 +69,6 @@ async function handlePutVersionlessDSURequest(request, response) {
         return response.end();
     }
 
-    const versionlessDSUFilePath = path.join(versionlessDSUFolderPath, filePath);
-
     const dsu = request.body;
     if (!dsu || typeof dsu !== "object") {
         logger.error("[VersionlessDSU] Required DSU content body not present");
@@ -82,12 +77,13 @@ async function handlePutVersionlessDSURequest(request, response) {
     }
 
     try {
-        logger.debug(`[VersionlessDSU] Writing versionlessDSU to ${versionlessDSUFilePath}`);
-        await $$.promisify(fs.writeFile)(versionlessDSUFilePath, dsu);
+        await $$.promisify(fs.mkdir)(path.dirname(filePath), { recursive: true });
+        logger.debug(`[VersionlessDSU] Writing versionlessDSU to ${filePath}`);
+        await $$.promisify(fs.writeFile)(filePath, dsu);
         response.statusCode = 200;
         response.end();
     } catch (error) {
-        logger.error(`[VersionlessDSU] Failed to write DSU content to file ${versionlessDSUFilePath}: (${dsu})`, error);
+        logger.error(`[VersionlessDSU] Failed to write DSU content to file ${filePath}: (${dsu})`, error);
         response.statusCode = 500;
         response.end();
     }
