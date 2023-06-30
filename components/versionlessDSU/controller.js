@@ -37,7 +37,7 @@ function getFilePathFromRequest(request) {
     let filePath = url.substring(filePathStartIndex);
 
     const filePathHash = crypto.sha256(filePath);
-    return path.join(versionlessDSUFolderPath, filePathHash.substring(0, 2), filePathHash);
+    return path.join(versionlessDSUFolderPath, filePathHash.substring(0, 3), filePathHash);
 }
 
 async function handleGetVersionlessDSURequest(request, response) {
