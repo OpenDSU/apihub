@@ -5,7 +5,7 @@ const TASKS_TABLE = "tasks";
 const HISTORY_TABLE = "history";
 const DATABASE = "FixedUrls.db";
 
-const LokiDatabase = require("loki-enclave-facade");
+const lokiEnclaveFacadeModule = require("loki-enclave-facade");
 const fsname = "fs";
 const fs = require(fsname);
 const pathname = "path";
@@ -378,7 +378,7 @@ module.exports = function (server) {
         if (err) {
             logger.error("Failed to ensure folder structure due to", err);
         }
-        database = new LokiDatabase(databasePersistence, INTERVAL_TIME, LokiDatabase.prototype.Adaptors.FS);
+        database = lokiEnclaveFacadeModule.createLokiEnclaveFacadeInstance(databasePersistence, INTERVAL_TIME, lokiEnclaveFacadeModule.Adaptors.FS);
 
         setInterval(taskRunner.execute, INTERVAL_TIME);
         setInterval(taskRunner.status, 1*60*1000);//each minute

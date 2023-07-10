@@ -15,8 +15,8 @@ function LokiMQAdapter(server, prefix, domain, configuration) {
     } catch (err) {
         fs.mkdirSync(path.dirname(storage), {recursive: true});
     }
-    const LokiEnclaveFacade = require("loki-enclave-facade");
-    const lokiEnclaveFacadeInstance = new LokiEnclaveFacade(storage);
+    const lokiEnclaveFacadeModule = require("loki-enclave-facade");
+    const lokiEnclaveFacadeInstance = lokiEnclaveFacadeModule.createLokiEnclaveFacadeInstance(storage);
 
     const settings = {
         mq_messageMaxSize: domainConfig["mq_messageMaxSize"] || 10 * 1024,

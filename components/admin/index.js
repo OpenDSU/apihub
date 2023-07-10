@@ -23,8 +23,9 @@ function getMainDomainStorageFile() {
 
 function getEnclave() {
     const storageFolder = require("path").join(getStorageFolder(), DATABASE_NAME);
-    const Enclave = require("loki-enclave-facade");
-    return new Enclave(storageFolder, DATABASE_PERSISTENCE_TIMEOUT, Enclave.prototype.Adaptors.FS);
+    const lokiEnclaveFacadeModule = require("loki-enclave-facade");
+    const createLokiEnclaveFacadeInstance = lokiEnclaveFacadeModule.createLokiEnclaveFacadeInstance;
+    return createLokiEnclaveFacadeInstance(storageFolder, DATABASE_PERSISTENCE_TIMEOUT, lokiEnclaveFacadeModule.Adaptors.FS);
 }
 
 function getMainDomain(callback) {
