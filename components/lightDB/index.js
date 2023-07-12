@@ -5,14 +5,16 @@ function LightDB(server) {
     const createLightDBServerInstance = lokiEnclaveFacadeModule.createLightDBServerInstance;
     const HOST = "localhost";
     const PORT = 8081;
-    const lightDBServerInstance = createLightDBServerInstance(PORT, server.rootFolder, HOST, (err) => {
+
+    createLightDBServerInstance(PORT, server.rootFolder, HOST, (err) => {
         if (err) {
             return logger.error(err);
         }
 
-        logger.info(`LightDB server started on port 8081`);
+        logger.info(`LightDB server started on port ${PORT}`);
     });
     const httpAPI = require("opendsu").loadAPI("http");
+
     server.put("/executeLightDBCommand", httpWrapper.bodyParser);
 
     server.put("/executeLightDBCommand", (req, res) => {
