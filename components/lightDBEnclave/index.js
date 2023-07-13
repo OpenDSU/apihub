@@ -1,6 +1,6 @@
 const logger = $$.getLogger("lightDB", "apihub");
 const httpWrapper = require("../../libs/http-wrapper/src/httpUtils");
-function LightDB(server) {
+function LightDBEnclave(server) {
     const lokiEnclaveFacadeModule = require("loki-enclave-facade");
     const createLightDBServerInstance = lokiEnclaveFacadeModule.createLightDBServerInstance;
     const HOST = "localhost";
@@ -15,9 +15,9 @@ function LightDB(server) {
     });
     const httpAPI = require("opendsu").loadAPI("http");
 
-    server.put("/executeLightDBCommand", httpWrapper.bodyParser);
+    server.put("/executeLightDBEnclaveCommand", httpWrapper.bodyParser);
 
-    server.put("/executeLightDBCommand", (req, res) => {
+    server.put("/executeLightDBEnclaveCommand", (req, res) => {
         const url = `http://${HOST}:${PORT}/executeCommand`;
         httpAPI.doPut(url, req.body, (err, response) => {
             if (err) {
@@ -35,4 +35,4 @@ function LightDB(server) {
 
 }
 
-module.exports = LightDB;
+module.exports = LightDBEnclave;

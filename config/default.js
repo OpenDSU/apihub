@@ -8,7 +8,7 @@ const defaultConfig = {
     "zeromqForwardAddress": "tcp://127.0.0.1:5001",
     "preventRateLimit": false,
     // staticServer needs to load last
-    "activeComponents": ["config", "mq", "secrets", "notifications", "bdns", "bricking", "anchoring", 'debugLogger', "mainDSU", "cloudWallet", "versionlessDSU", "stream", "lightDB", "staticServer"],
+    "activeComponents": ["config", "mq", "secrets", "notifications", "bdns", "bricking", "anchoring", 'debugLogger', "mainDSU", "cloudWallet", "versionlessDSU", "stream", "lightDBEnclave", "staticServer"],
     "componentsConfig": {
         "mq":{
             "module": "./components/mqHub",
@@ -65,8 +65,8 @@ const defaultConfig = {
         "requestForwarder":{
             "module": "./components/requestForwarder"
         },
-        "lightDB": {
-            "module": "./components/lightDB",
+        "lightDBEnclave": {
+            "module": "./components/lightDBEnclave",
         },
         "requestLogger":{
             "comment": "this is a standard middleware but its config is here to make it as uniform as possible",

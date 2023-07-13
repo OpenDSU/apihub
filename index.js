@@ -34,7 +34,7 @@ const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
 	require('./components/versionlessDSU');
 	require('./components/stream');
 	require('./components/requestForwarder');
-	require('./components/lightDB');
+	require('./components/lightDBEnclave');
 	//end
 })();
 
