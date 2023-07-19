@@ -36,7 +36,8 @@ module.exports = function (server) {
     function ensureURLUniformity(req) {
         let base = "https://non.relevant.url.com";
         //we add the base to get a valid url
-        let converter = new URL(base + req.url);
+        let url = typeof req === "object" ? req.url : req;
+        let converter = new URL(base + url);
         //we ensure that the searchParams are sorted
         converter.searchParams.sort();
         //we remove our artificial base
@@ -77,6 +78,15 @@ module.exports = function (server) {
         clean:function(fixedUrl, callback){
             logger.debug("Cleaning url", fixedUrl);
             fs.unlink(indexer.getFileName(fixedUrl), callback);
+        },
+        getTimestamp: function(fixedUrl, callback){
+            logger.debug("Reading timestamp for", fixedUrl);
+            fs.stat(indexer.getFileName(fixedUrl), {bigint: true}, (err, stats)=>{
+                if(err){
+                    return callback(err);
+                }
+                return callback(undefined, stats.mtimeMs);
+            });
         }
     };
 
@@ -456,6 +466,46 @@ module.exports = function (server) {
             res.end();
         });
     });
+    function getTimestampHandler(req, res, next){
+        if (["HEAD", "GET"].indexOf(req.method) === -1) {
+            //not our responsibility... for the moment we resolve only GET methods that have query params...
+            return next();
+        }
+
+        let possibleFixedUrl = false;
+        let url = req.url;
+        if (req.method === "GET") {
+            url = url.replace("/mtime", "");
+        }
+
+        for (let url of watchedUrls) {
+            if (url.startsWith(url)) {
+                possibleFixedUrl = true;
+            }
+        }
+
+        if (!possibleFixedUrl) {
+            //not our responsibility
+            return next();
+        }
+
+        let fixedUrl = ensureURLUniformity(url);
+        indexer.getTimestamp(fixedUrl, function (err, timestamp){
+            if(err){
+                //for any errors we try to invalidate any cache
+                timestamp = Date.now()-1000;
+            }
+            res.setHeader("ETag", timestamp);
+            if(req.method === "GET"){
+                res.write(timestamp.toString());
+            }
+            res.statusCode = 200;
+            res.end();
+
+        });
+    }
+    server.use("*", getTimestampHandler);
+    server.get("/mtime/*", getTimestampHandler);
 
     //register a middleware to intercept all the requests
     server.use("*", function (req, res, next) {

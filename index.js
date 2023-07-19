@@ -146,6 +146,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 	accessControlAllowHeaders.add("Access-Control-Allow-Origin");
 	accessControlAllowHeaders.add("User-Agent");
 	accessControlAllowHeaders.add("Authorization");
+	accessControlAllowHeaders.add("ETag");
 
 	server.registerAccessControlAllowHeaders = function(headers){
 		if(headers){
