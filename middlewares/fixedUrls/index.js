@@ -478,8 +478,8 @@ module.exports = function (server) {
             url = url.replace("/mtime", "");
         }
 
-        for (let url of watchedUrls) {
-            if (url.startsWith(url)) {
+        for (let wUrl of watchedUrls) {
+            if (url.startsWith(wUrl)) {
                 possibleFixedUrl = true;
             }
         }
