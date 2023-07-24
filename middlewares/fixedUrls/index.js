@@ -471,9 +471,14 @@ module.exports = function (server) {
             //not our responsibility... for the moment we resolve only GET methods that have query params...
             return next();
         }
-
         let possibleFixedUrl = false;
         let url = req.url;
+
+        if(req.method === "GET" && !url.startsWith("/mtime")){
+            //not our responsibility...
+            return next();
+        }
+
         if (req.method === "GET") {
             url = url.replace("/mtime", "");
         }
@@ -504,8 +509,7 @@ module.exports = function (server) {
 
         });
     }
-    server.use("*", getTimestampHandler);
-    server.get("/mtime/*", getTimestampHandler);
+
 
     //register a middleware to intercept all the requests
     server.use("*", function (req, res, next) {
@@ -590,4 +594,6 @@ module.exports = function (server) {
             resolveURL();
         });
     });
+    server.use("*", getTimestampHandler);
+    server.get("/mtime/*", getTimestampHandler);
 }
