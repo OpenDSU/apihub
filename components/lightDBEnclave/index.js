@@ -2,7 +2,6 @@ const logger = $$.getLogger("lightDB", "apihub");
 const httpWrapper = require("../../libs/http-wrapper/src/httpUtils");
 const prefix = "lightDB";
 function LightDBEnclave(server) {
-
     function forwardRequest(path, data, callback){
         const endpoint = process.env.LIGHT_DB_SERVER_ADDRESS || "http://127.0.0.1:8081";
         let protocol = endpoint.indexOf("https://") === 0 ? "https" : "http";

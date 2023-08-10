@@ -5,7 +5,7 @@ const TASKS_TABLE = "tasks";
 const HISTORY_TABLE = "history";
 const DATABASE = "FixedUrls.db";
 
-const lokiEnclaveFacadeModule = require("loki-enclave-facade");
+const enclaveAPI = require("opendsu").loadAPI("enclave");
 const fsname = "fs";
 const fs = require(fsname);
 const pathname = "path";
@@ -16,8 +16,7 @@ module.exports = function (server) {
 
     const workingDir = path.join(server.rootFolder, "external-volume", "fixed-urls");
     const storage = path.join(workingDir, "storage");
-    const databasePersistence = path.join(workingDir, DATABASE);
-    let database;
+    let lightDBEnclaveClient;
 
     let watchedUrls = [];
     //we inject a helper function that can be called by different components or middleware to signal that their requests
@@ -46,10 +45,10 @@ module.exports = function (server) {
     }
 
     function respond(res, content, statusCode) {
-        if(statusCode){
+        if (statusCode) {
             res.statusCode = statusCode;
             logger.audit(0x102, `Responding to url ${res.req.url} with status code ${statusCode}`);
-        }else{
+        } else {
             logger.audit(0x101, `Successful serving url ${res.req.url}`);
             res.statusCode = 200;
         }
@@ -59,7 +58,7 @@ module.exports = function (server) {
         res.end();
     }
 
-    function getIdentifier(fixedUrl){
+    function getIdentifier(fixedUrl) {
         return Buffer.from(fixedUrl).toString("base64");
     }
 
@@ -67,130 +66,130 @@ module.exports = function (server) {
         getFileName: function (fixedUrl) {
             return path.join(storage, getIdentifier(fixedUrl));
         },
-        persist:function(fixedUrl, content, callback){
+        persist: function (fixedUrl, content, callback) {
             logger.debug("Persisting url", fixedUrl);
             fs.writeFile(indexer.getFileName(fixedUrl), content, callback);
         },
-        get:function(fixedUrl, callback){
+        get: function (fixedUrl, callback) {
             logger.debug("Reading url", fixedUrl);
             fs.readFile(indexer.getFileName(fixedUrl), callback);
         },
-        clean:function(fixedUrl, callback){
+        clean: function (fixedUrl, callback) {
             logger.debug("Cleaning url", fixedUrl);
             fs.unlink(indexer.getFileName(fixedUrl), callback);
         },
-        getTimestamp: function(fixedUrl, callback){
+        getTimestamp: function (fixedUrl, callback) {
             logger.debug("Reading timestamp for", fixedUrl);
-            fs.stat(indexer.getFileName(fixedUrl), {bigint: true}, (err, stats)=>{
-                if(err){
+            fs.stat(indexer.getFileName(fixedUrl), {bigint: true}, (err, stats) => {
+                if (err) {
                     return callback(err);
                 }
-                return callback(undefined, stats.mtimeMs);
+                return callback($$.SYSTEM_IDENTIFIER, stats.mtimeMs);
             });
         }
     };
 
     const taskRegistry = {
-        inProgress:{},
-        createModel:function(fixedUrl){
+        inProgress: {},
+        createModel: function (fixedUrl) {
             return {url: fixedUrl, pk: getIdentifier(fixedUrl)};
         },
-        register:function(task, callback){
+        register: function (task, callback) {
             let newRecord = taskRegistry.createModel(task);
-            database.getRecord(undefined, HISTORY_TABLE, newRecord.pk, function (err, record){
-                if(err || !record){
-                    database.insertRecord(undefined, HISTORY_TABLE, newRecord.pk, newRecord, callback);
+            lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, newRecord.pk, function (err, record) {
+                if (err || !record) {
+                    lightDBEnclaveClient.insertRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, newRecord.pk, newRecord, callback);
                 }
                 return callback(undefined);
             });
         },
-        add:function(task, callback){
+        add: function (task, callback) {
             let newRecord = taskRegistry.createModel(task);
-            database.getRecord(undefined, TASKS_TABLE, newRecord.pk, function (err, record){
-                if(err || !record){
-                    return database.insertRecord(undefined, TASKS_TABLE, newRecord.pk, newRecord, callback);
+            lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, function (err, record) {
+                if (err || !record) {
+                    return lightDBEnclaveClient.insertRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, callback);
                 }
-                if(!record.counter){
+                if (!record.counter) {
                     record.counter = 0;
                 }
                 record.counter++;
-                return database.updateRecord(undefined, TASKS_TABLE, record.pk, record, callback)
+                return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, record.pk, record, callback)
             });
         },
-        remove:function(task, callback){
+        remove: function (task, callback) {
             let toBeRemoved = taskRegistry.createModel(task);
-            database.getRecord(undefined, TASKS_TABLE, toBeRemoved.pk, function(err, record){
-                if(err || !record){
+            lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, toBeRemoved.pk, function (err, record) {
+                if (err || !record) {
                     return callback(undefined);
                 }
-                if(record.counter && record.counter > 1){
+                if (record.counter && record.counter > 1) {
                     record.counter = 1;
-                    return database.updateRecord(undefined, TASKS_TABLE, toBeRemoved.pk, record, callback);
+                    return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, toBeRemoved.pk, record, callback);
                 }
 
-                database.deleteRecord(undefined, TASKS_TABLE, toBeRemoved.pk, callback);
+                lightDBEnclaveClient.deleteRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, toBeRemoved.pk, callback);
             });
         },
-        getOneTask:function(callback){
-            database.filter(undefined, TASKS_TABLE, "__timestamp > 0", "asc", 1, function(err, task){
-                if(err){
+        getOneTask: function (callback) {
+            lightDBEnclaveClient.filter($$.SYSTEM_IDENTIFIER, TASKS_TABLE, "__timestamp > 0", "asc", 1, function (err, task) {
+                if (err) {
                     return callback(err);
                 }
-                if(task.length === 0){
+                if (task.length === 0) {
                     return callback(undefined);
                 }
                 task = task[0];
-                if(taskRegistry.inProgress[task.url]){
+                if (taskRegistry.inProgress[task.url]) {
                     logger.debug(`${task.url} is in progress.`);
                     //we already have this task in progress, we need to wait
                     return callback(undefined);
                 }
                 taskRegistry.markInProgress(task.url);
-                callback(undefined, task);
+                callback($$.SYSTEM_IDENTIFIER, task);
             });
         },
-        isInProgress:function(task){
+        isInProgress: function (task) {
             return !!taskRegistry.inProgress[task];
         },
-        isScheduled:function(task, callback){
+        isScheduled: function (task, callback) {
             let tobeChecked = taskRegistry.createModel(task);
-            database.getRecord(undefined, TASKS_TABLE, tobeChecked.pk, function(err, task){
-                if(err || !task){
-                    return callback(undefined, undefined);
+            lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, tobeChecked.pk, function (err, task) {
+                if (err || !task) {
+                    return callback($$.SYSTEM_IDENTIFIER, undefined);
                 }
-                callback(undefined, task);
+                callback($$.SYSTEM_IDENTIFIER, task);
             });
         },
-        markInProgress:function(task){
+        markInProgress: function (task) {
             taskRegistry.inProgress[task] = true;
         },
-        markAsDone:function(task, callback){
+        markAsDone: function (task, callback) {
             logger.debug(`Marking task ${task} as done`);
             taskRegistry.inProgress[task] = undefined;
             delete taskRegistry.inProgress[task];
             taskRegistry.remove(task, callback);
         },
-        isKnown:function(task, callback){
+        isKnown: function (task, callback) {
             let target = taskRegistry.createModel(task);
-            database.getRecord(undefined, HISTORY_TABLE, target.pk, callback);
+            lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, target.pk, callback);
         },
-        schedule:function(criteria, callback){
-            database.filter(undefined, HISTORY_TABLE, criteria, function(err, records){
-                if(err){
-                    if(err.code === 404){
+        schedule: function (criteria, callback) {
+            lightDBEnclaveClient.filter($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, criteria, function (err, records) {
+                if (err) {
+                    if (err.code === 404) {
                         return callback();
                     }
                     return callback(err);
                 }
 
-                function createTask(){
-                    if(records.length === 0){
+                function createTask() {
+                    if (records.length === 0) {
                         return callback(undefined);
                     }
 
                     let record = records.pop();
-                    taskRegistry.add(record.url, function (err){
-                        if(err){
+                    taskRegistry.add(record.url, function (err) {
+                        if (err) {
                             return callback(err);
                         }
                         createTask();
@@ -200,56 +199,56 @@ module.exports = function (server) {
                 createTask();
             });
         },
-        cancel:function(criteria, callback){
-            database.filter(undefined, HISTORY_TABLE, criteria, async function(err, tasks){
-                if(err){
-                    if(err.code === 404){
+        cancel: function (criteria, callback) {
+            lightDBEnclaveClient.filter($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, criteria, async function (err, tasks) {
+                if (err) {
+                    if (err.code === 404) {
                         return callback();
                     }
                     return callback(err);
                 }
 
-                try{
+                try {
                     let markAsDone = $$.promisify(taskRegistry.markAsDone);
                     let clean = $$.promisify(indexer.clean);
-                    for(let task of tasks){
+                    for (let task of tasks) {
                         let url = task.url;
-                        //by marking it as done the task is removed from pending and database also
+                        //by marking it as done the task is removed from pending and lightDBEnclaveClient also
                         await markAsDone(url);
-                        try{
+                        try {
                             await clean(url);
-                        }catch(err){
+                        } catch (err) {
                             //we ignore any errors related to file not found...
-                            if(err.code !== "ENOENT"){
+                            if (err.code !== "ENOENT") {
                                 throw err;
                             }
                         }
                     }
-                }catch(err){
+                } catch (err) {
                     return callback(err);
                 }
 
                 callback(undefined);
             });
         },
-        status:function(){
+        status: function () {
             let inProgressCounter = Object.keys(taskRegistry.inProgress);
             logger.debug(`Number of tasks that are in progress: ${inProgressCounter ? inProgressCounter.length : 0}`);
 
-            database.getAllRecords(undefined, TASKS_TABLE, (err, scheduledTasks)=>{
-                if(!err){
+            lightDBEnclaveClient.getAllRecords($$.SYSTEM_IDENTIFIER, TASKS_TABLE, (err, scheduledTasks) => {
+                if (!err) {
                     logger.debug(`Number of scheduled tasks: ${scheduledTasks ? scheduledTasks.length : 0}`);
                 }
             });
-            database.getAllRecords(undefined, HISTORY_TABLE, (err, tasks)=>{
-                if(!err){
+            lightDBEnclaveClient.getAllRecords($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, (err, tasks) => {
+                if (!err) {
                     logger.debug(`Number of fixed urls: ${tasks ? tasks.length : 0}`);
                 }
             });
         }
     };
     const taskRunner = {
-        doItNow:function(task){
+        doItNow: function (task) {
             logger.info("Executing task for url", task.url);
             const fixedUrl = task.url;
             //we need to do the request and save the result into the cache
@@ -272,33 +271,33 @@ module.exports = function (server) {
             server.makeLocalRequest("GET", url, "", {}, function (error, result) {
                 if (error) {
                     logger.error("caught an error during fetching fixedUrl", error.message, error.code, error);
-                    if(error.httpCode && error.httpCode > 300){
+                    if (error.httpCode && error.httpCode > 300) {
                         //missing data
                         taskRunner.resolvePendingReq(task.url, "", error.httpCode);
                         logger.debug("Cleaning url because of the resolving error", error);
-                        indexer.clean(task.url, (err)=>{
-                            if(err){
-                                if(err.code !== "ENOENT"){
+                        indexer.clean(task.url, (err) => {
+                            if (err) {
+                                if (err.code !== "ENOENT") {
                                     logger.error("Failed to clean url", err);
                                 }
                             }
                         });
-                        return taskRegistry.markAsDone(task.url, (err)=> {
+                        return taskRegistry.markAsDone(task.url, (err) => {
                             if (err) {
                                 logger.log("Failed to remove a task that we weren't able to resolve");
                                 return;
                             }
                         });
                     }
-                    return taskRegistry.markAsDone(task.url, (err)=>{
+                    return taskRegistry.markAsDone(task.url, (err) => {
                         if (err) {
                             logger.log("Failed to remove a task that we weren't able to resolve");
                             return;
                         }
                         //if failed we add the task back to the end of the queue...
-                        setTimeout(()=>{
-                            taskRegistry.add(task.url,(err)=>{
-                                if(err){
+                        setTimeout(() => {
+                            taskRegistry.add(task.url, (err) => {
+                                if (err) {
                                     logger.log("Failed to reschedule the task", task.url, err.message, err.code, err);
                                 }
                             });
@@ -310,10 +309,10 @@ module.exports = function (server) {
                     //let's resolve as fast as possible any pending request for the current task
                     taskRunner.resolvePendingReq(task.url, result);
 
-                    if(!taskRegistry.isInProgress(task.url)){
+                    if (!taskRegistry.isInProgress(task.url)) {
                         logger.info("Looks that somebody canceled the task before we were able to resolve.");
                         //if somebody canceled the task before we finished the request we stop!
-                        return ;
+                        return;
                     }
 
                     indexer.persist(task.url, result, function (err) {
@@ -323,58 +322,58 @@ module.exports = function (server) {
 
                         taskRegistry.markAsDone(task.url, (err) => {
                             if (err) {
-                                logger.warn("Failed to mark request as done in database", task);
+                                logger.warn("Failed to mark request as done in lightDBEnclaveClient", task);
                             }
                         });
 
                         //let's test if we have other tasks that need to be executed...
                         taskRunner.execute();
                     });
-                }else{
+                } else {
                     taskRegistry.markAsDone(task.url, (err) => {
                         if (err) {
-                            logger.warn("Failed to mark request as done in database", task);
+                            logger.warn("Failed to mark request as done in lightDBEnclaveClient", task);
                         }
                         taskRunner.resolvePendingReq(task.url, result, 204);
                     });
                 }
             });
         },
-        execute:function(){
-            taskRegistry.getOneTask(function(err, task){
-                if(err || !task){
+        execute: function () {
+            taskRegistry.getOneTask(function (err, task) {
+                if (err || !task) {
                     return;
                 }
 
                 taskRunner.doItNow(task);
             })
         },
-        pendingRequests:{},
-        registerReq: function(url, req, res){
-            if(!taskRunner.pendingRequests[url]){
+        pendingRequests: {},
+        registerReq: function (url, req, res) {
+            if (!taskRunner.pendingRequests[url]) {
                 taskRunner.pendingRequests[url] = [];
             }
             taskRunner.pendingRequests[url].push({req, res});
         },
-        resolvePendingReq: function(url, content, statusCode){
+        resolvePendingReq: function (url, content, statusCode) {
             let pending = taskRunner.pendingRequests[url];
-            if(!pending){
+            if (!pending) {
                 return;
             }
-            while(pending.length>0){
+            while (pending.length > 0) {
                 let delayed = pending.shift();
-                try{
+                try {
                     respond(delayed.res, content, statusCode);
-                }catch(err){
+                } catch (err) {
                     //we ignore any errors at this stage... timeouts, client aborts etc.
                 }
             }
         },
-        status: function(){
+        status: function () {
             let pendingReq = Object.keys(taskRunner.pendingRequests);
             let counter = 0;
-            for(let pendingUrl of pendingReq){
-                if(taskRunner.pendingRequests[pendingUrl]){
+            for (let pendingUrl of pendingReq) {
+                if (taskRunner.pendingRequests[pendingUrl]) {
                     counter += taskRunner.pendingRequests[pendingUrl].length;
                 }
             }
@@ -388,39 +387,49 @@ module.exports = function (server) {
         if (err) {
             logger.error("Failed to ensure folder structure due to", err);
         }
-        database = lokiEnclaveFacadeModule.createLokiEnclaveFacadeInstance(databasePersistence, INTERVAL_TIME, lokiEnclaveFacadeModule.Adaptors.FS);
+        lightDBEnclaveClient = enclaveAPI.initialiseLightDBEnclaveClient(DATABASE);
+        lightDBEnclaveClient.createDatabase(DATABASE, (err) => {
+            if (err) {
+                logger.error("Failed to create database", err);
+            }
+            lightDBEnclaveClient.grantWriteAccess($$.SYSTEM_IDENTIFIER, (err) => {
+                if (err) {
+                    logger.error("Failed to grant write access to the enclave", err);
+                }
 
-        setInterval(taskRunner.execute, INTERVAL_TIME);
-        setInterval(taskRunner.status, 1*60*1000);//each minute
+                setInterval(taskRunner.execute, INTERVAL_TIME);
+                setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
+            })
+        })
     });
 
     server.put("/registerFixedURLs", require("./../../utils/middlewares").bodyReaderMiddleware);
-    server.put("/registerFixedURLs", function register(req, res, next){
-        if(!database){
-            return setTimeout(()=>{
+    server.put("/registerFixedURLs", function register(req, res, next) {
+        if (!lightDBEnclaveClient) {
+            return setTimeout(() => {
                 register(req, res, next);
             }, 100);
         }
         let body = req.body;
-        try{
+        try {
             body = JSON.parse(body);
-        }catch(err){
+        } catch (err) {
             logger.log(err);
         }
 
-        if(!Array.isArray(body)){
+        if (!Array.isArray(body)) {
             body = [body];
         }
 
-        function recursiveRegistry(){
-            if(body.length === 0){
+        function recursiveRegistry() {
+            if (body.length === 0) {
                 res.statusCode = 200;
                 res.end();
                 return;
             }
             let fixedUrl = body.pop();
-            taskRegistry.register(fixedUrl, function(err){
-                if(err){
+            taskRegistry.register(fixedUrl, function (err) {
+                if (err) {
                     res.statusCode = 500;
                     return res.end(err.message);
                 }
@@ -432,14 +441,14 @@ module.exports = function (server) {
     });
 
     server.put("/activateFixedURL", require("./../../utils/middlewares").bodyReaderMiddleware);
-    server.put("/activateFixedURL", function activate(req, res, next){
-        if(!database){
-            return setTimeout(()=>{
+    server.put("/activateFixedURL", function activate(req, res, next) {
+        if (!lightDBEnclaveClient) {
+            return setTimeout(() => {
                 activate(req, res, next);
             }, 100);
         }
-        taskRegistry.schedule(req.body.toString(), function (err){
-            if(err){
+        taskRegistry.schedule(req.body.toString(), function (err) {
+            if (err) {
                 logger.log(err);
                 res.statusCode = 500;
                 return res.end();
@@ -450,14 +459,14 @@ module.exports = function (server) {
     });
 
     server.put("/deactivateFixedURL", require("./../../utils/middlewares").bodyReaderMiddleware);
-    server.put("/deactivateFixedURL", function deactivate(req, res, next){
-        if(!database){
-            return setTimeout(()=>{
+    server.put("/deactivateFixedURL", function deactivate(req, res, next) {
+        if (!lightDBEnclaveClient) {
+            return setTimeout(() => {
                 deactivate(req, res, next);
             }, 100);
         }
-        taskRegistry.cancel(req.body.toString(), function (err){
-            if(err){
+        taskRegistry.cancel(req.body.toString(), function (err) {
+            if (err) {
                 logger.log(err);
                 res.statusCode = 500;
                 return res.end();
@@ -466,7 +475,8 @@ module.exports = function (server) {
             res.end();
         });
     });
-    function getTimestampHandler(req, res, next){
+
+    function getTimestampHandler(req, res, next) {
         if (["HEAD", "GET"].indexOf(req.method) === -1) {
             //not our responsibility... for the moment we resolve only GET methods that have query params...
             return next();
@@ -474,7 +484,7 @@ module.exports = function (server) {
         let possibleFixedUrl = false;
         let url = req.url;
 
-        if(req.method === "GET" && !url.startsWith("/mtime")){
+        if (req.method === "GET" && !url.startsWith("/mtime")) {
             //not our responsibility...
             return next();
         }
@@ -495,13 +505,13 @@ module.exports = function (server) {
         }
 
         let fixedUrl = ensureURLUniformity(url);
-        indexer.getTimestamp(fixedUrl, function (err, timestamp){
-            if(err){
+        indexer.getTimestamp(fixedUrl, function (err, timestamp) {
+            if (err) {
                 //for any errors we try to invalidate any cache
-                timestamp = Date.now()-1000;
+                timestamp = Date.now() - 1000;
             }
             res.setHeader("ETag", timestamp);
-            if(req.method === "GET"){
+            if (req.method === "GET") {
                 res.write(timestamp.toString());
             }
             res.statusCode = 200;
@@ -532,7 +542,6 @@ module.exports = function (server) {
         }
 
 
-
         if (req.query && req.query[TAG_FIXED_URL_REQUEST]) {
             //this TAG_FIXED_URL_REQUEST query param is set by our runner, and we should let this request to be executed
             return next();
@@ -540,14 +549,14 @@ module.exports = function (server) {
 
         //if we reached this line of code means that we need to do our "thing"
         let fixedUrl = ensureURLUniformity(req);
-        if(taskRegistry.isInProgress(fixedUrl)){
+        if (taskRegistry.isInProgress(fixedUrl)) {
             //there is a task for it... let's wait
             return taskRunner.registerReq(fixedUrl, req, res);
         }
 
-        function resolveURL(){
-            taskRegistry.isScheduled(fixedUrl, (err, task)=>{
-                if(task){
+        function resolveURL() {
+            taskRegistry.isScheduled(fixedUrl, (err, task) => {
+                if (task) {
                     logger.debug(`There is a scheduled task for this ${fixedUrl}`);
                     taskRunner.registerReq(fixedUrl, req, res);
                     taskRegistry.markInProgress(fixedUrl);
@@ -577,13 +586,13 @@ module.exports = function (server) {
             //if reached this point it might be a fixed url that is not known yet, and it should get registered and scheduled for resolving...
             //this case could catch params combinations that are not captured...
             if (!known) {
-                return taskRegistry.register(fixedUrl, (err)=>{
-                    if(err){
+                return taskRegistry.register(fixedUrl, (err) => {
+                    if (err) {
                         //this should not happen... but even if it happens we log and go on with the execution
                         console.error(err);
                     }
-                    taskRegistry.add(fixedUrl, (err)=>{
-                        if(err){
+                    taskRegistry.add(fixedUrl, (err) => {
+                        if (err) {
                             //this should not happen... but even if it happens we log and go on with the execution
                             console.error(err);
                         }

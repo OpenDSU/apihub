@@ -4,7 +4,8 @@ const URL_PREFIX = "/mq";
 const adapterImpls = {
 	local: require("./adapters/localMQAdapter.js"),
 	solace: require("./adapters/solaceMQAdapter.js"),
-	loki: require("./adapters/lokiMQAdapter.js")
+	loki: require("./adapters/lokiMQAdapter.js"),
+	lightdb: require("./adapters/lighDBEnclaveAdapter.js")
 };
 
 //just to expose the possibility to add new implementations for the adapters
@@ -159,7 +160,7 @@ async function MQHub(server, signalAsyncLoading, doneLoading) {
 		let domainConfig = config.getDomainConfig(domain);
 
 		if (domainConfig && domainConfig.enable && domainConfig.enable.indexOf("mq") !== -1) {
-			const adapterTypeName = domainConfig["mq_type"] || "loki";
+			const adapterTypeName = domainConfig["mq_type"] || "lightdb";
 			const adapter = adapterImpls[adapterTypeName];
 			if (!adapter) {
 				logger.info(0x03, `Not able to recognize the mq_type < ${adapterTypeName} > from the domain < ${domain} > config.`);
