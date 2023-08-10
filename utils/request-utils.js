@@ -57,7 +57,20 @@ async function getLocalBdnsEntryListExcludingSelfAsync(request, domain, entryNam
     if (entries && Array.isArray(entries)) {
         // remove self url from the list
         const currentApiHubUrl = getCurrentApiHubUrl(server);
-        entries = entries.filter((url) => url && url.indexOf(currentApiHubUrl) === -1);
+        const {host} = require("./../config/default");
+        entries = entries.filter((url) =>{
+            let result = false;
+            if(url){
+                if(url.indexOf(currentApiHubUrl) === -1){
+                    result = true;
+                }
+
+                if(url.indexOf(host) === -1){
+                    result = true;
+                }
+            }
+            return result;
+        });
 
         // remove providers specified in the Excluded-Providers headers in order to avoid cyclic calls
         const excludedProviders = getExcludedProvidersFromRequest(request);
