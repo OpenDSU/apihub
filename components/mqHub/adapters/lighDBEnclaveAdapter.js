@@ -17,7 +17,17 @@ function LightDBEnclaveAdapter(server, prefix, domain, configuration) {
     const ensureDBIsInitialised = (callback) => {
         lightDBEnclaveClient.createDatabase(DB_NAME,(err) => {
             if (!err) {
-                return lightDBEnclaveClient.grantWriteAccess($$.SYSTEM_IDENTIFIER, callback);
+                lightDBEnclaveClient.hasWriteAccess($$.SYSTEM_IDENTIFIER, (err, hasAccess) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (hasAccess) {
+                        return callback();
+                    }
+
+                    lightDBEnclaveClient.grantWriteAccess($$.SYSTEM_IDENTIFIER, callback);
+                })
             }
 
             return callback();

@@ -390,15 +390,28 @@ module.exports = function (server) {
         lightDBEnclaveClient = enclaveAPI.initialiseLightDBEnclaveClient(DATABASE);
         lightDBEnclaveClient.createDatabase(DATABASE, (err) => {
             if (err) {
-                logger.error("Failed to create database", err);
+                logger.debug("Failed to create database", err.message, err.code, err.rootCause);
             }
-            lightDBEnclaveClient.grantWriteAccess($$.SYSTEM_IDENTIFIER, (err) => {
+
+            lightDBEnclaveClient.hasWriteAccess($$.SYSTEM_IDENTIFIER, (err, hasAccess) => {
                 if (err) {
-                    logger.error("Failed to grant write access to the enclave", err);
+                    logger.debug("Failed to check if we have write access", err.message, err.code, err.rootCause);
                 }
 
-                setInterval(taskRunner.execute, INTERVAL_TIME);
-                setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
+                if (hasAccess) {
+                    setInterval(taskRunner.execute, INTERVAL_TIME);
+                    setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
+                    return;
+                }
+
+                lightDBEnclaveClient.grantWriteAccess($$.SYSTEM_IDENTIFIER, (err) => {
+                    if (err) {
+                        logger.debug("Failed to grant write access to the enclave", err.message, err.code, err.rootCause);
+                    }
+
+                    setInterval(taskRunner.execute, INTERVAL_TIME);
+                    setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
+                })
             })
         })
     });
