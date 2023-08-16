@@ -365,6 +365,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 
             addRequiredComponent("cloudWallet");
             addRequiredComponent("mainDSU");
+						addRequiredComponent("lightDBEnclave");
 
 			function installNextComponent(componentList){
 				const componentName = componentList[0];
