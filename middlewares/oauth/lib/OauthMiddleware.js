@@ -1,10 +1,12 @@
 const {sendUnauthorizedResponse} = require("../../../utils/middlewares");
 const util = require("./util");
 const urlModule = require("url");
+const {printDebugLog} = require("./util");
 
 function OAuthMiddleware(server) {
   const logger = $$.getLogger("OAuthMiddleware", "apihub/oauth");
-
+  const LOADER_PATH = "/loader";
+  let cookies;
   logger.debug(`Registering OAuthMiddleware`);
   const config = require("../../../config");
   const oauthConfig = config.getConfig("oauthConfig");
@@ -27,10 +29,10 @@ function OAuthMiddleware(server) {
       if (err) {
         return sendUnauthorizedResponse(req, res, "Unable to encrypt login info");
       }
-
+      cookies = cookies.concat([`loginContextCookie=${encryptedContext}`]);
       res.writeHead(301, {
         Location: loginContext.redirect,
-        "Set-Cookie": `loginContextCookie=${encryptedContext}`,
+        "Set-Cookie": cookies,
         "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
       });
       res.end();
@@ -41,7 +43,7 @@ function OAuthMiddleware(server) {
     util.printDebugLog("Entered login callback");
     let cbUrl = req.url;
     let query = urlModule.parse(cbUrl, true).query;
-    const {loginContextCookie} = util.parseCookies(req.headers.cookie);
+    const {loginContextCookie, lastUrls} = util.parseCookies(req.headers.cookie);
     if (!loginContextCookie) {
       util.printDebugLog("Logout because loginContextCookie is missing.")
       return logout(res);
@@ -85,10 +87,12 @@ function OAuthMiddleware(server) {
               util.printDebugLog("Unable to get SSODetectedId");
               return sendUnauthorizedResponse(req, res, "Unable to get token set", err);
             }
+
             util.printDebugLog("SSODetectedId", SSODetectedId);
+            util.printDebugLog("LastURLs", lastUrls);
             res.writeHead(301, {
-              Location: "/",
-              "Set-Cookie": [`accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0`],
+              Location: lastUrls || "/",
+              "Set-Cookie": [`lastUrls=${lastUrls}`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0`],
               "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
             });
             res.end();
@@ -114,7 +118,6 @@ function OAuthMiddleware(server) {
 
   server.use(function (req, res, next) {
     let {url} = req;
-
     function isCallbackPhaseActive() {
       const redirectUrlObj = new urlModule.URL(oauthConfig.client.redirectPath);
       const redirectPath = oauthConfig.client.redirectPath.slice(redirectUrlObj.origin.length);
@@ -128,9 +131,10 @@ function OAuthMiddleware(server) {
     }
 
     function startLogoutPhase(res) {
+      cookies = cookies.concat(["accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Max-Age=0"]);
       res.writeHead(301, {
         Location: "/logout",
-        "Set-Cookie": ["accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Max-Age=0"],
+        "Set-Cookie": cookies,
         "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
       });
       res.end();
@@ -168,7 +172,16 @@ function OAuthMiddleware(server) {
       return startAuthFlow(req, res);
     }
 
-    let {accessTokenCookie, refreshTokenCookie, isActiveSession} = util.parseCookies(req.headers.cookie);
+    let {accessTokenCookie, refreshTokenCookie, isActiveSession, lastUrls} = util.parseCookies(req.headers.cookie);
+    if (url.includes(LOADER_PATH)) {
+      if(!url.includes(lastUrls)){
+        lastUrls = url;
+      }
+    }
+    if(!lastUrls){
+      lastUrls = "";
+    }
+    cookies = [`lastUrls=${lastUrls}`];
 
     if (!accessTokenCookie) {
       if (!isActiveSession) {
@@ -197,7 +210,7 @@ function OAuthMiddleware(server) {
             return sendUnauthorizedResponse(req, res, "Unable to refresh token");
           }
 
-          const cookies = [`accessTokenCookie=${tokenSet.encryptedAccessToken}`, `refreshTokenCookie=${tokenSet.encryptedRefreshToken}`];
+          cookies = cookies.concat([`accessTokenCookie=${tokenSet.encryptedAccessToken}`, `refreshTokenCookie=${tokenSet.encryptedRefreshToken}`]);
           res.writeHead(301, {Location: "/", "Set-Cookie": cookies});
           res.end();
         })
@@ -221,7 +234,7 @@ function OAuthMiddleware(server) {
           }
 
           const sessionExpiryTime = Date.now() + oauthConfig.sessionTimeout;
-          const cookies = [`sessionExpiryTime=${sessionExpiryTime}; Path=/`, `accessTokenCookie=${encryptedAccessToken}; Path=/`]
+          cookies = cookies.concat([`sessionExpiryTime=${sessionExpiryTime}; Path=/`, `accessTokenCookie=${encryptedAccessToken}; Path=/`]);
           res.setHeader("Set-Cookie", cookies);
           next();
         })
