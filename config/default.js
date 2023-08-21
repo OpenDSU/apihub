@@ -93,6 +93,9 @@ const defaultConfig = {
     "enableJWTAuthorisation": false,
     "enableLocalhostAuthorization": false,
     "enableErrorCloaking": false,
+    "enableReadOnlyMechanism": true,
+    "readOnlyFile": "readonly",
+    "readOnlyInterval": 60000,
     "skipJWTAuthorisation": [
         "/leaflet-wallet",
         "/config",

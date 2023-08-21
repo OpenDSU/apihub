@@ -227,6 +227,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 
         function addRootMiddlewares() {
 			const LoggerMiddleware = require('./middlewares/logger');
+			const ReadOnly = require("./middlewares/readOnly");
 			const AuthorisationMiddleware = require('./middlewares/authorisation');
 			const Throttler = require('./middlewares/throttler');
 			const OAuth = require('./middlewares/oauth');
@@ -251,6 +252,10 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 
 			if(conf.enableRequestLogger) {
 				new LoggerMiddleware(server);
+			}
+
+			if(conf.enableReadOnlyMechanism){
+				ReadOnly(server);
 			}
 
 			if(conf.enableErrorCloaking){
