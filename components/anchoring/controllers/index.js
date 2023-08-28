@@ -43,7 +43,7 @@ function getWritingHandler(response) {
     return (err) => {
         if (err) {
             const errorMessage = typeof err === "string" ? err : err.message;
-            if (err.code === "EACCES") {
+            if (err.code === "EACCES" || err.code === 409) {
                 return response.send(409, errorMessage);
             } else if (err.code === ALIAS_SYNC_ERR_CODE || err.statusCode === 428) {
                 // see: https://tools.ietf.org/html/rfc6585#section-3
