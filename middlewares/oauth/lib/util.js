@@ -197,7 +197,7 @@ function parseCookies(cookies) {
         const cookieComponents = cookie.split("=");
         const cookieName = cookieComponents[0].trim();
         let cookieValue = cookieComponents[1].trim();
-        if (cookieValue === "null") {
+        if (cookieValue === "null" || cookieValue === "undefined") {
             cookieValue = undefined;
         }
         parsedCookies[cookieName] = cookieValue;

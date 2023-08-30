@@ -6,7 +6,7 @@ const {printDebugLog} = require("./util");
 function OAuthMiddleware(server) {
   const logger = $$.getLogger("OAuthMiddleware", "apihub/oauth");
   const LOADER_PATH = "/loader";
-  let cookies;
+  let cookies = [];
   logger.debug(`Registering OAuthMiddleware`);
   const config = require("../../../config");
   const oauthConfig = config.getConfig("oauthConfig");
@@ -29,7 +29,7 @@ function OAuthMiddleware(server) {
       if (err) {
         return sendUnauthorizedResponse(req, res, "Unable to encrypt login info");
       }
-      cookies = cookies.concat([`loginContextCookie=${encryptedContext}`]);
+      cookies = cookies.concat([`loginContextCookie=${encryptedContext}; Path=/`]);
       res.writeHead(301, {
         Location: loginContext.redirect,
         "Set-Cookie": cookies,
@@ -92,7 +92,7 @@ function OAuthMiddleware(server) {
             util.printDebugLog("LastURLs", lastUrls);
             res.writeHead(301, {
               Location: lastUrls || "/",
-              "Set-Cookie": [`lastUrls=${lastUrls}`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0`],
+              "Set-Cookie": [`lastUrls=${lastUrls}`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0; Path=/`],
               "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
             });
             res.end();
@@ -178,10 +178,9 @@ function OAuthMiddleware(server) {
         lastUrls = url;
       }
     }
-    if(!lastUrls){
-      lastUrls = "";
+    if (lastUrls) {
+      cookies = [`lastUrls=${lastUrls}; Path=/`];
     }
-    cookies = [`lastUrls=${lastUrls}`];
 
     if (!accessTokenCookie) {
       if (!isActiveSession) {
