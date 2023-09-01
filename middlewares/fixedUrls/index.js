@@ -84,7 +84,7 @@ module.exports = function (server) {
                 if (err) {
                     return callback(err);
                 }
-                return callback($$.SYSTEM_IDENTIFIER, stats.mtimeMs);
+                return callback(undefined, stats.mtimeMs);
             });
         }
     };
@@ -145,7 +145,7 @@ module.exports = function (server) {
                     return callback(undefined);
                 }
                 taskRegistry.markInProgress(task.url);
-                callback($$.SYSTEM_IDENTIFIER, task);
+                callback(undefined, task);
             });
         },
         isInProgress: function (task) {
@@ -155,9 +155,9 @@ module.exports = function (server) {
             let tobeChecked = taskRegistry.createModel(task);
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, tobeChecked.pk, function (err, task) {
                 if (err || !task) {
-                    return callback($$.SYSTEM_IDENTIFIER, undefined);
+                    return callback(undefined, undefined);
                 }
-                callback($$.SYSTEM_IDENTIFIER, task);
+                callback(undefined, task);
             });
         },
         markInProgress: function (task) {
