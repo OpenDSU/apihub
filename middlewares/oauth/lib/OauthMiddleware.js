@@ -131,7 +131,7 @@ function OAuthMiddleware(server) {
     }
 
     function startLogoutPhase(res) {
-      cookies = cookies.concat(["accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Max-Age=0"]);
+      cookies = ["lastUrls=/; Path=/", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Max-Age=0"];
       res.writeHead(301, {
         Location: "/logout",
         "Set-Cookie": cookies,
@@ -173,10 +173,8 @@ function OAuthMiddleware(server) {
     }
 
     let {accessTokenCookie, refreshTokenCookie, isActiveSession, lastUrls} = util.parseCookies(req.headers.cookie);
-    if (url.includes(LOADER_PATH)) {
-      if(!url.includes(lastUrls)){
+    if (url.endsWith(LOADER_PATH) || url.endsWith(`${LOADER_PATH}/`) || url === "/" || url === "") {
         lastUrls = url;
-      }
     }
     if (lastUrls) {
       cookies = [`lastUrls=${lastUrls}; Path=/`];
@@ -223,7 +221,7 @@ function OAuthMiddleware(server) {
 
         util.printDebugLog("SSODetectedId", SSODetectedId);
         req.headers["user-id"] = SSODetectedId;
-        if (url.includes("/mq/")) {
+        if (url.includes("/mq/") || url.includes("/get-last-version")) {
           return next();
         }
         util.updateAccessTokenExpiration(accessTokenCookie, (err, encryptedAccessToken)=>{
