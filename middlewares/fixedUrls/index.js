@@ -107,7 +107,19 @@ module.exports = function (server) {
             let newRecord = taskRegistry.createModel(task);
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, function (err, record) {
                 if (err || !record) {
-                    return lightDBEnclaveClient.insertRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, callback);
+                    return lightDBEnclaveClient.insertRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, (insertError)=>{
+                        //if we fail... could be that the task is ready register by another request due to concurency
+                        //we do another getrecord and if fails we return the original insert record error
+                        if(insertError){
+                            return lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, function (err, record) {
+                                if (err || !record) {
+                                    return callback(insertError);
+                                }
+                                callback(undefined);
+                            });
+                        }
+                        callback(undefined);
+                    });
                 }
                 if (!record.counter) {
                     record.counter = 0;
