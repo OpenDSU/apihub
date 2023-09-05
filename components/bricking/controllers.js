@@ -26,25 +26,19 @@ async function getBrick(request, response) {
 }
 
 function putBrick(request, response) {
-    console.time("putBrick");
     const utils = require("./utils");
-    console.time("buildBuffer");
     utils.convertReadableStreamToBuffer(request, (error, brickData) => {
-        console.timeEnd("buildBuffer");
         if (error) {
             logger.info(0x02, `Fail to convert Stream to Buffer!`, error.message);
             logger.error("Fail to convert Stream to Buffer!", error.message);
-            console.timeEnd("putBrick");
             return response.send(500);
         }
 
         request.fsBrickStorage.addBrick(brickData, (error, brickHash) => {
             if (error) {
                 logger.info(0x02, `Fail to manage current brick!`, error.message);
-                console.timeEnd("putBrick");
                 return response.send(error.code === "EACCES" ? 409 : 500);
             }
-            console.timeEnd("putBrick");
             return response.send(201, brickHash);
         });
     });
