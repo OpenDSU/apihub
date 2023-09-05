@@ -52,6 +52,16 @@ class FSBrickStorage {
         return await $$.promisify(fs.readFile)(brickPath);
     }
 
+    async brickExists(hash) {
+        const fs = require("fs");
+        const brickPath = fsBrickPathsManager.resolveBrickPath(this.domain, hash);
+        try {
+            await $$.promisify(fs.access)(brickPath);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
     addBrick(data, callback) {
         callback = $$.makeSaneCallback(callback);
 

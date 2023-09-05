@@ -8,7 +8,7 @@ function Bricks(server) {
 
     const { requestFSBrickStorageMiddleware } = require('./middlewares');
 
-    const { getBrick, putBrick, downloadMultipleBricks } = require('./controllers');
+    const { getBrick, putBrick, downloadMultipleBricks, brickExists} = require('./controllers');
 
     server.use(`/bricking/:domain/*`, headersMiddleware);
     server.use(`/bricking/:domain/*`, responseModifierMiddleware);
@@ -18,6 +18,8 @@ function Bricks(server) {
     server.put(`/bricking/:domain/put-brick`, putBrick);
 
     server.get(`/bricking/:domain/get-brick/:hashLink`, getBrick);
+
+    server.get(`/bricking/:domain/brick-exists/:hashLink`, brickExists);
 
     server.get(`/bricking/:domain/downloadMultipleBricks`, downloadMultipleBricks);
 }
