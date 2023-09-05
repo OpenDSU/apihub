@@ -1,7 +1,6 @@
 const {sendUnauthorizedResponse} = require("../../../utils/middlewares");
 const util = require("./util");
 const urlModule = require("url");
-const {printDebugLog} = require("./util");
 
 function OAuthMiddleware(server) {
     const logger = $$.getLogger("OAuthMiddleware", "apihub/oauth");
@@ -31,6 +30,7 @@ function OAuthMiddleware(server) {
                 return sendUnauthorizedResponse(req, res, "Unable to encrypt login info");
             }
             cookies = [`lastUrls=${lastUrls}; Path=/`, `loginContextCookie=${encryptedContext}; Path=/`];
+            logger.info("SSO redirect (http 301) triggered for:", req.url);
             res.writeHead(301, {
                 Location: loginContext.redirect,
                 "Set-Cookie": cookies,
@@ -47,7 +47,7 @@ function OAuthMiddleware(server) {
         const {loginContextCookie, lastUrls} = util.parseCookies(req.headers.cookie);
         if (!loginContextCookie) {
             util.printDebugLog("Logout because loginContextCookie is missing.")
-            return logout(res);
+            return logout(req, res);
         }
         util.decryptLoginInfo(loginContextCookie, (err, loginContext) => {
             if (err) {
@@ -56,7 +56,7 @@ function OAuthMiddleware(server) {
 
             if (Date.now() - loginContext.date > oauthConfig.sessionTimeout) {
                 util.printDebugLog("Logout because loginContextCookie is expired.")
-                return logout(res);
+                return logout(req, res);
             }
 
             const queryCode = query['code'];
@@ -103,13 +103,14 @@ function OAuthMiddleware(server) {
         });
     }
 
-    function logout(res) {
+    function logout(req, res) {
         const urlModule = require("url");
         const logoutUrl = urlModule.parse(oauthConfig.client.logoutUrl);
 
         logoutUrl.query = {
             post_logout_redirect_uri: oauthConfig.client.postLogoutRedirectUrl, client_id: oauthConfig.client.clientId,
         };
+        logger.info("SSO redirect (http 301) triggered for:", req.url);
         res.writeHead(301, {
             Location: urlModule.format(logoutUrl)
         });
@@ -134,6 +135,7 @@ function OAuthMiddleware(server) {
         function startLogoutPhase(res) {
             lastUrls=undefined;
             cookies = ["lastUrls=; Path=/; Max-Age=0", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0"];
+            logger.info("SSO redirect (http 301) triggered for:", req.url);
             res.writeHead(301, {
                 Location: "/logout",
                 "Set-Cookie": cookies,
@@ -167,7 +169,7 @@ function OAuthMiddleware(server) {
         }
 
         if (isLogoutPhaseActive()) {
-            return logout(res);
+            return logout(req, res);
         }
 
         if (isPostLogoutPhaseActive()) {
@@ -212,6 +214,7 @@ function OAuthMiddleware(server) {
                     }
 
                     cookies = cookies.concat([`accessTokenCookie=${tokenSet.encryptedAccessToken}`, `refreshTokenCookie=${tokenSet.encryptedRefreshToken}`]);
+                    logger.info("SSO redirect (http 301) triggered for:", req.url);
                     res.writeHead(301, {Location: "/", "Set-Cookie": cookies});
                     res.end();
                 })
@@ -225,7 +228,7 @@ function OAuthMiddleware(server) {
 
                 util.printDebugLog("SSODetectedId", SSODetectedId);
                 req.headers["user-id"] = SSODetectedId;
-                if (url.includes("/mq/") || url.includes("/get-last-version")) {
+                if (url.includes("/mq/") || url.includes("/get-last-version") || url.includes("/brick-exists")) {
                     return next();
                 }
                 util.updateAccessTokenExpiration(accessTokenCookie, (err, encryptedAccessToken) => {
