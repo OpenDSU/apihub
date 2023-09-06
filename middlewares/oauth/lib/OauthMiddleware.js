@@ -18,6 +18,8 @@ function OAuthMiddleware(server) {
     const webClient = new WebClient(oauthConfig);
     const errorMessages = require("./errorMessages");
 
+    const defaultUrlsToSkip = ["brick-exists", "get-all-versions", "get-last-version", "get-brick"];
+    
     //we let KeyManager to boot and prepare ...
     util.initializeKeyManager(ENCRYPTION_KEYS_LOCATION, oauthConfig.keyTTL);
 
@@ -154,6 +156,20 @@ function OAuthMiddleware(server) {
             return;
         }
 
+        let urlParts = url.split("/");
+        let action = "";
+        try{
+            action = urlParts[3];
+        }
+         catch(err){
+             //ignored on purpose
+         }
+            
+        if(defaultUrlsToSkip.indexOf(action) !== -1) {
+            next();
+            return;
+        }
+        
         if (!config.getConfig("enableLocalhostAuthorization") && req.headers.host.indexOf("localhost") === 0) {
             next();
             return;
@@ -228,7 +244,7 @@ function OAuthMiddleware(server) {
 
                 util.printDebugLog("SSODetectedId", SSODetectedId);
                 req.headers["user-id"] = SSODetectedId;
-                if (url.includes("/mq/") || url.includes("/get-last-version") || url.includes("/brick-exists")) {
+                if (url.includes("/mq/")) {
                     return next();
                 }
                 util.updateAccessTokenExpiration(accessTokenCookie, (err, encryptedAccessToken) => {
