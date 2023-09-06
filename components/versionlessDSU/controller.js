@@ -50,6 +50,10 @@ async function handleGetVersionlessDSURequest(request, response) {
 
     const fs = require("fs");
     try {
+        let resolvedFilePath = path.resolve(filePath);
+        if(resolvedFilePath.indexOf(versionlessDSUFolderPath) !== -1){
+            throw Error("Trying to read outside of VersionLess storage folder");
+        }
         const fileContent = await $$.promisify(fs.readFile)(filePath);
         logger.debug(`[VersionlessDSU] Reading existing versionlessDSU from ${filePath}`);
         response.setHeader('content-type', "application/octet-stream"); // required in order for opendsu http fetch to properly work
@@ -79,6 +83,10 @@ async function handlePutVersionlessDSURequest(request, response) {
     try {
         await $$.promisify(fs.mkdir)(path.dirname(filePath), { recursive: true });
         logger.debug(`[VersionlessDSU] Writing versionlessDSU to ${filePath}`);
+        let resolvedFilePath = path.resolve(filePath);
+        if(resolvedFilePath.indexOf(versionlessDSUFolderPath) !== -1){
+            throw Error("Trying to write outside of VersionLess storage folder");
+        }
         await $$.promisify(fs.writeFile)(filePath, dsu);
         response.statusCode = 200;
         response.end();
