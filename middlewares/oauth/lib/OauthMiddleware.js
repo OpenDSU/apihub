@@ -18,7 +18,7 @@ function OAuthMiddleware(server) {
     const webClient = new WebClient(oauthConfig);
     const errorMessages = require("./errorMessages");
 
-    const defaultUrlsToSkip = ["brick-exists", "get-all-versions", "get-last-version", "get-brick"];
+    const defaultUrlsToSkip = ["brick-exists", "get-all-versions", "get-last-version", "get-brick", "credential"];
     
     //we let KeyManager to boot and prepare ...
     util.initializeKeyManager(ENCRYPTION_KEYS_LOCATION, oauthConfig.keyTTL);

@@ -1,3 +1,4 @@
+const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
 
 function secrets(server) {
     const logger = $$.getLogger("secrets", "apihub/secrets");
@@ -90,12 +91,61 @@ function secrets(server) {
         });
     }
 
+    function putDIDSecret(req, res){
+        let {did, name} = req.params;
+        let secret = req.body;
+        secretsService.putSecret(name, did, secret, err => {
+            if (err) {
+                res.statusCode = err.code;
+                res.end(err.message);
+                return;
+            }
+
+            res.statusCode = 200;
+            res.end();
+        });
+    }
+
+    function getDIDSecret(req, res){
+        let {did, name} = req.params;
+        secretsService.getSecret(name, did, (err, secret)=>{
+            if (err) {
+                res.statusCode = err.code;
+                res.end(err.message);
+                return;
+            }
+
+            res.statusCode = 200;
+            let parsedSecret = JSON.parse(secret);
+            res.end(parsedSecret.secret);
+        });
+    }
+
+    function deleteDIDSecret(req, res){
+        let {did, name} = req.params;
+        secretsService.deleteSecret(name, did, err => {
+            if (err) {
+                res.statusCode = err.code;
+                res.end(err.message);
+                return;
+            }
+
+            res.statusCode = 200;
+            res.end();
+        });
+    }
+
     logEncryptionTest();
     server.put('/putSSOSecret/*', httpUtils.bodyParser);
     server.get("/getSSOSecret/:appName", getSSOSecret);
     server.put('/putSSOSecret/:appName', putSSOSecret);
     server.delete("/deactivateSSOSecret/:appName/:did", deleteSSOSecret);
     server.delete("/removeSSOSecret/:appName", deleteSSOSecret);
+
+    server.put('/putDIDSecret/*', httpUtils.bodyParser);
+    server.put('/putDIDSecret/:did/:name', putDIDSecret);
+    server.get('/getDIDSecret/:did/:name', getDIDSecret);
+    server.delete('/removeDIDSecret/:did/:name', deleteDIDSecret);
 }
 
 module.exports = secrets;
