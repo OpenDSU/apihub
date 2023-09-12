@@ -18,7 +18,7 @@ function SecretsService(serverRootFolder) {
     let latestEncryptionKey = encryptionKeys[0].trim();
     let successfulEncryptionKeyIndex = 0;
     const containers = {};
-
+    let readonlyMode = false;
     const loadContainerAsync = async (containerName) => {
         try {
             containers[containerName] = await getDecryptedSecretsAsync(containerName);
@@ -80,6 +80,9 @@ function SecretsService(serverRootFolder) {
     }
 
     const writeSecrets = (secretsContainerName, callback) => {
+        if (readonlyMode) {
+            return callback(createError(555, `Secrets Service is in readonly mode`));
+        }
         let secrets = containers[secretsContainerName];
         secrets = JSON.stringify(secrets);
         const encryptedSecrets = encryptSecret(secrets);
@@ -115,9 +118,9 @@ function SecretsService(serverRootFolder) {
     const getDecryptedSecrets = (secretsContainerName, callback) => {
         const filePath = getSecretFilePath(secretsContainerName);
         fs.readFile(filePath, async (err, secrets) => {
-            if (err) {
+            if (err || !secrets) {
                 logger.error(`Failed to read file ${filePath}`);
-                return callback(createError(500, `Failed to read file ${filePath}`));
+                return callback(createError(404, `Failed to read file ${filePath}`));
             }
 
             let decryptedSecrets;
@@ -125,14 +128,16 @@ function SecretsService(serverRootFolder) {
                 decryptedSecrets = await decryptSecret(secretsContainerName, secrets);
             } catch (e) {
                 logger.error(`Failed to decrypt secrets`);
-                return callback(createError(500, `Failed to decrypt secrets`));
+                readonlyMode = true;
+                console.log("Readonly mode activated")
+                return callback(createError(555, `Failed to decrypt secrets`));
             }
 
             try {
                 decryptedSecrets = JSON.parse(decryptedSecrets.toString());
             } catch (e) {
                 logger.error(`Failed to parse secrets`);
-                return callback(createError(500, `Failed to parse secrets`));
+                return callback(createError(555, `Failed to parse secrets`));
             }
 
             callback(undefined, decryptedSecrets);
@@ -163,9 +168,12 @@ function SecretsService(serverRootFolder) {
     }
 
     this.getSecretSync = (secretsContainerName, userId) => {
+        if (readonlyMode) {
+            throw createError(555, `Secrets Service is in readonly mode`);
+        }
         if (!containers[secretsContainerName]) {
             containers[secretsContainerName] = {};
-            console.info("Initializing secrets container", secretsContainerName)
+            console.info("Initializing secrets container", secretsContainerName);
         }
         const secret = containers[secretsContainerName][userId];
         if (!secret) {
@@ -200,29 +208,20 @@ function SecretsService(serverRootFolder) {
     this.rotateKeyAsync = async () => {
         let writeKey = encryptionKeys[0].trim();
         let readKey = encryptionKeys.length === 2 ? encryptionKeys[1].trim() : writeKey;
-        const rotationIsNeeded = async () => {
-            let secretsContainersNames = fs.readdirSync(getStorageFolderPath());
-            if (secretsContainersNames.length) {
-                secretsContainersNames = secretsContainersNames.map((containerName) => {
-                    const extIndex = containerName.lastIndexOf(".");
-                    return path.basename(containerName).substring(0, extIndex);
-                })
 
-                const containerName = secretsContainersNames[0];
-                try{
-                    await $$.promisify(getDecryptedSecrets)(containerName);
-                }catch (e) {
-                    return true;
-                }
-            } else {
-                logger.info("No secrets containers found");
+        if (readonlyMode) {
+            if(encryptionKeys.length !== 2){
+                logger.info(0x501, `Rotation not possible`);
+                return;
             }
-        }
-
-        if (await rotationIsNeeded()) {
             logger.info(0x501, "Secrets Encryption Key rotation detected");
+            readonlyMode = false;
             latestEncryptionKey = readKey;
             await this.loadContainersAsync();
+            if (readonlyMode) {
+                logger.info(0x501, `Rotation not possible because wrong decryption key was provided. The old key should be the second one in the list`);
+                return;
+            }
             latestEncryptionKey = writeKey;
             await this.forceWriteSecretsAsync();
             logger.info(0x501, `Re-encrypting Recovery Passphrases on disk completed`)
