@@ -1,4 +1,4 @@
-require("../../../../psknode/bundles/pskruntime");
+require("../../../../builds/output/pskruntime");
 require('../../flows/CSBmanager');
 const assert = require("double-check").assert;
 const path = require('swarmutils').path;

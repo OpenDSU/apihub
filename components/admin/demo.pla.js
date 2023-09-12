@@ -1,4 +1,4 @@
-require("../../../../psknode/bundles/openDSU");
+require("../../../../builds/output/openDSU");
 openDSURequire('overwrite-require');
 const logger = $$.getLogger("demo.pla.js", "apihub/admin");
 

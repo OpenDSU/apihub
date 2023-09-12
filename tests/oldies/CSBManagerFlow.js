@@ -1,6 +1,6 @@
-require("../../../../psknode/bundles/pskruntime");
-require("../../../../psknode/bundles/virtualMQ");
-require("../../../../psknode/bundles/psknode");
+require("../../../../builds/output/pskruntime");
+require("../../../../builds/output/virtualMQ");
+require("../../../../builds/output/psknode");
 const double_check = require("double-check");
 const assert = double_check.assert;
 const path = require('swarmutils').path;

@@ -1,7 +1,7 @@
 
-require("../../../../psknode/bundles/pskruntime");
-require("../../../../psknode/bundles/consoleTools");
-require("../../../../psknode/bundles/virtualMQ");
+require("../../../../builds/output/pskruntime");
+require("../../../../builds/output/consoleTools");
+require("../../../../builds/output/virtualMQ");
 const VirtualMQ = require('virtualmq');
 const path = require('swarmutils').path;
 const interact = require('interact');

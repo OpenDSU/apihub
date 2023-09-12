@@ -1,6 +1,6 @@
-require("../../../psknode/bundles/pskruntime");
-require("../../../psknode/bundles/virtualMQ");
-require("../../../psknode/bundles/psknode");
+require("../../../builds/output/pskruntime");
+require("../../../builds/output/virtualMQ");
+require("../../../builds/output/psknode");
 const http = require("http");
 
 const VirtualMQ = require('virtualmq');
