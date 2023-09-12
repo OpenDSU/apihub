@@ -1,27 +1,31 @@
-const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
+const SecretsService = require("./SecretsService");
 
 function secrets(server) {
     const logger = $$.getLogger("secrets", "apihub/secrets");
     const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
     const SecretsService = require("./SecretsService");
-    const secretsService = new SecretsService(server.rootFolder);
+    let secretsService;
+    setTimeout(async ()=>{
+      secretsService =  await SecretsService.getSecretsServiceInstanceAsync(server.rootFolder);
+    })
 
     const getSSOSecret = (request, response) => {
         let userId = request.headers["user-id"];
         let appName = request.params.appName;
-        secretsService.getSecret(appName, userId, (err, secret)=>{
-            if (err) {
-                response.statusCode = err.code;
-                response.end(err.message);
-                return;
-            }
+        let secret;
+        try {
+            secret = secretsService.getSecretSync(appName, userId);
+        } catch (e) {
+            response.statusCode = e.code;
+            response.end(e.message);
+            return;
+        }
 
-            response.statusCode = 200;
-            response.end(secret);
-        })
+        response.statusCode = 200;
+        response.end(secret);
     }
 
-    const putSSOSecret = (request, response) => {
+    const putSSOSecret = async (request, response) => {
         let userId = request.headers["user-id"];
         let appName = request.params.appName;
         let secret;
@@ -34,43 +38,34 @@ function secrets(server) {
             return;
         }
 
-        secretsService.putSecret(appName, userId, secret, err => {
-            if (err) {
-                response.statusCode = err.code;
-                response.end(err.message);
-                return;
-            }
+        try {
+            await secretsService.putSecretAsync(appName, userId, secret);
+        } catch (e) {
+            response.statusCode = e.code;
+            response.end(e.message);
+            return;
+        }
 
-            response.statusCode = 200;
-            response.end();
-        });
+        response.statusCode = 200;
+        response.end();
     };
 
-    const getUserIdFromDID = (did, appName) => {
-        const crypto = require("opendsu").loadAPI("crypto");
-        const decodedDID = crypto.decodeBase58(did);
-        const splitDecodedDID = decodedDID.toString().split(":");
-        let name = splitDecodedDID.slice(4).join(":");
-        let userId = name.slice(appName.length + 1);
-        return userId;
-    }
-
-    const deleteSSOSecret = (request, response) => {
+    const deleteSSOSecret = async (request, response) => {
         let appName = request.params.appName;
         let userId = request.headers["user-id"];
 
-        secretsService.deleteSecret(appName, userId, err => {
-            if (err) {
-                response.statusCode = err.code;
-                response.end(err.message);
-                return;
-            }
+        try {
+            await secretsService.deleteSecretAsync(appName, userId);
+        } catch (e) {
+            response.statusCode = e.code;
+            response.end(e.message);
+            return;
+        }
 
-            response.statusCode = 200;
-            response.end();
-        });
+        response.statusCode = 200;
+        response.end();
     }
-    
+
     const logEncryptionTest = () => {
         const key = "presetEncryptionKeyForInitialLog";
         const text = "TheQuickBrownFoxJumpedOverTheLazyDog";
@@ -91,48 +86,46 @@ function secrets(server) {
         });
     }
 
-    function putDIDSecret(req, res){
+    async function putDIDSecret(req, res) {
         let {did, name} = req.params;
         let secret = req.body;
-        secretsService.putSecret(name, did, secret, err => {
-            if (err) {
-                res.statusCode = err.code;
-                res.end(err.message);
-                return;
-            }
-
-            res.statusCode = 200;
-            res.end();
-        });
+        try {
+            await secretsService.putSecretAsync(name, did, secret);
+        } catch (e) {
+            res.statusCode = e.code;
+            res.end(e.message);
+            return;
+        }
+        res.statusCode = 200;
+        res.end();
     }
 
-    function getDIDSecret(req, res){
+    function getDIDSecret(req, res) {
         let {did, name} = req.params;
-        secretsService.getSecret(name, did, (err, secret)=>{
-            if (err) {
-                res.statusCode = err.code;
-                res.end(err.message);
-                return;
-            }
-
+        let secret;
+        try {
+            secret = secretsService.getSecretSync(name, did);
             res.statusCode = 200;
-            let parsedSecret = JSON.parse(secret);
-            res.end(parsedSecret.secret);
-        });
+        } catch (err) {
+            res.statusCode = err.code;
+            res.end(err.message);
+            return;
+        }
+        res.end(secret);
     }
 
-    function deleteDIDSecret(req, res){
+    async function deleteDIDSecret(req, res) {
         let {did, name} = req.params;
-        secretsService.deleteSecret(name, did, err => {
-            if (err) {
-                res.statusCode = err.code;
-                res.end(err.message);
-                return;
-            }
-
+        try {
+            await secretsService.deleteSecretAsync(name, did)
             res.statusCode = 200;
-            res.end();
-        });
+        } catch (err) {
+            res.statusCode = err.code;
+            res.end(err.message);
+            return;
+        }
+
+        res.end();
     }
 
     logEncryptionTest();

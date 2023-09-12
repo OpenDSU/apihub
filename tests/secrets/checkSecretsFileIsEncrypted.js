@@ -20,7 +20,9 @@ assert.callback('check if secrets endpoint encryption and key rotation work', as
     let base64EncryptionKey = generateEncryptionKey();
     // set env variable
     process.env.SSO_SECRETS_ENCRYPTION_KEY = base64EncryptionKey;
-    const port = await $$.promisify(tir.launchApiHubTestNode)(100,  folder);
+    const {port} = await tir.launchConfigurableApiHubTestNodeAsync({
+        rootFolder: folder
+    });
     const url = `http://localhost:${port}`;
     const httpAPI = openDSU.loadAPI("http");
     //send a secret to the secrets endpoint for storage; secret should be encrypted with process.env.SSO_SECRETS_ENCRYPTION_KEY and stored on disk
@@ -58,7 +60,8 @@ assert.callback('check if secrets endpoint encryption and key rotation work', as
     // read secret from secrets endpoint (expected "{\"secret\": \"some secret\"}" )
     // the get call will trigger the re-encryption of secrets using the new key
     let secretReadFromServer = await $$.promisify(httpAPI.doGet)(`${url}${GET_SECRETS_URL_PATH}`, {headers: {"user-id": USER_ID}});
-    assert.equal(JSON.parse(secretReadFromServer).secret, secret);
+    await $$.promisify(httpAPI.doPut)(`${url}${PUT_SECRETS_URL_PATH}`, {secret}, {headers: {"user-id": USER_ID}});
+    assert.equal(secretReadFromServer, secret);
 
     // read again the encrypted data from disk
     encryptedSecret = fs.readFileSync(demiurgeSecretsFilePath);
@@ -83,6 +86,6 @@ assert.callback('check if secrets endpoint encryption and key rotation work', as
 
     process.env.SSO_SECRETS_ENCRYPTION_KEY = `${newBase64EncryptionKey}`
     secretReadFromServer = await $$.promisify(httpAPI.doGet)(`${url}${GET_SECRETS_URL_PATH}`, {headers: {"user-id": USER_ID}});
-    assert.equal(JSON.parse(secretReadFromServer).secret, secret);
+    assert.equal(secretReadFromServer, secret);
     callback()
 }, 5000000);

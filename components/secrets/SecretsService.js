@@ -2,9 +2,66 @@ const fs = require("fs");
 const path = require("path");
 const config = require("../../config");
 
+
 function SecretsService(serverRootFolder) {
+    const getStorageFolderPath = () => {
+        return path.join(serverRootFolder, config.getConfig("externalStorage"), "secrets");
+    }
+
+    const lockPath = path.join(getStorageFolderPath(), "secret.lock");
+    const lock = require("../../utils/ExpiringFileLock").getLock(lockPath, 60000);
+    console.log("Secrets Service initialized");
     const logger = $$.getLogger("secrets", "apihub/secrets");
-    const crypto = require("opendsu").loadAPI("crypto");
+    const openDSU = require("opendsu");
+    const crypto = openDSU.loadAPI("crypto");
+    const encryptionKeys = process.env.SSO_SECRETS_ENCRYPTION_KEY.split(",");
+    let latestEncryptionKey = encryptionKeys[0].trim();
+    let successfulEncryptionKeyIndex = 0;
+    const containers = {};
+
+    const loadContainerAsync = async (containerName) => {
+        try {
+            containers[containerName] = await getDecryptedSecretsAsync(containerName);
+            console.info("Secrets container", containerName, "loaded");
+        } catch (e) {
+            containers[containerName] = {};
+            console.info("Initializing secrets container", containerName);
+        }
+    }
+
+    this.loadContainersAsync = async () => {
+        ensureFolderExists(getStorageFolderPath());
+        let secretsContainersNames = fs.readdirSync(getStorageFolderPath());
+        if (secretsContainersNames.length) {
+            secretsContainersNames = secretsContainersNames.map((containerName) => {
+                const extIndex = containerName.lastIndexOf(".");
+                return path.basename(containerName).substring(0, extIndex);
+            })
+
+            for (let containerName of secretsContainersNames) {
+                await loadContainerAsync(containerName);
+            }
+        } else {
+            logger.info("No secrets containers found");
+        }
+    }
+
+    this.forceWriteSecretsAsync = async () => {
+        ensureFolderExists(getStorageFolderPath());
+        let secretsContainersNames = fs.readdirSync(getStorageFolderPath());
+        if (secretsContainersNames.length) {
+            secretsContainersNames = secretsContainersNames.map((containerName) => {
+                const extIndex = containerName.lastIndexOf(".");
+                return path.basename(containerName).substring(0, extIndex);
+            })
+
+            for (let containerName of secretsContainersNames) {
+                await writeSecretsAsync(containerName);
+            }
+        } else {
+            logger.info("No secrets containers found");
+        }
+    }
     const createError = (code, message) => {
         const err = Error(message);
         err.code = code
@@ -22,151 +79,163 @@ function SecretsService(serverRootFolder) {
         return crypto.encrypt(secret, latestEncryptionKey);
     }
 
-    const writeSecrets = (appName, secrets, callback) => {
-        if (typeof secrets === "object") {
-            secrets = JSON.stringify(secrets);
-        }
+    const writeSecrets = (secretsContainerName, callback) => {
+        let secrets = containers[secretsContainerName];
+        secrets = JSON.stringify(secrets);
         const encryptedSecrets = encryptSecret(secrets);
-        fs.writeFile(getSecretFilePath(appName), encryptedSecrets, callback);
+        fs.writeFile(getSecretFilePath(secretsContainerName), encryptedSecrets, callback);
     }
 
-    const ensureFolderExists = (folderPath, callback) => {
-        fs.access(folderPath, (err) => {
-            if (err) {
-                fs.mkdir(folderPath, {recursive: true}, callback);
-                return;
-            }
-
-            callback();
-        })
+    const writeSecretsAsync = async (secretsContainerName) => {
+        return await $$.promisify(writeSecrets)(secretsContainerName);
+    }
+    const ensureFolderExists = (folderPath) => {
+        try {
+            fs.accessSync(folderPath);
+        } catch (e) {
+            fs.mkdirSync(folderPath, {recursive: true});
+        }
     }
 
-    const getStorageFolderPath = () => {
-        return path.join(serverRootFolder, config.getConfig("externalStorage"), "secrets");
+
+    const getSecretFilePath = (secretsContainerName) => {
+        const folderPath = getStorageFolderPath(secretsContainerName);
+        return path.join(folderPath, `${secretsContainerName}.secret`);
     }
 
-    const getSecretFilePath = (appName) => {
-        const folderPath = getStorageFolderPath(appName);
-        return path.join(folderPath, `${appName}.secret`);
-    }
-
-    const decryptSecret = (appName, encryptedSecret, callback) => {
-        const encryptionKeys = process.env.SSO_SECRETS_ENCRYPTION_KEY.split(",");
-        const latestEncryptionKey = encryptionKeys[0].trim();
-        let decryptedSecret;
-        const _decryptSecretRecursively = (index) => {
-            let encryptionKey = encryptionKeys[index];
-            if (typeof encryptionKey === "undefined") {
-                logger.error(`Failed to decrypt secret. Invalid encryptionKey.`);
-                callback(createError(500, `Failed to decrypt secret`));
-                return;
-            }
-
-            encryptionKey = encryptionKey.trim();
-            let bufferEncryptionKey = encryptionKey;
-            if (!$$.Buffer.isBuffer(bufferEncryptionKey)) {
-                bufferEncryptionKey = $$.Buffer.from(bufferEncryptionKey, "base64");
-            }
-
-            try {
-                decryptedSecret = crypto.decrypt(encryptedSecret, bufferEncryptionKey);
-            } catch (e) {
-                _decryptSecretRecursively(index + 1);
-                return;
-            }
-
-            if (latestEncryptionKey !== encryptionKey) {
-                logger.info(0x501, "Secrets Encryption Key rotation detected");
-                writeSecrets(appName, decryptedSecret.toString(), err => {
-                    if (err) {
-                        logger.info(0x501, `Re-encrypting Recovery Passphrases on disk file ${getSecretFilePath(appName)} failed due to error: ${err}`);
-                        return callback(err);
-                    }
-                    logger.info(0x501, `Re-encrypting Recovery Passphrases on disk file ${getSecretFilePath(appName)} completed`)
-                    callback(undefined, decryptedSecret);
-                });
-
-                return;
-            }
-
-            callback(undefined, decryptedSecret);
+    const decryptSecret = async (secretsContainerName, encryptedSecret) => {
+        let bufferEncryptionKey = latestEncryptionKey;
+        if (!$$.Buffer.isBuffer(bufferEncryptionKey)) {
+            bufferEncryptionKey = $$.Buffer.from(bufferEncryptionKey, "base64");
         }
 
-        _decryptSecretRecursively(0);
-    }
+        return crypto.decrypt(encryptedSecret, bufferEncryptionKey);
+    };
 
-    const getDecryptedSecrets = (appName, callback) => {
-        const filePath = getSecretFilePath(appName);
-        fs.readFile(filePath, (err, secrets) => {
+    const getDecryptedSecrets = (secretsContainerName, callback) => {
+        const filePath = getSecretFilePath(secretsContainerName);
+        fs.readFile(filePath, async (err, secrets) => {
             if (err) {
                 logger.error(`Failed to read file ${filePath}`);
                 return callback(createError(500, `Failed to read file ${filePath}`));
             }
 
-            decryptSecret(appName, secrets, (err, decryptedSecrets) => {
-                if (err) {
-                    return callback(err);
-                }
+            let decryptedSecrets;
+            try {
+                decryptedSecrets = await decryptSecret(secretsContainerName, secrets);
+            } catch (e) {
+                logger.error(`Failed to decrypt secrets`);
+                return callback(createError(500, `Failed to decrypt secrets`));
+            }
 
-                try {
-                    decryptedSecrets = JSON.parse(decryptedSecrets.toString());
-                } catch (e) {
-                    logger.error(`Failed to parse secrets`);
-                    return callback(createError(500, `Failed to parse secrets`));
-                }
+            try {
+                decryptedSecrets = JSON.parse(decryptedSecrets.toString());
+            } catch (e) {
+                logger.error(`Failed to parse secrets`);
+                return callback(createError(500, `Failed to parse secrets`));
+            }
 
-                callback(undefined, decryptedSecrets);
-            })
+            callback(undefined, decryptedSecrets);
         });
     }
 
-    this.putSecret = (appName, userId, secret, callback) => {
-        if (typeof process.env.SSO_SECRETS_ENCRYPTION_KEY === "undefined") {
-            logger.warn(`The SSO_SECRETS_ENCRYPTION_KEY is missing from environment.`);
-            return callback(createError(500, `The SSO_SECRETS_ENCRYPTION_KEY is missing from environment.`));
+    const getDecryptedSecretsAsync = async (secretsContainerName) => {
+        return await $$.promisify(getDecryptedSecrets, this)(secretsContainerName);
+    }
+
+    this.putSecretAsync = async (secretsContainerName, userId, secret) => {
+        await lock.lock();
+        let res;
+        try {
+            await loadContainerAsync(secretsContainerName);
+            if (!containers[secretsContainerName]) {
+                containers[secretsContainerName] = {};
+                console.info("Initializing secrets container", secretsContainerName)
+            }
+            containers[secretsContainerName][userId] = secret;
+            res = await writeSecretsAsync(secretsContainerName, userId);
+        } catch (e) {
+            await lock.unlock();
+            throw e;
         }
-        const folderPath = getStorageFolderPath();
-        ensureFolderExists(folderPath, err => {
-            if (err) {
-                return callback(createError(500, `Failed to store secret for user ${userId}`));
-            }
+        await lock.unlock();
+        return res;
+    }
 
-            getDecryptedSecrets(appName, (err, decryptedSecrets) => {
-                if (err) {
-                    decryptedSecrets = {};
+    this.getSecretSync = (secretsContainerName, userId) => {
+        if (!containers[secretsContainerName]) {
+            containers[secretsContainerName] = {};
+            console.info("Initializing secrets container", secretsContainerName)
+        }
+        const secret = containers[secretsContainerName][userId];
+        if (!secret) {
+            throw createError(404, `Secret for user ${userId} not found`);
+        }
+
+        return secret;
+    }
+
+    this.deleteSecretAsync = async (secretsContainerName, userId) => {
+        await lock.lock();
+        let res;
+        try {
+            await loadContainerAsync(secretsContainerName);
+            if (!containers[secretsContainerName]) {
+                containers[secretsContainerName] = {};
+                console.info("Initializing secrets container", secretsContainerName)
+            }
+            if (!containers[secretsContainerName][userId]) {
+                throw createError(404, `Secret for user ${userId} not found`);
+            }
+            delete containers[secretsContainerName][userId];
+            await writeSecretsAsync(secretsContainerName);
+        } catch (e) {
+            await lock.unlock();
+            throw e;
+        }
+        await lock.unlock();
+        return res;
+    }
+
+    this.rotateKeyAsync = async () => {
+        let writeKey = encryptionKeys[0].trim();
+        let readKey = encryptionKeys.length === 2 ? encryptionKeys[1].trim() : writeKey;
+        const rotationIsNeeded = async () => {
+            let secretsContainersNames = fs.readdirSync(getStorageFolderPath());
+            if (secretsContainersNames.length) {
+                secretsContainersNames = secretsContainersNames.map((containerName) => {
+                    const extIndex = containerName.lastIndexOf(".");
+                    return path.basename(containerName).substring(0, extIndex);
+                })
+
+                const containerName = secretsContainersNames[0];
+                try{
+                    await $$.promisify(getDecryptedSecrets)(containerName);
+                }catch (e) {
+                    return true;
                 }
-
-                decryptedSecrets[userId] = secret;
-                writeSecrets(appName, decryptedSecrets, callback);
-            })
-        })
-    }
-
-    this.getSecret = (appName, userId, callback) => {
-        getDecryptedSecrets(appName, (err, decryptedSecrets) => {
-            if (err) {
-                return callback(err);
+            } else {
+                logger.info("No secrets containers found");
             }
+        }
 
-            const secret = decryptedSecrets[userId];
-            if (typeof secret === "undefined") {
-                return callback(createError(404, `Secret for user ${userId} not found`));
-            }
-
-            callback(undefined, JSON.stringify({secret}));
-        })
-    }
-
-    this.deleteSecret = (appName, userId, callback) => {
-        getDecryptedSecrets(appName, (err, decryptedSecrets) => {
-            if (err) {
-                return callback(err);
-            }
-
-            delete decryptedSecrets[userId];
-            writeSecrets(appName, decryptedSecrets, callback);
-        })
+        if (await rotationIsNeeded()) {
+            logger.info(0x501, "Secrets Encryption Key rotation detected");
+            latestEncryptionKey = readKey;
+            await this.loadContainersAsync();
+            latestEncryptionKey = writeKey;
+            await this.forceWriteSecretsAsync();
+            logger.info(0x501, `Re-encrypting Recovery Passphrases on disk completed`)
+        }
     }
 }
 
-module.exports = SecretsService;
+const getSecretsServiceInstanceAsync = async (serverRootFolder) => {
+    const secretsService = new SecretsService(serverRootFolder);
+    await secretsService.loadContainersAsync();
+    return secretsService;
+}
+
+module.exports = {
+    getSecretsServiceInstanceAsync
+};
