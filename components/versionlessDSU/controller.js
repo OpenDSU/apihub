@@ -84,7 +84,7 @@ async function handlePutVersionlessDSURequest(request, response) {
         await $$.promisify(fs.mkdir)(path.dirname(filePath), { recursive: true });
         logger.debug(`[VersionlessDSU] Writing versionlessDSU to ${filePath}`);
         let resolvedFilePath = path.resolve(filePath);
-        if(resolvedFilePath.indexOf(versionlessDSUFolderPath) !== -1){
+        if(resolvedFilePath.indexOf(versionlessDSUFolderPath) === -1){
             throw Error("Trying to write outside of VersionLess storage folder");
         }
         await $$.promisify(fs.writeFile)(filePath, dsu);
