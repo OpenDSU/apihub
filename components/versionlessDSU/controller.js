@@ -51,7 +51,7 @@ async function handleGetVersionlessDSURequest(request, response) {
     const fs = require("fs");
     try {
         let resolvedFilePath = path.resolve(filePath);
-        if(resolvedFilePath.indexOf(versionlessDSUFolderPath) !== -1){
+        if(resolvedFilePath.indexOf(versionlessDSUFolderPath) === -1){
             throw Error("Trying to read outside of VersionLess storage folder");
         }
         const fileContent = await $$.promisify(fs.readFile)(filePath);
