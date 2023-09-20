@@ -14,8 +14,8 @@ function SecretsService(serverRootFolder) {
     const logger = $$.getLogger("secrets", "apihub/secrets");
     const openDSU = require("opendsu");
     const crypto = openDSU.loadAPI("crypto");
-    const encryptionKeys = process.env.SSO_SECRETS_ENCRYPTION_KEY.split(",");
-    let latestEncryptionKey = encryptionKeys[0].trim();
+    const encryptionKeys = process.env.SSO_SECRETS_ENCRYPTION_KEY ? process.env.SSO_SECRETS_ENCRYPTION_KEY.split(",") : undefined;
+    let latestEncryptionKey = encryptionKeys ? encryptionKeys[0].trim() : undefined;
     let successfulEncryptionKeyIndex = 0;
     const containers = {};
     let readonlyMode = false;
@@ -70,7 +70,10 @@ function SecretsService(serverRootFolder) {
     }
 
     const encryptSecret = (secret) => {
-        const encryptionKeys = process.env.SSO_SECRETS_ENCRYPTION_KEY.split(",");
+        const encryptionKeys = process.env.SSO_SECRETS_ENCRYPTION_KEY ? process.env.SSO_SECRETS_ENCRYPTION_KEY.split(",") : undefined;
+        if(!encryptionKeys) {
+            throw Error("process.env.SSO_SECRETS_ENCRYPTION_KEY is empty")
+        }
         let latestEncryptionKey = encryptionKeys[0];
         if (!$$.Buffer.isBuffer(latestEncryptionKey)) {
             latestEncryptionKey = $$.Buffer.from(latestEncryptionKey, "base64");
