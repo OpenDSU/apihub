@@ -1,3 +1,5 @@
+const {totalNumberOfAnchors} = require("../../controllers");
+
 function FilePersistenceStrategy(rootFolder, configuredPath) {
     const self = this;
     const fileOperations = new FileOperations();
@@ -18,6 +20,10 @@ function FilePersistenceStrategy(rootFolder, configuredPath) {
 
             callback();
         });
+    }
+
+    self.totalNumberOfAnchors = function (callback) {
+        fileOperations.totalNumberOfAnchors(callback);
     }
 
     self.getLastVersion = function (anchorId, callback) {
@@ -154,6 +160,21 @@ function FileOperations() {
             }
             return callback(undefined, true);
         });
+    }
+
+    self.totalNumberOfAnchors = function (callback) {
+        fs.readdir(anchoringFolder, {withFileTypes: true}, (err, items) => {
+            if (err) {
+                return callback(err);
+            }
+            let numberOfFiles = 0;
+            items.forEach(item => {
+                if (item.isFile()) {
+                    numberOfFiles++;
+                }
+            })
+            return callback(undefined, numberOfFiles);
+        })
     }
 
     self.getlastVersion = function (anchorId, callback) {

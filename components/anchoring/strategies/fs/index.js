@@ -21,6 +21,10 @@ class FS{
         this.anchoringBehaviour.appendAnchor(this.commandData.anchorId, this.commandData.anchorValue, callback);
     }
 
+    totalNumberOfAnchors(callback){
+        this.fps.totalNumberOfAnchors(callback);
+    }
+
     getAllVersions(callback){
         this.anchoringBehaviour.getAllVersions(this.commandData.anchorId, (err, anchorValues)=>{
             if (err) {

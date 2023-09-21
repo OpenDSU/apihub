@@ -5,7 +5,7 @@ const logger = $$.getLogger("apihub", "anchoring");
 const getStrategy = async (request) => {
     let receivedDomain;
     let domainConfig;
-    if (request.params.anchorId && request.params.domain) {
+    if (request.params.anchorId) {
         try {
             receivedDomain = utils.getDomainFromKeySSI(request.params.anchorId);
         } catch (e) {
@@ -20,9 +20,16 @@ const getStrategy = async (request) => {
         if (!domainConfig) {
             throw Error(`[Anchoring] Domain '${receivedDomain}' not found`);
         }
-    } else {
-        throw Error(`[Anchoring] AnchorId or domain is missing from request.params`);
     }
+
+    if (request.params.domain) {
+        domainConfig = await utils.getAnchoringDomainConfig(request.params.domain);
+    }
+
+    if (!domainConfig) {
+        throw Error(`[Anchoring] Unable to identify domain. Check configuration or api call required params.`);
+    }
+
 
     const StrategyClass = anchoringStrategies[domainConfig.type];
     if (!StrategyClass) {
