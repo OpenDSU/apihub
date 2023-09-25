@@ -5,8 +5,6 @@ const urlModule = require("url");
 function OAuthMiddleware(server) {
     const logger = $$.getLogger("OAuthMiddleware", "apihub/oauth");
     const LOADER_PATH = "/loader";
-    let cookies = [];
-    let lastUrls;
     logger.debug(`Registering OAuthMiddleware`);
     const config = require("../../../config");
     const oauthConfig = config.getConfig("oauthConfig");
@@ -23,7 +21,7 @@ function OAuthMiddleware(server) {
     //we let KeyManager to boot and prepare ...
     util.initializeKeyManager(ENCRYPTION_KEYS_LOCATION, oauthConfig.keyTTL);
 
-    function startAuthFlow(req, res) {
+    function startAuthFlow(req, res, cookies = []) {
         util.printDebugLog("Starting authentication flow");
         const loginContext = webClient.getLoginInfo(oauthConfig);
         util.printDebugLog("Login info", JSON.stringify(loginContext));
@@ -31,7 +29,7 @@ function OAuthMiddleware(server) {
             if (err) {
                 return sendUnauthorizedResponse(req, res, "Unable to encrypt login info");
             }
-            cookies = [`lastUrls=${lastUrls}; Path=/`, `loginContextCookie=${encryptedContext}; Path=/`];
+            cookies = cookies.concat([`loginContextCookie=${encryptedContext}; Path=/`]);
             logger.info("SSO redirect (http 301) triggered for:", req.url);
             res.writeHead(301, {
                 Location: loginContext.redirect,
@@ -113,7 +111,7 @@ function OAuthMiddleware(server) {
             post_logout_redirect_uri: oauthConfig.client.postLogoutRedirectUrl, client_id: oauthConfig.client.clientId,
         };
 
-        let cookies = ["logout=true; Path=/;", "lastUrls=; Path=/; Max-Age=0", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0"];
+        let cookies = ["logout=true; Path=/;", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0"];
         logger.info("SSO redirect (http 301) triggered for:", req.url);
         res.writeHead(301, {
             Location: urlModule.format(logoutUrl),
@@ -139,8 +137,7 @@ function OAuthMiddleware(server) {
         }
 
         function startLogoutPhase(res) {
-            lastUrls=undefined;
-            cookies = ["lastUrls=; Path=/; Max-Age=0", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0"];
+            let cookies = ["accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0"];
             logger.info("SSO redirect (http 301) triggered for:", req.url);
             res.writeHead(301, {
                 Location: "/logout",
@@ -192,14 +189,22 @@ function OAuthMiddleware(server) {
             return logout(req, res);
         }
 
-        if (isPostLogoutPhaseActive()) {
-            return startAuthFlow(req, res);
-        }
-
         const parsedCookies = util.parseCookies(req.headers.cookie);
         let {accessTokenCookie, refreshTokenCookie, isActiveSession} = parsedCookies;
         let logoutCookie = parsedCookies.logout;
-        lastUrls = parsedCookies.lastUrls;
+        let lastUrls = parsedCookies.lastUrls;
+        let cookies = [];
+
+        if (url.endsWith(LOADER_PATH) || url.endsWith(`${LOADER_PATH}/`) || url === "/" || url === "") {
+            lastUrls = url;
+        }
+        if (lastUrls) {
+            cookies = [`lastUrls=${lastUrls}; Path=/`];
+        }
+
+        if (isPostLogoutPhaseActive()) {
+            return startAuthFlow(req, res, cookies);
+        }
 
         if(logoutCookie === "true"){
             res.statusCode = 403;
@@ -211,17 +216,10 @@ function OAuthMiddleware(server) {
             return res.end(returnHtml);
         }
 
-        if (url.endsWith(LOADER_PATH) || url.endsWith(`${LOADER_PATH}/`) || url === "/" || url === "") {
-            lastUrls = url;
-        }
-        if (lastUrls) {
-            cookies = [`lastUrls=${lastUrls}; Path=/`];
-        }
-
         if (!accessTokenCookie) {
             if (!isActiveSession) {
                 util.printDebugLog("Redirect to start authentication flow because accessTokenCookie and isActiveSession are missing.")
-                return startAuthFlow(req, res);
+                return startAuthFlow(req, res, cookies);
             } else {
                 util.printDebugLog("Logout because accessTokenCookie is missing and isActiveSession is present.")
                 return startLogoutPhase(res);
