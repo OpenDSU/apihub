@@ -95,7 +95,7 @@ function OAuthMiddleware(server) {
                         util.printDebugLog("LastURLs", lastUrls);
                         res.writeHead(301, {
                             Location: lastUrls || "/",
-                            "Set-Cookie": [`lastUrls=${lastUrls}; Path=/`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0; Path=/`],
+                            "Set-Cookie": [`logout=false; Path=/`,`lastUrls=${lastUrls}; Path=/`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}; Max-age=${86400}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0; Path=/`],
                             "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
                         });
                         res.end();
@@ -112,7 +112,8 @@ function OAuthMiddleware(server) {
         logoutUrl.query = {
             post_logout_redirect_uri: oauthConfig.client.postLogoutRedirectUrl, client_id: oauthConfig.client.clientId,
         };
-        let cookies = ["lastUrls=; Path=/; Max-Age=0", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0"];
+
+        let cookies = ["logout=true; Path=/;", "lastUrls=; Path=/; Max-Age=0", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0"];
         logger.info("SSO redirect (http 301) triggered for:", req.url);
         res.writeHead(301, {
             Location: urlModule.format(logoutUrl),
@@ -197,7 +198,19 @@ function OAuthMiddleware(server) {
 
         const parsedCookies = util.parseCookies(req.headers.cookie);
         let {accessTokenCookie, refreshTokenCookie, isActiveSession} = parsedCookies;
+        let logoutCookie = parsedCookies.logout;
         lastUrls = parsedCookies.lastUrls;
+
+        if(logoutCookie === "true"){
+            res.statusCode = 403;
+            const loginUrl = oauthConfig.client.postLogoutRedirectUrl;
+            const returnHtml ="<html>" +
+              `<body>We apologize for the inconvenience. The automated login attempt was unsuccessful. You can either <a href=\"${loginUrl}\">retry the login</a> or if the issue persists, please restart your browser.</body>` +
+              "</html>";
+
+            return res.end(returnHtml);
+        }
+
         if (url.endsWith(LOADER_PATH) || url.endsWith(`${LOADER_PATH}/`) || url === "/" || url === "") {
             lastUrls = url;
         }
@@ -232,7 +245,7 @@ function OAuthMiddleware(server) {
                         return sendUnauthorizedResponse(req, res, "Unable to refresh token");
                     }
 
-                    cookies = cookies.concat([`accessTokenCookie=${tokenSet.encryptedAccessToken}`, `refreshTokenCookie=${tokenSet.encryptedRefreshToken}`]);
+                    cookies = cookies.concat([`accessTokenCookie=${tokenSet.encryptedAccessToken}; Max-age=${86400}`, `refreshTokenCookie=${tokenSet.encryptedRefreshToken}`]);
                     logger.info("SSO redirect (http 301) triggered for:", req.url);
                     res.writeHead(301, {Location: "/", "Set-Cookie": cookies});
                     res.end();
@@ -257,7 +270,7 @@ function OAuthMiddleware(server) {
                     }
 
                     const sessionExpiryTime = Date.now() + oauthConfig.sessionTimeout;
-                    cookies = cookies.concat([`sessionExpiryTime=${sessionExpiryTime}; Path=/`, `accessTokenCookie=${encryptedAccessToken}; Path=/`]);
+                    cookies = cookies.concat([`sessionExpiryTime=${sessionExpiryTime}; Path=/`, `accessTokenCookie=${encryptedAccessToken}; Path=/; Max-age=${86400}`]);
                     res.setHeader("Set-Cookie", cookies);
                     next();
                 })

@@ -31,10 +31,11 @@ function WebClient(oauthConfig) {
 
 
     this.loginCallback = (context, callback) => {
-        //fingerprint virification
+        //fingerprint verification
+        /* disabled because was triggered by multiple tabs login...
         if (context.clientState !== context.queryState) {
             return callback(new Error('Invalid state'));
-        }
+        }*/
 
         let body = {
             'grant_type': 'authorization_code',
