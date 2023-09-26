@@ -1,9 +1,24 @@
-const {sendUnauthorizedResponse} = require("../../../utils/middlewares");
+
+
 const util = require("./util");
 const urlModule = require("url");
 
 function OAuthMiddleware(server) {
     const logger = $$.getLogger("OAuthMiddleware", "apihub/oauth");
+
+    function sendUnauthorizedResponse(req, res, reason, error) {
+        logger.error(`[${req.method}] ${req.url} blocked: ${reason}`, error);
+        res.statusCode = 403;
+        const loginUrl = oauthConfig.client.postLogoutRedirectUrl;
+        const returnHtml ="<html>" +
+          `<body>We apologize for the inconvenience. The automated login attempt was unsuccessful. 
+                    You can either <a href=\"${loginUrl}\">retry the login</a> or if the issue persists, please restart your browser.
+                    <script>sessionStorage.setItem('initialURL', window.location.href);</script>
+                </body>` +
+          "</html>";
+        res.end(returnHtml);
+    }
+
     const LOADER_PATH = "/loader";
     logger.debug(`Registering OAuthMiddleware`);
     const config = require("../../../config");
@@ -97,7 +112,7 @@ function OAuthMiddleware(server) {
                         util.printDebugLog("SSODetectedId", SSODetectedId);
                         res.writeHead(301, {
                             Location: "/redirect.html",
-                            "Set-Cookie": [`logout=false; Path=/`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}; Max-age=${86400}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0; Path=/`],
+                            "Set-Cookie": [`logout=false; Path=/`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}; Max-age=86400`, "isActiveSession=true; Max-age=86400", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}; Max-age=86400`, `SSOUserId=${SSOUserId}; Max-age=86400`, `SSODetectedId=${SSODetectedId}; Max-age=86400`, `loginContextCookie=; Max-Age=0; Path=/`],
                             "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
                         });
                         res.end();
@@ -250,7 +265,7 @@ function OAuthMiddleware(server) {
                         return sendUnauthorizedResponse(req, res, "Unable to refresh token");
                     }
 
-                    cookies = cookies.concat([`accessTokenCookie=${tokenSet.encryptedAccessToken}; Max-age=${86400}`, `refreshTokenCookie=${tokenSet.encryptedRefreshToken}`]);
+                    cookies = cookies.concat([`accessTokenCookie=${tokenSet.encryptedAccessToken}; Max-age=86400`, `refreshTokenCookie=${tokenSet.encryptedRefreshToken}`]);
                     logger.info("SSO redirect (http 301) triggered for:", req.url);
                     res.writeHead(301, {Location: "/", "Set-Cookie": cookies});
                     res.end();
@@ -275,7 +290,7 @@ function OAuthMiddleware(server) {
                     }
 
                     const sessionExpiryTime = Date.now() + oauthConfig.sessionTimeout;
-                    cookies = cookies.concat([`sessionExpiryTime=${sessionExpiryTime}; Path=/`, `accessTokenCookie=${encryptedAccessToken}; Path=/; Max-age=${86400}`]);
+                    cookies = cookies.concat([`sessionExpiryTime=${sessionExpiryTime}; Path=/`, `accessTokenCookie=${encryptedAccessToken}; Path=/; Max-age=86400`]);
                     res.setHeader("Set-Cookie", cookies);
                     next();
                 })
