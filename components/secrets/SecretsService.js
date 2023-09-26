@@ -9,7 +9,7 @@ function SecretsService(serverRootFolder) {
     }
 
     const lockPath = path.join(getStorageFolderPath(), "secret.lock");
-    const lock = require("../../utils/ExpiringFileLock").getLock(lockPath, 60000);
+    const lock = require("../../utils/ExpiringFileLock").getLock(lockPath, 10000);
     console.log("Secrets Service initialized");
     const logger = $$.getLogger("secrets", "apihub/secrets");
     const openDSU = require("opendsu");

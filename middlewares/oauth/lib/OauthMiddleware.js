@@ -21,7 +21,12 @@ function OAuthMiddleware(server) {
     //we let KeyManager to boot and prepare ...
     util.initializeKeyManager(ENCRYPTION_KEYS_LOCATION, oauthConfig.keyTTL);
 
-    function startAuthFlow(req, res, cookies = []) {
+    function redirectToLogin(req, res) {
+        res.statusCode = 200;
+        res.write(`<html><body><script>sessionStorage.setItem('initialURL', window.location.href); window.location.href = "/login";</script></body></html>`);
+        res.end();
+    }
+    function startAuthFlow(req, res) {
         util.printDebugLog("Starting authentication flow");
         const loginContext = webClient.getLoginInfo(oauthConfig);
         util.printDebugLog("Login info", JSON.stringify(loginContext));
@@ -29,7 +34,7 @@ function OAuthMiddleware(server) {
             if (err) {
                 return sendUnauthorizedResponse(req, res, "Unable to encrypt login info");
             }
-            cookies = cookies.concat([`loginContextCookie=${encryptedContext}; Path=/`]);
+            let cookies = [`loginContextCookie=${encryptedContext}; Path=/`];
             logger.info("SSO redirect (http 301) triggered for:", req.url);
             res.writeHead(301, {
                 Location: loginContext.redirect,
@@ -44,7 +49,7 @@ function OAuthMiddleware(server) {
         util.printDebugLog("Entered login callback");
         let cbUrl = req.url;
         let query = urlModule.parse(cbUrl, true).query;
-        const {loginContextCookie, lastUrls} = util.parseCookies(req.headers.cookie);
+        const {loginContextCookie} = util.parseCookies(req.headers.cookie);
         if (!loginContextCookie) {
             util.printDebugLog("Logout because loginContextCookie is missing.")
             return logout(req, res);
@@ -90,10 +95,9 @@ function OAuthMiddleware(server) {
                         }
 
                         util.printDebugLog("SSODetectedId", SSODetectedId);
-                        util.printDebugLog("LastURLs", lastUrls);
                         res.writeHead(301, {
-                            Location: lastUrls || "/",
-                            "Set-Cookie": [`logout=false; Path=/`,`lastUrls=${lastUrls}; Path=/`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}; Max-age=${86400}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0; Path=/`],
+                            Location: "/redirect.html",
+                            "Set-Cookie": [`logout=false; Path=/`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}; Max-age=${86400}`, "isActiveSession=true", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}`, `SSOUserId = ${SSOUserId}`, `SSODetectedId = ${SSODetectedId}`, `loginContextCookie=; Max-Age=0; Path=/`],
                             "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
                         });
                         res.end();
@@ -151,6 +155,10 @@ function OAuthMiddleware(server) {
             return url === "/logout";
         }
 
+        function isLoginPhaseActive() {
+            return url === "/login";
+        }
+
         const canSkipOAuth = urlsToSkip.some((urlToSkip) => url.indexOf(urlToSkip) === 0);
         if (canSkipOAuth) {
             next();
@@ -189,21 +197,17 @@ function OAuthMiddleware(server) {
             return logout(req, res);
         }
 
+        if(isLoginPhaseActive()){
+            return startAuthFlow(req, res);
+        }
+
         const parsedCookies = util.parseCookies(req.headers.cookie);
         let {accessTokenCookie, refreshTokenCookie, isActiveSession} = parsedCookies;
         let logoutCookie = parsedCookies.logout;
-        let lastUrls = parsedCookies.lastUrls;
         let cookies = [];
 
-        if (url.endsWith(LOADER_PATH) || url.endsWith(`${LOADER_PATH}/`) || url === "/" || url === "") {
-            lastUrls = url;
-        }
-        if (lastUrls) {
-            cookies = [`lastUrls=${lastUrls}; Path=/`];
-        }
-
         if (isPostLogoutPhaseActive()) {
-            return startAuthFlow(req, res, cookies);
+            return startAuthFlow(req, res);
         }
 
         if(logoutCookie === "true"){
@@ -218,8 +222,8 @@ function OAuthMiddleware(server) {
 
         if (!accessTokenCookie) {
             if (!isActiveSession) {
-                util.printDebugLog("Redirect to start authentication flow because accessTokenCookie and isActiveSession are missing.")
-                return startAuthFlow(req, res, cookies);
+                util.printDebugLog("Redirect to login because accessTokenCookie and isActiveSession are missing.")
+                return redirectToLogin(req, res);
             } else {
                 util.printDebugLog("Logout because accessTokenCookie is missing and isActiveSession is present.")
                 return startLogoutPhase(res);

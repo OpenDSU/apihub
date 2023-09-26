@@ -10,7 +10,9 @@ function ExpiringFileLock(folderLock, timeout) {
         while (true) {
             try {
                 const stat = await fsPromises.stat(folderLock);
-                if (stat.ctime.getTime() < Date.now() - timeout) {
+                const currentTime = Date.now();
+                // console.log("checking if lock is expired", folderLock, stat.ctime.getTime(), currentTime - timeout, stat.ctime.getTime() < currentTime - timeout);
+                if (stat.ctime.getTime() < currentTime - timeout) {
                     await fsPromises.rmdir(folderLock);
                     console.log("Removed expired lock", folderLock);
                 }
@@ -19,9 +21,10 @@ function ExpiringFileLock(folderLock, timeout) {
             }
 
             try {
-                await fsPromises.mkdir(folderLock);
+                await fsPromises.mkdir(folderLock, {recursive: true});
                 return;
             } catch (e) {
+                console.log("Retrying to acquire lock", folderLock, "after 100ms");
                 await asyncSleep(100);
             }
         }
