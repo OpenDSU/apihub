@@ -54,13 +54,15 @@ async function getBrickFromExternalProvidersAsync(request, domain, hashLink) {
 }
 
 async function getBrickWithExternalProvidersFallbackAsync(request, domain, hashLink, fsBrickStorage) {
+    const code = 0x201;
+    logger.ignoreErrorsWithCode(code);
     try {
         const brick = await fsBrickStorage.getBrickAsync(hashLink);
         if (brick) {
             return brick;
         }
     } catch (error) {
-        logger.warn(`[Bricking] Brick ${hashLink} not found. Trying to fallback to other providers...`);
+        logger.warn(code, `[Bricking] Brick ${hashLink} not found. Trying to fallback to other providers...`);
     }
 
     try {
@@ -73,13 +75,13 @@ async function getBrickWithExternalProvidersFallbackAsync(request, domain, hashL
                 await fsBrickStorage.addBrickAsync(externalBrick);
                 console.info(`[Bricking] Saved external brick ${hashLink} to own storage`);
             } catch (error) {
-                logger.warn("[Bricking] Fail to manage external brick saving!", error);
+                logger.warn(code, "[Bricking] Fail to manage external brick saving!", error);
             }
         });
 
         return externalBrick;
     } catch (error) {
-        logger.warn(`[Bricking] Error while trying to get missing brick from fallback providers!`, error);
+        logger.warn(code, `[Bricking] Error while trying to get missing brick from fallback providers!`, error);
         throw error;
     }
 }

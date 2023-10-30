@@ -429,13 +429,13 @@ module.exports.getHttpWrapper = function () {
 };
 
 module.exports.getServerConfig = function () {
-	logger.warn(`apihub.getServerConfig() method is deprecated, please use server.config to retrieve necessary info.`);
+	logger.debug(`apihub.getServerConfig() method is deprecated, please use server.config to retrieve necessary info.`);
 	const config = require('./config');
 	return config.getConfig();
 };
 
 module.exports.getDomainConfig = function (domain, ...configKeys) {
-	logger.warn(`apihub.getServerConfig() method is deprecated, please use server.config.getDomainConfig(...) to retrieve necessary info.`);
+	logger.debug(`apihub.getServerConfig() method is deprecated, please use server.config.getDomainConfig(...) to retrieve necessary info.`);
 	const config = require('./config');
 	return config.getDomainConfig(domain, ...configKeys);
 };

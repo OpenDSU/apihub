@@ -35,13 +35,14 @@ function getHeadersWithExcludedProvidersIncludingSelf(request) {
 async function getLocalBdnsEntryListExcludingSelfAsync(request, domain, entryName) {
     const { server } = request;
     let entries;
-
+    const ignorableErrorCode = 0x401;
+    logger.ignoreErrorsWithCode(ignorableErrorCode);
     try {
         // trying to get the entries via contract call
         const entriesUrl = `/contracts/${domain}/bdns-entries/anchoringServices`;
         entries = await server.makeLocalRequestAsync("GET", entriesUrl);
     } catch (error) {
-        logger.error(`[${entryName}] Failed to call contract to get ${entryName}. Falling back to local bdns check`);
+        logger.error(ignorableErrorCode, `[${entryName}] Failed to call contract to get ${entryName}. Falling back to local bdns check`);
 
         try {
             const bdnsUrl = `/bdns`;
@@ -50,7 +51,7 @@ async function getLocalBdnsEntryListExcludingSelfAsync(request, domain, entryNam
                 entries = bdns[domain][entryName];
             }
         } catch (error) {
-            logger.error(`[${entryName}] Failed to call BDNS to get ${entryName}`);
+            logger.error(ignorableErrorCode, `[${entryName}] Failed to call BDNS to get ${entryName}`);
         }
     }
 
