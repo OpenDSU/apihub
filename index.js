@@ -50,7 +50,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 	server.rootFolder = rootFolder;
 	server.timeout = conf.timeout || (60 * 1000) + 1000;
 	server.requestTimeout = conf.requestTimeout || 300 * 1000;
-	
+
 	server.keepAliveTimeout = conf.keepAliveTimeout || (60 * 1000) + 1000;
 
 	server.getHeadHandler = function(handler){
@@ -89,11 +89,11 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 
 	let listenCallback = (err) => {
 		if (err) {
-			logger.error(err);
 			if (!dynamicPort && callback) {
 				return OpenDSUSafeCallback(callback)(createOpenDSUErrorWrapper(`Failed to listen on port <${port}>`, err));
 			}
 			if(dynamicPort && error.code === 'EADDRINUSE'){
+				logger.debug(`Port ${port} is already in use. Trying to find another one...`);
 				function getRandomPort() {
 					const min = 9000;
 					const max = 65535;
@@ -105,6 +105,8 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 				}
 				let timeValue = retryTimeout || CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL;
 				setTimeout(bootup, timeValue);
+			}else{
+			    logger.error(err);
 			}
 		}
 	};
