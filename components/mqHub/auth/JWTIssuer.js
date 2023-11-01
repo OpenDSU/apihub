@@ -28,12 +28,12 @@ function JWTIssuer(workingDir) {
 		const fs = require("fs");
 		const opendsu = require("opendsu");
 		const keyssiApi = opendsu.loadApi("keyssi");
-
+		const code = 601;
 		try {
 			seeder = await $$.promisify(fs.readFile)(getSeederFilePath());
 		} catch (err) {
 			if (err.code !== "ENOENT") {
-				logger.error("Not able to read the Issuer persistence file needed by JWT Auth Support layer!", err);
+				logger.debug(code, "Not able to read the Issuer persistence file needed by JWT Auth Support layer!", err);
 			}
 		}
 
@@ -43,7 +43,7 @@ function JWTIssuer(workingDir) {
 				logger.debug("MQ JWT AUTH Issuer loaded.");
 				return;
 			} catch (err) {
-				logger.error("Failed to load MQ JWT AUTH Issuer info. Creating a new Issuer!",
+				logger.info(code, "Failed to load MQ JWT AUTH Issuer info. Creating a new Issuer!",
 					"\nPrevious tokens will not be valid anymore!!!");
 			}
 		}
