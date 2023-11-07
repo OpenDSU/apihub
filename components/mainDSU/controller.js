@@ -100,6 +100,7 @@ async function handleDefaultMainDSURequest(request, response) {
         const mainDSU = await $$.promisify(resolver.createDSUForExistingSSI)(seedSSI);
 
         logger.debug(`[MainDSU] Settings config for seed ${await $$.promisify(seedSSI.getAnchorId)()}`, environmentConfig);
+        let batchId = await $$.promisify(mainDSU.safeBeginBatch());
         await $$.promisify(mainDSU.writeFile)("/environment.json", JSON.stringify(environmentConfig));
 
         mainDSUSeedSSI = seedSSI;
@@ -109,7 +110,7 @@ async function handleDefaultMainDSURequest(request, response) {
 
         logger.debug(`[MainDSU] Writing generated mainDSU to ${mainDSUSeedSSIFilePath}: ${mainDSUAnchorId}`);
         await $$.promisify(fs.writeFile)(mainDSUSeedSSIFilePath, mainDSUSeedSSI.getIdentifier(), "utf-8");
-
+        await $$.promisify(mainDSU.commitBatch(batchId));
         sendMainDSUSeedSSI(mainDSUFileName, response);
     } catch (error) {
         logger.error("[MainDSU] Failed to create seedSSI", error);
