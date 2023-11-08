@@ -100,7 +100,7 @@ async function handleDefaultMainDSURequest(request, response) {
         const mainDSU = await $$.promisify(resolver.createDSUForExistingSSI)(seedSSI);
 
         logger.debug(`[MainDSU] Settings config for seed ${await $$.promisify(seedSSI.getAnchorId)()}`, environmentConfig);
-        let batchId = await $$.promisify(mainDSU.safeBeginBatch());
+        let batchId = await $$.promisify(mainDSU.safeBeginBatch)();
         await $$.promisify(mainDSU.writeFile)("/environment.json", JSON.stringify(environmentConfig));
 
         mainDSUSeedSSI = seedSSI;
