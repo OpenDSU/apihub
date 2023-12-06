@@ -132,12 +132,54 @@ function OAuthMiddleware(server) {
 
         let cookies = ["logout=true; Path=/;", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0"];
         logger.info("SSO redirect (http 301) triggered for:", req.url);
-        res.writeHead(301, {
-            Location: urlModule.format(logoutUrl),
-            "Set-Cookie": cookies,
-            "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
-        });
-        res.end();
+        const protocol = logoutUrl.protocol || "https:";
+        const moduleName = protocol.slice(0, -1);
+        const module = require(moduleName);
+        const request = module.request;
+        const options = {
+            hostname: logoutUrl.hostname,
+            port: logoutUrl.port,
+            path: logoutUrl.pathname,
+            method: "GET",
+            headers: {
+                "Set-Cookie": cookies,
+            },
+        }
+        const logoutRequest = request(options, (response) => {
+            response.on("data", (data) => {
+                //do nothing
+            });
+
+            response.on("error", (err) => {
+                options.method = "POST";
+                const logoutPostRequest = request(options, (response) => {
+                    response.on("error", (err) => {
+                        res.statusCode = 500;
+                        res.end();
+                    })
+                    response.on("end", () => {
+                        res.writeHead(301, {
+                            Location: oauthConfig.client.postLogoutRedirectUrl,
+                            "Set-Cookie": cookies,
+                            "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+                        });
+                        res.end();
+                    })
+                });
+
+                logoutPostRequest.end();
+            })
+
+            response.on("end", () => {
+                res.writeHead(301, {
+                    Location: urlModule.format(logoutUrl),
+                    "Set-Cookie": cookies,
+                    "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+                });
+                res.end();
+            });
+        })
+        logoutRequest.end();
     }
 
     server.use(function (req, res, next) {
