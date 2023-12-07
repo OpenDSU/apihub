@@ -1,5 +1,3 @@
-
-
 const util = require("./util");
 const urlModule = require("url");
 
@@ -10,12 +8,12 @@ function OAuthMiddleware(server) {
         logger.error(`[${req.method}] ${req.url} blocked: ${reason}`, error);
         res.statusCode = 403;
         const loginUrl = oauthConfig.client.postLogoutRedirectUrl;
-        const returnHtml ="<html>" +
-          `<body>We apologize for the inconvenience. The automated login attempt was unsuccessful. 
+        const returnHtml = "<html>" +
+            `<body>We apologize for the inconvenience. The automated login attempt was unsuccessful. 
                     You can either <a href=\"${loginUrl}\">retry the login</a> or if the issue persists, please restart your browser.
                     <script>sessionStorage.setItem('initialURL', window.location.href);</script>
                 </body>` +
-          "</html>";
+            "</html>";
         res.end(returnHtml);
     }
 
@@ -32,7 +30,7 @@ function OAuthMiddleware(server) {
     const errorMessages = require("./errorMessages");
 
     const defaultUrlsToSkip = ["brick-exists", "get-all-versions", "get-last-version", "get-brick", "credential"];
-    
+
     //we let KeyManager to boot and prepare ...
     util.initializeKeyManager(ENCRYPTION_KEYS_LOCATION, oauthConfig.keyTTL);
 
@@ -41,6 +39,7 @@ function OAuthMiddleware(server) {
         res.write(`<html><body><script>sessionStorage.setItem('initialURL', window.location.href); window.location.href = "/login";</script></body></html>`);
         res.end();
     }
+
     function startAuthFlow(req, res) {
         util.printDebugLog("Starting authentication flow");
         const loginContext = webClient.getLoginInfo(oauthConfig);
@@ -130,56 +129,24 @@ function OAuthMiddleware(server) {
             post_logout_redirect_uri: oauthConfig.client.postLogoutRedirectUrl, client_id: oauthConfig.client.clientId,
         };
 
-        let cookies = ["logout=true; Path=/;", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0"];
+        let cookies = ["logout=true; Path=/;", "accessTokenCookie=; Max-Age=0", "isActiveSession=; Max-Age=0", "refreshTokenCookie=; Max-Age=0", "loginContextCookie=; Path=/; Max-Age=0", `logoutUrl=${logoutUrl.href}; Path=/`, `postLogoutRedirectUrl=${oauthConfig.client.postLogoutRedirectUrl}; Path=/`];
         logger.info("SSO redirect (http 301) triggered for:", req.url);
-        const protocol = logoutUrl.protocol || "https:";
-        const moduleName = protocol.slice(0, -1);
-        const module = require(moduleName);
-        const request = module.request;
-        const options = {
-            hostname: logoutUrl.hostname,
-            port: logoutUrl.port,
-            path: logoutUrl.pathname,
-            method: "GET",
-            headers: {
+        if (oauthConfig.usePostForLogout) {
+            res.writeHead(301, {
+                Location: "/logout-post",
                 "Set-Cookie": cookies,
-            },
+                "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+            });
+
+            return res.end();
         }
-        const logoutRequest = request(options, (response) => {
-            response.on("data", (data) => {
-                //do nothing
-            });
 
-            response.on("error", (err) => {
-                options.method = "POST";
-                const logoutPostRequest = request(options, (response) => {
-                    response.on("error", (err) => {
-                        res.statusCode = 500;
-                        res.end();
-                    })
-                    response.on("end", () => {
-                        res.writeHead(301, {
-                            Location: oauthConfig.client.postLogoutRedirectUrl,
-                            "Set-Cookie": cookies,
-                            "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
-                        });
-                        res.end();
-                    })
-                });
-
-                logoutPostRequest.end();
-            })
-
-            response.on("end", () => {
-                res.writeHead(301, {
-                    Location: urlModule.format(logoutUrl),
-                    "Set-Cookie": cookies,
-                    "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
-                });
-                res.end();
-            });
-        })
-        logoutRequest.end();
+        res.writeHead(301, {
+            Location: urlModule.format(logoutUrl),
+            "Set-Cookie": cookies,
+            "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
+        });
+        res.end();
     }
 
     server.use(function (req, res, next) {
@@ -216,6 +183,10 @@ function OAuthMiddleware(server) {
             return url === "/login";
         }
 
+        function isLogoutPostPhaseActive() {
+            return url === "/logout-post";
+        }
+
         const canSkipOAuth = urlsToSkip.some((urlToSkip) => url.indexOf(urlToSkip) === 0);
         if (canSkipOAuth) {
             next();
@@ -224,18 +195,17 @@ function OAuthMiddleware(server) {
 
         let urlParts = url.split("/");
         let action = "";
-        try{
+        try {
             action = urlParts[3];
+        } catch (err) {
+            //ignored on purpose
         }
-         catch(err){
-             //ignored on purpose
-         }
-            
-        if(defaultUrlsToSkip.indexOf(action) !== -1) {
+
+        if (defaultUrlsToSkip.indexOf(action) !== -1) {
             next();
             return;
         }
-        
+
         if (!config.getConfig("enableLocalhostAuthorization") && req.headers.host.indexOf("localhost") === 0) {
             next();
             return;
@@ -254,7 +224,7 @@ function OAuthMiddleware(server) {
             return logout(req, res);
         }
 
-        if(isLoginPhaseActive()){
+        if (isLoginPhaseActive()) {
             return startAuthFlow(req, res);
         }
 
@@ -267,15 +237,54 @@ function OAuthMiddleware(server) {
             return startAuthFlow(req, res);
         }
 
-        if(logoutCookie === "true"){
+        if (isLogoutPostPhaseActive()) {
+            const returnHtml = "<html>" +
+                `<body>
+                 <script>
+                    function parseCookies(cookies) {
+                        const parsedCookies = {};
+                        if (!cookies) {
+                            return parsedCookies;
+                        }
+                        let splitCookies = cookies.split(";");
+                        splitCookies = splitCookies.map(splitCookie => splitCookie.trim());
+                        splitCookies.forEach(cookie => {
+                            const cookieComponents = cookie.split("=");
+                            const cookieName = cookieComponents[0].trim();
+                            let cookieValue = cookieComponents[1].trim();
+                            if (cookieValue === "null") {
+                                cookieValue = undefined;
+                            }
+                            parsedCookies[cookieName] = cookieValue;
+                        })
+                    
+                        return parsedCookies;
+                    }
+
+                    const parsedCookies = parseCookies(document.cookie);
+                    const logoutUrl = parsedCookies.logoutUrl;
+                    const postLogoutRedirectUrl = parsedCookies.postLogoutRedirectUrl;
+                    
+                    fetch(logoutUrl, {method: "POST"}).
+                        then(response => {
+                            window.location.href = postLogoutRedirectUrl; 
+                        })
+                 </script>
+                </body>` +
+                "</html>";
+
+            return res.end(returnHtml);
+        }
+
+        if (logoutCookie === "true") {
             res.statusCode = 403;
             const loginUrl = oauthConfig.client.postLogoutRedirectUrl;
-            const returnHtml ="<html>" +
-              `<body>We apologize for the inconvenience. The automated login attempt was unsuccessful. 
+            const returnHtml = "<html>" +
+                `<body>We apologize for the inconvenience. The automated login attempt was unsuccessful. 
                     You can either <a href=\"${loginUrl}\">retry the login</a> or if the issue persists, please restart your browser.
                     <script>sessionStorage.setItem('initialURL', window.location.href);</script>
                 </body>` +
-              "</html>";
+                "</html>";
 
             return res.end(returnHtml);
         }
