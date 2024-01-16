@@ -59,13 +59,14 @@ async function handleGetVersionlessDSURequest(request, response) {
         response.setHeader('content-type', "application/octet-stream"); // required in order for opendsu http fetch to properly work
         return sendVersionlessDSUContent(fileContent, response);
     } catch (error) {
-        logger.error(`[VersionlessDSU] Failed to read/parse versionlessDSU from ${getFilePathFromRequest}`, error);
+        logger.error(`[VersionlessDSU] Failed to read/parse versionlessDSU from ${filePath}`, error);
         response.statusCode = 500;
         response.end();
     }
 }
 
 async function handlePutVersionlessDSURequest(request, response) {
+    debugger
     const filePath = getFilePathFromRequest(request);
     if(!filePath) {
         logger.error("[VersionlessDSU] FilePath not specified");
