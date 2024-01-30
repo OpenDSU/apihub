@@ -10,6 +10,7 @@ process.on('SIGTERM', (signal)=>{
 });
 
 const httpWrapper = require('./libs/http-wrapper');
+const SimpleAuth = require("./middlewares/simpleAuth");
 const Server = httpWrapper.Server;
 
 const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
@@ -233,7 +234,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			const AuthorisationMiddleware = require('./middlewares/authorisation');
 			const Throttler = require('./middlewares/throttler');
 			const OAuth = require('./middlewares/oauth');
-      const SimpleAuth = require('./middlewares/simpleAuth');
+      		const SimpleAuth = require('./middlewares/simpleAuth');
 			const FixedUrls = require('./middlewares/fixedUrls');
 			const SimpleLock = require('./middlewares/SimpleLock');
 			const ResponseHeaderMiddleware = require('./middlewares/responseHeader');
@@ -268,11 +269,13 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			Throttler(server);
 			FixedUrls(server);
 			SimpleLock(server);
-			SimpleAuth(server);
 
             if(conf.enableJWTAuthorisation) {
                 new AuthorisationMiddleware(server);
             }
+			if(process.env.ENABLE_SSO !== "false") {
+				SimpleAuth(server);
+			}
 			if(conf.enableOAuth && process.env.ENABLE_SSO !== "false") {
                 new OAuth(server);
             }
