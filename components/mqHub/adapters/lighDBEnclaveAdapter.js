@@ -13,7 +13,7 @@ function LightDBEnclaveAdapter(server, prefix, domain, configuration) {
     const MQAdapterMixin = require("./MQAdapterMixin");
     MQAdapterMixin(this, server, prefix, domain, configuration);
     const DB_NAME = "mqDB";
-    const lightDBEnclaveClient = require("opendsu").loadAPI("enclave").initialiseLightDBEnclaveClient(DB_NAME);
+    const lightDBEnclaveClient = require("opendsu").loadAPI("enclave").initialiseLightDBEnclave(DB_NAME);
     const ensureDBIsInitialised = (callback) => {
         lightDBEnclaveClient.createDatabase(DB_NAME,(err) => {
             if (!err) {
