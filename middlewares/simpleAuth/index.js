@@ -20,7 +20,7 @@ function readSecretsFile(filePath) {
     });
     return userEntries;
   } catch (err) {
-    console.error(err);
+    // console.error(err);
     return null;
   }
 }
