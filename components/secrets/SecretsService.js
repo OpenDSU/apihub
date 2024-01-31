@@ -4,6 +4,8 @@ const config = require("../../config");
 
 
 function SecretsService(serverRootFolder) {
+    serverRootFolder = serverRootFolder || config.getConfig("storage");
+    const DEFAULT_CONTAINER_NAME = "default";
     const getStorageFolderPath = () => {
         return path.join(serverRootFolder, config.getConfig("externalStorage"), "secrets");
     }
@@ -170,6 +172,10 @@ function SecretsService(serverRootFolder) {
         return res;
     }
 
+    this.putSecretInDefaultContainerAsync = async (secretName, secret) => {
+        return await this.putSecretAsync(DEFAULT_CONTAINER_NAME, secretName, secret);
+    }
+
     this.getSecretSync = (secretsContainerName, userId) => {
         if (readonlyMode) {
             throw createError(555, `Secrets Service is in readonly mode`);
@@ -184,6 +190,10 @@ function SecretsService(serverRootFolder) {
         }
 
         return secret;
+    }
+
+    this.readSecretSync = (secretName) => {
+        return this.getSecretSync(DEFAULT_CONTAINER_NAME, secretName);
     }
 
     this.deleteSecretAsync = async (secretsContainerName, userId) => {
