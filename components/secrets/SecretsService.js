@@ -6,6 +6,7 @@ const config = require("../../config");
 function SecretsService(serverRootFolder) {
     serverRootFolder = serverRootFolder || config.getConfig("storage");
     const DEFAULT_CONTAINER_NAME = "default";
+    const API_KEY_CONTAINER_NAME = "apiKeys";
     const getStorageFolderPath = () => {
         return path.join(serverRootFolder, config.getConfig("externalStorage"), "secrets");
     }
@@ -73,7 +74,7 @@ function SecretsService(serverRootFolder) {
 
     const encryptSecret = (secret) => {
         const encryptionKeys = process.env.SSO_SECRETS_ENCRYPTION_KEY ? process.env.SSO_SECRETS_ENCRYPTION_KEY.split(",") : undefined;
-        if(!encryptionKeys) {
+        if (!encryptionKeys) {
             throw Error("process.env.SSO_SECRETS_ENCRYPTION_KEY is empty")
         }
         let latestEncryptionKey = encryptionKeys[0];
@@ -153,7 +154,7 @@ function SecretsService(serverRootFolder) {
         return await $$.promisify(getDecryptedSecrets, this)(secretsContainerName);
     }
 
-    this.putSecretAsync = async (secretsContainerName, userId, secret) => {
+    this.putSecretAsync = async (secretsContainerName, userId, secret, isAdmin) => {
         await lock.lock();
         let res;
         try {
@@ -162,7 +163,13 @@ function SecretsService(serverRootFolder) {
                 containers[secretsContainerName] = {};
                 console.info("Initializing secrets container", secretsContainerName)
             }
-            containers[secretsContainerName][userId] = secret;
+            if (typeof isAdmin !== "undefined") {
+                containers[secretsContainerName][userId] = {};
+                containers[secretsContainerName][userId].secret = secret;
+                containers[secretsContainerName][userId].isAdmin = isAdmin;
+            } else {
+                containers[secretsContainerName][userId] = secret;
+            }
             res = await writeSecretsAsync(secretsContainerName, userId);
         } catch (e) {
             await lock.unlock();
@@ -196,6 +203,47 @@ function SecretsService(serverRootFolder) {
         return this.getSecretSync(DEFAULT_CONTAINER_NAME, secretName);
     }
 
+    this.generateAPIKeyAsync = async (keyId, isAdmin) => {
+        const apiKey = crypto.generateRandom(32).toString("base64");
+        await this.putSecretAsync(API_KEY_CONTAINER_NAME, keyId, apiKey, isAdmin);
+        return apiKey;
+    }
+
+    this.apiKeysContainerIsEmpty = () => {
+        return Object.keys(containers[API_KEY_CONTAINER_NAME] || {}).length === 0;
+    }
+
+    this.isAdminAPIKey = (apiKey) => {
+        const container = containers[API_KEY_CONTAINER_NAME];
+        if(!container){
+            return false;
+        }
+        const apiKeyObjs = Object.values(container);
+        if(apiKeyObjs.length === 0){
+            return false;
+        }
+        let index = apiKeyObjs.findIndex((obj) => {
+            return obj.secret === apiKey && obj.isAdmin;
+        });
+        return index !== -1;
+    }
+
+    this.getAllSecretsSync = (secretsContainerName) => {
+        if (readonlyMode) {
+            throw createError(555, `Secrets Service is in readonly mode`);
+        }
+        if (!containers[secretsContainerName]) {
+            containers[secretsContainerName] = {};
+            console.info("Initializing secrets container", secretsContainerName);
+        }
+        return containers[secretsContainerName];
+    }
+
+    this.generateServerSecretAsync = async (secretName) => {
+        const secret = crypto.generateRandom(32).toString("base64");
+        return await this.putSecretInDefaultContainerAsync(secretName, secret);
+    }
+
     this.deleteSecretAsync = async (secretsContainerName, userId) => {
         await lock.lock();
         let res;
@@ -223,7 +271,7 @@ function SecretsService(serverRootFolder) {
         let readKey = encryptionKeys.length === 2 ? encryptionKeys[1].trim() : writeKey;
 
         if (readonlyMode) {
-            if(encryptionKeys.length !== 2){
+            if (encryptionKeys.length !== 2) {
                 logger.info(0x501, `Rotation not possible`);
                 return;
             }

@@ -1,17 +1,28 @@
 const SecretsService = require("./SecretsService");
+const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
 
 function secrets(server) {
     const logger = $$.getLogger("secrets", "apihub/secrets");
     const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
+    const constants = require("./constants");
     const SecretsService = require("./SecretsService");
     let secretsService;
     setTimeout(async ()=>{
       secretsService =  await SecretsService.getSecretsServiceInstanceAsync(server.rootFolder);
     })
 
+    const containerIsReadonly = (containerName) => {
+        const readonlyContainers = Object.values(constants.CONTAINERS);
+        return readonlyContainers.includes(containerName);
+    }
     const getSSOSecret = (request, response) => {
         let userId = request.headers["user-id"];
         let appName = request.params.appName;
+        if(containerIsReadonly(appName)){
+            response.statusCode = 403;
+            response.end(`Container ${appName} is readonly`);
+            return;
+        }
         let secret;
         try {
             secret = secretsService.getSecretSync(appName, userId);
@@ -102,6 +113,11 @@ function secrets(server) {
 
     function getDIDSecret(req, res) {
         let {did, name} = req.params;
+        if(containerIsReadonly(did)){
+            res.statusCode = 403;
+            res.end(`Container ${did} is readonly`);
+            return;
+        }
         let secret;
         try {
             secret = secretsService.getSecretSync(name, did);
@@ -129,6 +145,33 @@ function secrets(server) {
     }
 
     logEncryptionTest();
+
+    const senderIsAdmin = (req) => {
+        const authorizationHeader = req.headers.authorization;
+        if(!authorizationHeader) {
+            return !!secretsService.apiKeysContainerIsEmpty();
+        }
+
+        return secretsService.isAdminAPIKey(authorizationHeader);
+    }
+
+    server.post("/apiKey/*", httpUtils.bodyParser);
+    server.post("/apiKey/:keyId/:isAdmin", async (req, res) => {
+        if(!senderIsAdmin(req)){
+            res.statusCode = 403;
+            res.end("Forbidden");
+            return;
+        }
+        let {keyId, isAdmin} = req.params;
+        const apiKey = await secretsService.generateAPIKeyAsync(keyId, isAdmin === "true")
+        res.statusCode = 200;
+        res.end(apiKey);
+    });
+
+    server.delete("/apiKey/:keyId", async (req, res) => {
+
+    })
+
     server.put('/putSSOSecret/*', httpUtils.bodyParser);
     server.get("/getSSOSecret/:appName", getSSOSecret);
     server.put('/putSSOSecret/:appName', putSSOSecret);
