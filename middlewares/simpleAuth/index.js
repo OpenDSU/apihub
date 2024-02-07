@@ -1,4 +1,5 @@
 const fs = require('fs');
+const fsPromises = fs.promises;
 const path = require('path');
 const openDSU = require("opendsu");
 const crypto = openDSU.loadAPI("crypto");
@@ -25,16 +26,11 @@ function readSecretsFile(filePath) {
     }
 }
 
-// Utility function to generate API Key
-function generateRandom() {
-    return crypto.generateRandom(32).toString("hex");
-}
-
 function getSSOId(mail) {
     if (mail) {
         return mail;
     }
-    return generateRandom();
+    return crypto.generateRandom(32).toString("base64");
 }
 
 function getPwdSecret(user, pwd, mail, ssoId) {
@@ -58,7 +54,6 @@ module.exports = function (server) {
     });
 
     server.use(function (req, res, next) {
-
         if (!fs.existsSync(secretsFilePath)) {
             return next();
         }
@@ -67,28 +62,30 @@ module.exports = function (server) {
             return res.writeHead(500).end('Error reading secrets file');
         }
 
-        if (!skipUrls.includes(req.url)) {
+        if (skipUrls.includes(req.url)) {
+            return next();
+        }
 
-            let {SimpleAuthorisation} = util.parseCookies(req.headers.cookie);
+        let {SimpleAuthorisation} = util.parseCookies(req.headers.cookie);
 
+        if (!SimpleAuthorisation) {
+            res.setHeader('Set-Cookie', `originalUrl=${req.url}; HttpOnly`);
+            return res.writeHead(302, {'Location': '/simpleAuth'}).end();
+        }
 
-            if (!SimpleAuthorisation) {
-                res.setHeader('Set-Cookie', `originalUrl=${req.url}; HttpOnly`);
-                return res.writeHead(302, {'Location': '/simpleAuth'}).end();
-            }
+        // Verify API Key
+        const authorisationData = SimpleAuthorisation.split(":");
 
-            // Verify API Key
-            const authorisationData = SimpleAuthorisation.split(":");
-
-            if (authorisationData.length !== 2 || !secretsService.getSecretSync(appName, authorisationData[0])) {
-                res.writeHead(302, {'Location': '/simpleAuth'});
-                //    res.setHeader('Set-Cookie', 'SimpleAuthorisation=; HttpOnly; Max-Age=0');
-                return res.end();
-            }
+        if (authorisationData.length !== 2 || !secretsService.getSecretSync(appName, authorisationData[0])) {
+            res.writeHead(302, {'Location': '/simpleAuth'});
+            //    res.setHeader('Set-Cookie', 'SimpleAuthorisation=; HttpOnly; Max-Age=0');
+            return res.end();
         }
 
         next();
     });
+
+    const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
 
     server.get('/simpleAuth/*', (req, res) => {
         let wrongCredentials = req.query.wrongCredentials || false;
@@ -140,55 +137,51 @@ module.exports = function (server) {
         return res.end(returnHtml);
     })
 
-    server.post('/simpleAuth', (req, res) => {
-        let body = '';
-
-        req.on('data', (chunk) => {
-            body += chunk;
-        });
-
-        req.on('end', async () => {
-            const formResult = querystring.parse(body);
-            const hashedPassword = crypto.sha256JOSE(formResult.password).toString("hex");
-            const index = htpPwdSecrets.findIndex(entry => entry.startsWith(formResult.username));
-
-            if (index !== -1) {
-                let [user, pwd, mail, ssoId] = htpPwdSecrets[index].split(':');
-                if (pwd === hashedPassword) {
-                    if (!ssoId) {
-                        ssoId = getSSOId(mail);
-                        htpPwdSecrets[index] = getPwdSecret(user, pwd, mail, ssoId)
-                        // Join the entries back into a single string
-                        const updatedData = htpPwdSecrets.join('\n');
-                        fs.writeFile(secretsFilePath, updatedData, 'utf8', (err) => {
-                            if (err) {
-                                console.error('Error writing file:', err);
-                            } else {
-                                console.log(`Information for ${user} updated successfully.`);
-                            }
-                        });
-                    }
-                    const apiKey = generateRandom();
-                    await secretsService.putSecretAsync(appName, formResult.username, apiKey);
-                    res.setHeader('Set-Cookie', [`SimpleAuthorisation=${formResult.username}:${apiKey}; HttpOnly`, `ssoId=${ssoId}; HttpOnly`]);
-                    res.writeHead(302, {'Location': '/redirect'});
-                    return res.end();
-                }
-            }
+    server.post('/simpleAuth', httpUtils.bodyParser);
+    server.post('/simpleAuth', async (req, res) => {
+        const {body} = req;
+        const formResult = querystring.parse(body);
+        const hashedPassword = crypto.sha256JOSE(formResult.password).toString("hex");
+        const index = htpPwdSecrets.findIndex(entry => entry.startsWith(formResult.username));
+        if (index === -1) {
             res.writeHead(302, {'Location': '/simpleAuth?wrongCredentials=true'});
             return res.end();
-        });
+        }
 
-        return;
-    })
+        let [user, pwd, mail, ssoId] = htpPwdSecrets[index].split(':');
+        if (pwd === hashedPassword) {
+            if (!ssoId) {
+                ssoId = getSSOId(mail);
+                htpPwdSecrets[index] = getPwdSecret(user, pwd, mail, ssoId)
+                // Join the entries back into a single string
+                const updatedData = htpPwdSecrets.join('\n');
+                try {
+                    await fsPromises.writeFile(secretsFilePath, updatedData, 'utf8');
+                } catch (e) {
+                    res.statusCode = 500;
+                    return res.end(`Error writing file: ${e.message}`);
+                }
+            }
+            let apiKey;
+            try {
+                apiKey = await secretsService.generateAPIKeyAsync(formResult.username, false);
+                await secretsService.putSecretAsync(appName, formResult.username, apiKey);
+            } catch (e) {
+                res.statusCode = 500;
+                return res.end(`Error writing secret: ${e.message}`);
+            }
+            res.setHeader('Set-Cookie', [`SimpleAuthorisation=${formResult.username}:${apiKey}; HttpOnly`, `ssoId=${ssoId}; HttpOnly`, `apiKey=${apiKey}; HttpOnly`]);
+            res.writeHead(302, {'Location': '/redirect'});
+            return res.end();
+        }
+    });
+
 
     server.get('/redirect', (req, res) => {
         let {originalUrl, ssoId} = util.parseCookies(req.headers.cookie);
         res.setHeader('Set-Cookie', ['originalUrl=; HttpOnly; Max-Age=0', 'ssoId=; HttpOnly; Max-Age=0']);
-
         res.writeHead(200, {'Content-Type': 'text/html'});
 
         return res.end(`<script>localStorage.setItem('SSODetectedID', '${ssoId}'); window.location.href = '${originalUrl || "/"}';</script>`);
-
     })
 }

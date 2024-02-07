@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const config = require("../../config");
+const {CONTAINERS} = require("./constants");
 
 
 function SecretsService(serverRootFolder) {
@@ -209,8 +210,28 @@ function SecretsService(serverRootFolder) {
         return apiKey;
     }
 
+    this.deleteAPIKeyAsync = async (keyId) => {
+        await this.deleteSecretAsync(API_KEY_CONTAINER_NAME, keyId);
+    }
+
     this.apiKeysContainerIsEmpty = () => {
         return Object.keys(containers[API_KEY_CONTAINER_NAME] || {}).length === 0;
+    }
+
+    this.validateAPIKey = async (apiKey) => {
+        await loadContainerAsync(CONTAINERS.API_KEY_CONTAINER_NAME);
+        const container = containers[API_KEY_CONTAINER_NAME];
+        if (!container) {
+            return false;
+        }
+        const apiKeyObjs = Object.values(container);
+        if (apiKeyObjs.length === 0) {
+            return false;
+        }
+        let index = apiKeyObjs.findIndex((obj) => {
+            return obj.secret === apiKey;
+        });
+        return index !== -1;
     }
 
     this.isAdminAPIKey = (apiKey) => {
@@ -246,7 +267,6 @@ function SecretsService(serverRootFolder) {
 
     this.deleteSecretAsync = async (secretsContainerName, userId) => {
         await lock.lock();
-        let res;
         try {
             await loadContainerAsync(secretsContainerName);
             if (!containers[secretsContainerName]) {
@@ -263,7 +283,6 @@ function SecretsService(serverRootFolder) {
             throw e;
         }
         await lock.unlock();
-        return res;
     }
 
     this.rotateKeyAsync = async () => {

@@ -3,14 +3,13 @@ function APIKeyAuth(server) {
     let secretServiceInstance;
     const utils = require("../../utils/cookie-utils.js")
 
-    const authorizationHeaderContainsAValidAPIKey = (req) => {
-        const header = req.headers["Authorization"];
-        if (!header) {
+    const authorizationHeaderContainsAValidAPIKey = async (req) => {
+        const apiKey = req.headers["Authorization"];
+        if (!apiKey) {
             return false;
         }
 
-        const apiKey = header.split(" ")[1];
-        return secretServiceInstance.validateAPIKey(apiKey);
+        return await secretServiceInstance.validateAPIKey(apiKey);
     }
 
     server.use(async (req, res, next) => {
@@ -22,22 +21,24 @@ function APIKeyAuth(server) {
             delete req.skipSSO;
         }
 
-        if (authorizationHeaderContainsAValidAPIKey(req)) {
+        if (await authorizationHeaderContainsAValidAPIKey(req)) {
             req.skipSSO = true;
             return next();
         }
 
-        //api
         const {apiKey} = utils.parseCookies(req.headers.cookie);
 
         if(!apiKey){
             return next();
         }
 
-        if(secretServiceInstance.validateAPIKey(apiKey)){
+        if(await secretServiceInstance.validateAPIKey(apiKey)){
             req.skipSSO = true;
             return next();
         }
+
+        res.statusCode = 403;
+        res.end("Forbidden");
     });
 
 }

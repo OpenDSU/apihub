@@ -235,6 +235,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			const Throttler = require('./middlewares/throttler');
 			const OAuth = require('./middlewares/oauth');
       		const SimpleAuth = require('./middlewares/simpleAuth');
+			const APIKeyAuthorisation = require('./middlewares/apiKeyAuth');
 			const FixedUrls = require('./middlewares/fixedUrls');
 			const SimpleLock = require('./middlewares/SimpleLock');
 			const ResponseHeaderMiddleware = require('./middlewares/responseHeader');
@@ -276,6 +277,9 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			if(process.env.ENABLE_SSO !== "false") {
 				SimpleAuth(server);
 			}
+
+			APIKeyAuthorisation(server);
+
 			if(conf.enableOAuth && process.env.ENABLE_SSO !== "false") {
                 new OAuth(server);
             }
