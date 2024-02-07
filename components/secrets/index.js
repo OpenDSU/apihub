@@ -169,7 +169,15 @@ function secrets(server) {
     });
 
     server.delete("/apiKey/:keyId", async (req, res) => {
-
+        if(!senderIsAdmin(req)){
+            res.statusCode = 403;
+            res.end("Forbidden");
+            return;
+        }
+        let {keyId} = req.params;
+        await secretsService.deleteAPIKeyAsync(keyId);
+        res.statusCode = 200;
+        res.end();
     })
 
     server.put('/putSSOSecret/*', httpUtils.bodyParser);

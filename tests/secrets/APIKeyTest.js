@@ -7,16 +7,17 @@ const fs = require("fs");
 const config = require("../../config");
 const openDSU = require("opendsu");
 const crypto = openDSU.loadAPI("crypto");
-const GENERATE_API_KEY_PATH = "/apiKey";
-const DELETE_API_KEY_PATH = "/apiKey";
-const USER_ID = "someUser";
-const secret = "some secret";
+const API_KEY_PATH = "/apiKey";
+const USERS = {
+    USER1: "user1",
+    USER2: "user2"
+}
 
 const generateEncryptionKey = () => {
     return crypto.generateRandom(32).toString("base64");
 }
 
-assert.callback('check if secrets endpoint encryption and key rotation work', async (callback) => {
+assert.callback("Test API keys", async (callback) => {
     const folder = await $$.promisify(dc.createTestFolder)('encrypt secrets');
     let base64EncryptionKey = generateEncryptionKey();
     // set env variable
@@ -25,15 +26,110 @@ assert.callback('check if secrets endpoint encryption and key rotation work', as
         rootFolder: folder
     });
     const url = `http://localhost:${port}`;
-    let generatedAPIKey = await fetch(`${url}${GENERATE_API_KEY_PATH}/userId/true`, {
-        method: "POST",
-        headers: {
-            "Authorization": "someUser"
-        }
-    })
 
-    generatedAPIKey = await generatedAPIKey.text();
-    assert.true(generatedAPIKey.length > 0, "API Key not generated");
+    //=================================================================================================
+    //=                                  Test API key generation                                      =
+    //=================================================================================================
+    let generatedAPIKey;
+    let firstAdminAPIKey;
+    let response;
+    let error;
+    try {
+        response = await fetch(`${url}${API_KEY_PATH}/${USERS.USER1}/true`, {
+            method: "POST"
+        })
+    } catch (e) {
+        error = e;
+    }
+    assert.true(error === undefined, "Failed to generate API key");
+    assert.true(response.status === 200, "Generate API key failed");
+    error = undefined;
+    try {
+        generatedAPIKey = await response.text();
+    } catch (e) {
+        error = e;
+    }
+    assert.true(error === undefined, "Failed to get API key");
+    assert.true(Buffer.from(generatedAPIKey, "base64").length === 32, "API key is not 32 bytes");
+
+    firstAdminAPIKey = generatedAPIKey;
+    response = undefined;
+    try {
+        response = await fetch(`${url}${API_KEY_PATH}/${USERS.USER2}/true`, {
+            method: "POST"
+        })
+    } catch (e) {
+        error = e;
+    }
+    assert.true(error === undefined, "Failed to generate API key");
+    assert.true(response.status === 403, "Generate API key should have failed because the sender does not have admin rights");
+
+    response = undefined;
+    try {
+        response = await fetch(`${url}${API_KEY_PATH}/${USERS.USER2}/true`, {
+            method: "POST",
+            headers: {
+                "Authorization": firstAdminAPIKey
+            }
+        })
+    } catch (e) {
+        error = e;
+    }
+    assert.true(error === undefined, "Failed to generate API key");
+    assert.true(response.status === 200, "Generate API key failed");
+
+    error = undefined;
+    generatedAPIKey = undefined;
+    try {
+        generatedAPIKey = await response.text();
+    } catch (e) {
+        error = e;
+    }
+    assert.true(error === undefined, "Failed to get API key");
+    assert.true(Buffer.from(generatedAPIKey, "base64").length === 32, "API key is not 32 bytes");
+
+
+    //=================================================================================================
+    //=                                  Test API key deletion                                        =
+    //=================================================================================================
+    response = undefined;
+    try {
+        response = await fetch(`${url}${API_KEY_PATH}/${USERS.USER2}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": "first"
+            }
+        })
+    } catch (e) {
+        error = e;
+    }
+    assert.true(error === undefined, "Failed to delete API key");
+    assert.true(response.status === 403, "Delete API key should have failed because the sender does not have admin rights");
+
+    response = undefined;
+    try {
+        response = await fetch(`${url}${API_KEY_PATH}/${USERS.USER2}`, {
+            method: "DELETE"
+        })
+    } catch (e) {
+        error = e;
+    }
+    assert.true(error === undefined, "Failed to delete API key");
+    assert.true(response.status === 403, "Delete API key should have failed because the sender does not have admin rights");
+
+    response = undefined;
+    try {
+        response = await fetch(`${url}${API_KEY_PATH}/${USERS.USER2}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": firstAdminAPIKey
+            }
+        })
+    } catch (e) {
+        error = e;
+    }
+    assert.true(error === undefined, "Failed to delete API key");
+    assert.true(response.status === 200, "Delete API key failed");
     callback();
 }, 5000000);
 
