@@ -5,7 +5,7 @@ fs = require(fs);
 
 let readOnly = false;
 
-module.exports = function (server) {
+function ReadOnlyMiddleware(server, registerHandler = true) {
     let config = server.config;
     let readOnlyFlag = config.readOnlyFile || "readonly";
     let interval = config.readOnlyInterval || 60 * 1000;
@@ -29,7 +29,7 @@ module.exports = function (server) {
         }
     }
 
-    function disabelReadOnly() {
+    function disableReadOnly() {
         if (readOnly) {
             console.info("Read only mode is disabled.");
             readOnly = false;
@@ -47,7 +47,7 @@ module.exports = function (server) {
             if (!err) {
                 enableReadOnly();
             } else {
-                disabelReadOnly();
+                disableReadOnly();
             }
         });
     }
@@ -55,12 +55,16 @@ module.exports = function (server) {
     checkReadOnlyFlag();
     setInterval(checkReadOnlyFlag, interval);
 
-    server.use("*", function (req, res, next) {
-        if (readOnly && req.method !== "GET" && req.method !== "HEAD") {
-            res.statusCode = 405;
-            res.write("read only mode is active");
-            return res.end();
-        }
-        next();
-    });
+    if(registerHandler){
+        server.use("*", function (req, res, next) {
+            if (readOnly && req.method !== "GET" && req.method !== "HEAD") {
+                res.statusCode = 405;
+                res.write("read only mode is active");
+                return res.end();
+            }
+            next();
+        });
+    }
 }
+
+module.exports = ReadOnlyMiddleware;

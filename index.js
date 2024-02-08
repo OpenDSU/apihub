@@ -451,6 +451,10 @@ module.exports.getDomainConfig = function (domain, ...configKeys) {
 	return config.getDomainConfig(domain, ...configKeys);
 };
 
+module.exports.middlewares = {
+	ReadOnly: require("./middlewares/readOnly")
+}
+
 module.exports.getSecretsServiceInstanceAsync = require("./components/secrets/SecretsService").getSecretsServiceInstanceAsync;
 
 module.exports.anchoringStrategies = require("./components/anchoring/strategies");
