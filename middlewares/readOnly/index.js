@@ -16,18 +16,38 @@ module.exports = function (server) {
         console.warn(`ReadOnly flag location resolved outside of ApiHUB root folder. (${readOnlyFlag})`);
     }
 
+    Object.defineProperty(server, "readOnlyModeActive", {
+        get: function () {
+            return readOnly;
+        }
+    });
+
+    function enableReadOnly() {
+        if (!readOnly) {
+            console.info("Read only mode is activated.");
+            readOnly = true;
+        }
+    }
+
+    function disabelReadOnly() {
+        if (readOnly) {
+            console.info("Read only mode is disabled.");
+            readOnly = false;
+        }
+    }
+
     function checkReadOnlyFlag() {
+        let envFlag = process.env.READ_ONLY_MODE;
+        if (typeof envFlag === "string" && envFlag.toLowerCase().trim() === "true") {
+            console.info("READ_ONLY_MODE env flag was detected.");
+            enableReadOnly();
+            return;
+        }
         fs.access(readOnlyFlag, fs.constants.F_OK, (err) => {
             if (!err) {
-                if (!readOnly) {
-                    console.info("Read only mode is activated.");
-                    readOnly = true;
-                }
+                enableReadOnly();
             } else {
-                if (readOnly) {
-                    console.info("Read only mode is disabled.");
-                    readOnly = false;
-                }
+                disabelReadOnly();
             }
         });
     }
@@ -36,7 +56,7 @@ module.exports = function (server) {
     setInterval(checkReadOnlyFlag, interval);
 
     server.use("*", function (req, res, next) {
-        if (readOnly && req.method !== "GET") {
+        if (readOnly && req.method !== "GET" && req.method !== "HEAD") {
             res.statusCode = 405;
             res.write("read only mode is active");
             return res.end();
