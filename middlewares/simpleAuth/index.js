@@ -4,12 +4,14 @@ const path = require('path');
 const openDSU = require("opendsu");
 const crypto = openDSU.loadAPI("crypto");
 const querystring = require('querystring');
-const util = require("../../utils/cookie-utils");
+const cookieUtils = require("../../utils/cookie-utils");
 const SecretsService = require("../../components/secrets/SecretsService");
 const appName = 'simpleAuth'
 const PUT_SECRETS_URL_PATH = "/putSSOSecret/simpleAuth";
 const GET_SECRETS_URL_PATH = "/getSSOSecret/simpleAuth";
 const skipUrls = ['/simpleAuth', '/simpleAuth?wrongCredentials=true', '/favicon.ico', '/redirect', GET_SECRETS_URL_PATH, PUT_SECRETS_URL_PATH]
+const util = require("../oauth/lib/util.js");
+const urlsToSkip = [...util.getUrlsToSkip(), ...skipUrls];
 
 // Utility function to read .htpassword.secrets file
 function readSecretsFile(filePath) {
@@ -62,12 +64,12 @@ module.exports = function (server) {
             return res.writeHead(500).end('Error reading secrets file');
         }
 
-        const canSkipOAuth = skipUrls.some((urlToSkip) => req.url.indexOf(urlToSkip) !== -1);
+        const canSkipOAuth = urlsToSkip.some((urlToSkip) => req.url.indexOf(urlToSkip) !== -1);
         if (canSkipOAuth) {
             return next();
         }
 
-        let {SimpleAuthorisation} = util.parseCookies(req.headers.cookie);
+        let {SimpleAuthorisation} = cookieUtils.parseCookies(req.headers.cookie);
 
         if (!SimpleAuthorisation) {
             res.setHeader('Set-Cookie', `originalUrl=${req.url}; HttpOnly`);
@@ -179,7 +181,7 @@ module.exports = function (server) {
 
 
     server.get('/redirect', (req, res) => {
-        let {originalUrl, ssoId} = util.parseCookies(req.headers.cookie);
+        let {originalUrl, ssoId} = cookieUtils.parseCookies(req.headers.cookie);
         res.setHeader('Set-Cookie', ['originalUrl=; HttpOnly; Max-Age=0', 'ssoId=; HttpOnly; Max-Age=0']);
         res.writeHead(200, {'Content-Type': 'text/html'});
 
