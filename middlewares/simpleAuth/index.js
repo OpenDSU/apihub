@@ -62,7 +62,8 @@ module.exports = function (server) {
             return res.writeHead(500).end('Error reading secrets file');
         }
 
-        if (skipUrls.includes(req.url)) {
+        const canSkipOAuth = skipUrls.some((urlToSkip) => req.url.indexOf(urlToSkip) !== -1);
+        if (canSkipOAuth) {
             return next();
         }
 

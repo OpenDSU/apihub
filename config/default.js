@@ -91,6 +91,7 @@ const defaultConfig = {
     "enableInstallationDetails": false,
     "enableRequestLogger": true,
     "enableJWTAuthorisation": false,
+    "enableSimpleAuth": false,
     "enableLocalhostAuthorization": false,
     "enableErrorCloaking": false,
     "enableReadOnlyMechanism": true,

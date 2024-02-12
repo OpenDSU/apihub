@@ -274,7 +274,8 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			if(conf.enableJWTAuthorisation) {
 					new AuthorisationMiddleware(server);
 			}
-			if(process.env.ENABLE_SSO !== "false") {
+
+			if(conf.enableSimpleAuth && process.env.ENABLE_SSO !== "false") {
 				SimpleAuth(server);
 			}
 
