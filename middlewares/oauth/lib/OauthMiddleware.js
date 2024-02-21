@@ -187,6 +187,10 @@ function OAuthMiddleware(server) {
             return url === "/logout-post";
         }
 
+        if(req.skipSSO){
+            return next();
+        }
+
         const canSkipOAuth = urlsToSkip.some((urlToSkip) => url.indexOf(urlToSkip) === 0);
         if (canSkipOAuth) {
             next();

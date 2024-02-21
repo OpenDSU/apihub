@@ -224,13 +224,11 @@ function SecretsService(serverRootFolder) {
         if (!container) {
             return false;
         }
-        const apiKeyObjs = Object.values(container);
-        if (apiKeyObjs.length === 0) {
+        const apiKeys = Object.values(container);
+        if (apiKeys.length === 0) {
             return false;
         }
-        let index = apiKeyObjs.findIndex((obj) => {
-            return obj.secret === apiKey;
-        });
+        let index = apiKeys.findIndex(el => el === apiKey);
         return index !== -1;
     }
 
@@ -309,10 +307,13 @@ function SecretsService(serverRootFolder) {
     }
 }
 
+let secretsServiceInstance;
 const getSecretsServiceInstanceAsync = async (serverRootFolder) => {
-    const secretsService = new SecretsService(serverRootFolder);
-    await secretsService.loadContainersAsync();
-    return secretsService;
+    if (!secretsServiceInstance) {
+        secretsServiceInstance = new SecretsService(serverRootFolder);
+        await secretsServiceInstance.loadContainersAsync();
+    }
+    return secretsServiceInstance;
 }
 
 module.exports = {

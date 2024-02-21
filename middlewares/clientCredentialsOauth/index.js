@@ -4,6 +4,10 @@ function ClientCredentialsOauth(server) {
     const util = require("../oauth/lib/util");
 
     server.use(async (req, res, next) => {
+        if (req.skipClientCredentialsOauth) {
+            return next();
+        }
+
         if (!req.headers.authorization) {
             res.statusCode = 401;
             res.end("Missing Authorization header");

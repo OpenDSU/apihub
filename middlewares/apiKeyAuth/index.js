@@ -4,7 +4,7 @@ function APIKeyAuth(server) {
     const utils = require("../../utils/cookie-utils.js")
 
     const authorizationHeaderContainsAValidAPIKey = async (req) => {
-        const apiKey = req.headers["Authorization"];
+        const apiKey = req.headers["x-api-key"];
         if (!apiKey) {
             return false;
         }
@@ -21,19 +21,26 @@ function APIKeyAuth(server) {
             delete req.skipSSO;
         }
 
+        if(req.skipClientCredentialsOauth){
+            delete req.skipClientCredentialsOauth;
+        }
+
         if (await authorizationHeaderContainsAValidAPIKey(req)) {
             req.skipSSO = true;
+            req.skipClientCredentialsOauth = true;
             return next();
         }
 
         const {apiKey} = utils.parseCookies(req.headers.cookie);
 
         if(!apiKey){
+            req.skipClientCredentialsOauth = true;
             return next();
         }
 
         if(await secretServiceInstance.validateAPIKey(apiKey)){
             req.skipSSO = true;
+            req.skipClientCredentialsOauth = true;
             return next();
         }
 

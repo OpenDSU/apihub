@@ -10,7 +10,6 @@ process.on('SIGTERM', (signal)=>{
 });
 
 const httpWrapper = require('./libs/http-wrapper');
-const SimpleAuth = require("./middlewares/simpleAuth");
 const Server = httpWrapper.Server;
 
 const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
@@ -280,18 +279,22 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 				SimpleAuth(server);
 			}
 
+			if (conf.enableAPIKeyAuth) {
+                APIKeyAuthorisation(server);
+			}
+
 			if(conf.enableClientCredentialsOauth) {
 				ClientCredentialsOAuth(server);
 			}
 
-			APIKeyAuthorisation(server);
-
 			if(conf.enableOAuth && process.env.ENABLE_SSO !== "false") {
                 new OAuth(server);
             }
+
 			if(conf.responseHeaders){
 				new ResponseHeaderMiddleware(server);
 			}
+
             if(conf.enableInstallationDetails) {
                 const enableInstallationDetails = require("./components/installation-details");
                 enableInstallationDetails(server);
