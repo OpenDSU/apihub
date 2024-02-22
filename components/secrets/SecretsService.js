@@ -23,6 +23,16 @@ function SecretsService(serverRootFolder) {
     let successfulEncryptionKeyIndex = 0;
     const containers = {};
     let readonlyMode = false;
+
+    const apiKeyExists = (apiKeysContainer, apiKey) => {
+        const apiKeys = Object.values(apiKeysContainer);
+        if (apiKeys.length === 0) {
+            return false;
+        }
+        let index = apiKeys.findIndex(el => el === apiKey);
+        return index !== -1;
+    }
+
     const loadContainerAsync = async (containerName) => {
         try {
             containers[containerName] = await getDecryptedSecretsAsync(containerName);
@@ -30,6 +40,15 @@ function SecretsService(serverRootFolder) {
         } catch (e) {
             containers[containerName] = {};
             console.info("Initializing secrets container", containerName);
+        }
+
+        if (containerName === API_KEY_CONTAINER_NAME) {
+            const apiKey = require("opendsu").loadAPI("crypto").sha256JOSE(process.env.SSO_SECRETS_ENCRYPTION_KEY, "base64");
+            if (!apiKeyExists(containers[containerName], apiKey)) {
+                console.log("API Key not found in container", containerName);
+                containers[containerName][apiKey] = apiKey;
+                await writeSecretsAsync(containerName);
+            }
         }
     }
 
@@ -224,21 +243,17 @@ function SecretsService(serverRootFolder) {
         if (!container) {
             return false;
         }
-        const apiKeys = Object.values(container);
-        if (apiKeys.length === 0) {
-            return false;
-        }
-        let index = apiKeys.findIndex(el => el === apiKey);
-        return index !== -1;
+
+        return apiKeyExists(container, apiKey);
     }
 
     this.isAdminAPIKey = (apiKey) => {
         const container = containers[API_KEY_CONTAINER_NAME];
-        if(!container){
+        if (!container) {
             return false;
         }
         const apiKeyObjs = Object.values(container);
-        if(apiKeyObjs.length === 0){
+        if (apiKeyObjs.length === 0) {
             return false;
         }
         let index = apiKeyObjs.findIndex((obj) => {
