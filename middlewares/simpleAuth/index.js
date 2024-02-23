@@ -141,8 +141,7 @@ module.exports = function (server) {
         return res.end(returnHtml);
     })
 
-    server.post('/simpleAuth', httpUtils.bodyParser);
-    server.post('/simpleAuth', async (req, res) => {
+    const simpleAuthHandler = async (req, res,next) => {
         const {body} = req;
         const formResult = querystring.parse(body);
         const hashedPassword = crypto.sha256JOSE(formResult.password).toString("hex");
@@ -178,7 +177,7 @@ module.exports = function (server) {
             res.writeHead(302, {'Location': '/redirect'});
             return res.end();
         }
-    });
+    };
 
 
     server.get('/redirect', (req, res) => {
@@ -187,5 +186,11 @@ module.exports = function (server) {
         res.writeHead(200, {'Content-Type': 'text/html'});
 
         return res.end(`<script>localStorage.setItem('SSODetectedID', '${ssoId}'); window.location.href = '${originalUrl || "/"}';</script>`);
-    })
+    });
+
+    server.post('/simpleAuth', httpUtils.bodyParser);
+    server.post('/simpleAuth', simpleAuthHandler)
+
+    server.put('/simpleAuth', httpUtils.bodyParser);
+    server.put('/simpleAuth', simpleAuthHandler)
 }
