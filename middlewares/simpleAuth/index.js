@@ -193,4 +193,6 @@ module.exports = function (server) {
 
     server.put('/simpleAuth', httpUtils.bodyParser);
     server.put('/simpleAuth', simpleAuthHandler)
+        return res.end(`<script>localStorage.setItem('SSODetectedId', '${ssoId}'); window.location.href = '${originalUrl || "/"}';</script>`);
+    })
 }
