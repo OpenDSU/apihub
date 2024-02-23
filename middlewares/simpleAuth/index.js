@@ -186,6 +186,6 @@ module.exports = function (server) {
         res.setHeader('Set-Cookie', ['originalUrl=; HttpOnly; Max-Age=0', 'ssoId=; HttpOnly; Max-Age=0']);
         res.writeHead(200, {'Content-Type': 'text/html'});
 
-        return res.end(`<script>localStorage.setItem('SSODetectedID', '${ssoId}'); window.location.href = '${originalUrl || "/"}';</script>`);
+        return res.end(`<script>localStorage.setItem('SSODetectedId', '${ssoId}'); window.location.href = '${originalUrl || "/"}';</script>`);
     })
 }
