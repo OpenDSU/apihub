@@ -40,9 +40,9 @@ function OAuthMiddleware(server) {
         res.end();
     }
 
-    function setSSODetectedId(ssoDetectedId, req, res) {
+    function setSSODetectedId(ssoDetectedId, SSOUserId, req, res) {
         res.writeHead(200, {'Content-Type': 'text/html'});
-        return res.end(`<script>localStorage.setItem('SSODetectedId', '${ssoDetectedId}'); window.location.href = '/redirect.html';</script>`);
+        return res.end(`<script>localStorage.setItem('SSODetectedId', '${ssoDetectedId}'); localStorage.setItem('SSOUserId', '${SSOUserId}'); window.location.href = '/redirect.html';</script>`);
     }
 
     function startAuthFlow(req, res) {
@@ -242,9 +242,9 @@ function OAuthMiddleware(server) {
         }
 
         const parsedCookies = util.parseCookies(req.headers.cookie);
-        let {accessTokenCookie, refreshTokenCookie, isActiveSession, SSODetectedId} = parsedCookies;
+        let {accessTokenCookie, refreshTokenCookie, isActiveSession, SSODetectedId, SSOUserId} = parsedCookies;
         if (isSetSSODetectedIdPhaseActive()) {
-            return setSSODetectedId(SSODetectedId, req, res);
+            return setSSODetectedId(SSODetectedId, SSOUserId, req, res);
         }
         let logoutCookie = parsedCookies.logout;
         let cookies = [];
