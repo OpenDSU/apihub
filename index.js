@@ -272,11 +272,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			SimpleLock(server);
 
 			if(conf.enableJWTAuthorisation) {
-					new AuthorisationMiddleware(server);
-			}
-
-			if(conf.enableSimpleAuth && process.env.ENABLE_SSO !== "false") {
-				SimpleAuth(server);
+				new AuthorisationMiddleware(server);
 			}
 
 			if (conf.enableAPIKeyAuth) {
@@ -285,6 +281,10 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 
 			if(conf.enableClientCredentialsOauth) {
 				ClientCredentialsOAuth(server);
+			}
+
+			if(conf.enableSimpleAuth && process.env.ENABLE_SSO !== "false") {
+				SimpleAuth(server);
 			}
 
 			if(conf.enableOAuth && process.env.ENABLE_SSO !== "false") {
