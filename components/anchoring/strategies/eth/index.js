@@ -56,17 +56,8 @@ function ETH(server, domainConfig, anchorId, newAnchorValue, jsonData) {
 
     const readJSONFromBlockchain = (action, callback)=>{
         const endpoint = createEndpoint(action);
-        let headers;
-        let body = "";
-        if (jsonData) {
-            body = JSON.stringify(jsonData);
-            headers = {
-                "Content-Type": "application/json", "Content-Length": body.length
-            }
-        }
         http.fetch(endpoint, {
-            method: 'GET',
-            headers, body
+            method: 'GET'
         })
             .then(res => res.json())
             .then(data => callback(undefined, data))
