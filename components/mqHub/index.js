@@ -24,7 +24,7 @@ const defaultSettings = {
 
 async function MQHub(server, signalAsyncLoading, doneLoading) {
 
-	server.registerAccessControlAllowHeaders(["token", "authorization"]);
+	server.registerAccessControlAllowHeaders(["token", "authorization", "x-mq-authorization"]);
 
 	const logger = $$.getLogger("MQHub", "apihub/mqHub");
 
@@ -78,7 +78,7 @@ async function MQHub(server, signalAsyncLoading, doneLoading) {
 			return;
 		}
 
-		let token = request.headers['authorization'];
+		let token = request.headers['x-mq-authorization'];
 
 		if(! await allowUnregisteredDID(domainName) && !token){
 			logger.info(0x03, `No token was available on the request and the domain ${domainName} configuration prohibits unregisteredDIDs to use the MQ api.`);
@@ -113,7 +113,7 @@ async function MQHub(server, signalAsyncLoading, doneLoading) {
 			return;
 		}
 
-		let token = request.headers['authorization'];
+		let token = request.headers['x-mq-authorization'];
 
 		if(! await allowUnregisteredDID(domainName) && !token){
 			logger.info(0x03, `No token was available on the request and the domain ${domainName} configuration prohibits unregisteredDIDs to use the MQ api.`);
