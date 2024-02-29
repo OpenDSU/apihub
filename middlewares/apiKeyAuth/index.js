@@ -34,7 +34,6 @@ function APIKeyAuth(server) {
         const {apiKey} = utils.parseCookies(req.headers.cookie);
 
         if(!apiKey){
-            req.skipClientCredentialsOauth = true;
             return next();
         }
 

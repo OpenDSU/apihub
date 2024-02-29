@@ -9,9 +9,7 @@ function ClientCredentialsOauth(server) {
         }
 
         if (!req.headers.authorization) {
-            res.statusCode = 401;
-            res.end("Missing Authorization header");
-            return;
+            return next();
         }
 
         const token = req.headers.authorization.split(" ")[1];
@@ -21,6 +19,7 @@ function ClientCredentialsOauth(server) {
                 return res.end("Invalid token");
             }
 
+            req.skipSSO = true
             next();
         })
     });
