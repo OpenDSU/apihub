@@ -66,7 +66,6 @@ async function handleGetVersionlessDSURequest(request, response) {
 }
 
 async function handlePutVersionlessDSURequest(request, response) {
-    debugger
     const filePath = getFilePathFromRequest(request);
     if(!filePath) {
         logger.error("[VersionlessDSU] FilePath not specified");
