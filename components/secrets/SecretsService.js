@@ -219,9 +219,13 @@ function SecretsService(serverRootFolder) {
         return secret;
     }
 
-    this.readSecretSync = (secretName) => {
+    this.readSecretSync = this.getSecretSync;
+
+    this.getSecretFromDefaultContainerSync = (secretName) => {
         return this.getSecretSync(DEFAULT_CONTAINER_NAME, secretName);
     }
+
+    this.readSecretFromDefaultContainerSync = this.getSecretFromDefaultContainerSync;
 
     this.generateAPIKeyAsync = async (keyId, isAdmin) => {
         const apiKey = crypto.generateRandom(32).toString("base64");
