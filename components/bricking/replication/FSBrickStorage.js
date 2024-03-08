@@ -1,40 +1,9 @@
-class FSBrickPathsManager {
-    constructor() {
-        this.brickPaths = {};
-        this.utils = require("./utils.js");
-    }
-
-    storeDomainPath(domainName, domainFolder, serverRoot) {
-        if (!this.brickPaths[domainName]) {
-            this.brickPaths[domainName] = require("path").join(serverRoot || "", domainFolder || domainName);
-        }
-    }
-
-    removeDomainPath(domainName) {
-        delete this.brickPaths[domainName];
-    }
-
-    resolveBrickPath(domainName, brickHash) {
-        return require("path").join(this.resolveBrickDirname(domainName, brickHash), brickHash);
-    }
-
-    resolveBrickDirname(domainName, brickHash) {
-        this.utils.verifyBrickHash(brickHash);
-        return require("path").join(this.brickPaths[domainName], brickHash.substr(0, this.utils.HASH_MAX_SIZE));
-    }
-
-    getUtils() {
-        return this.utils;
-    }
-}
-
-const fsBrickPathsManager = new FSBrickPathsManager();
-
 class FSBrickStorage {
-    constructor(domainName, domainFolder, serverRoot) {
+    constructor(domainName, domainFolder, serverRoot, fsBrickPathsManager) {
         this.domain = domainName;
-
-        fsBrickPathsManager.storeDomainPath(this.domain, domainFolder, serverRoot);
+        const FSBrickPathsManager = require("./FSBrickPathsManager");
+        this.fsBrickPathsManager = fsBrickPathsManager || new FSBrickPathsManager(2);
+        this.fsBrickPathsManager.storeDomainPath(this.domain, domainFolder, serverRoot);
     }
 
     getBrick(hash, callback) {
@@ -47,14 +16,14 @@ class FSBrickStorage {
 
     async getBrickAsync(hash) {
         const fs = require("fs");
-        const brickPath = fsBrickPathsManager.resolveBrickPath(this.domain, hash);
+        const brickPath = this.fsBrickPathsManager.resolveBrickPath(this.domain, hash);
         await $$.promisify(fs.access)(brickPath);
         return await $$.promisify(fs.readFile)(brickPath);
     }
 
     async brickExists(hash) {
         const fs = require("fs");
-        const brickPath = fsBrickPathsManager.resolveBrickPath(this.domain, hash);
+        const brickPath = this.fsBrickPathsManager.resolveBrickPath(this.domain, hash);
         try {
             await $$.promisify(fs.access)(brickPath);
             return true;
@@ -77,11 +46,11 @@ class FSBrickStorage {
         // TODO: use workers from OpenDSU apiSpace
         // const pool = workers.createPool() or (pool probably should be at FSBrickStorage ctor level)
         // await $$.promisify(pool.runSyncFunction)("crypto", "sha256", data);
-        const brickDirPath = fsBrickPathsManager.resolveBrickDirname(this.domain, hash);
+        const brickDirPath = this.fsBrickPathsManager.resolveBrickDirname(this.domain, hash);
         await $$.promisify(fs.mkdir)(brickDirPath, { recursive: true });
         //await $$.promisify(fs.access)(brickDirPath);
 
-        const brickPath = fsBrickPathsManager.resolveBrickPath(this.domain, hash);
+        const brickPath = this.fsBrickPathsManager.resolveBrickPath(this.domain, hash);
         await $$.promisify(fs.writeFile)(brickPath, data);
         return hash;
     }
@@ -97,17 +66,13 @@ class FSBrickStorage {
     async deleteBrickAsync(hash) {
         const fs = require("fs");
         const removeDir = require("swarmutils").removeDir;
-        const brickPath = fsBrickPathsManager.resolveBrickPath(this.domain, hash);
+        const brickPath = this.fsBrickPathsManager.resolveBrickPath(this.domain, hash);
         await $$.promisify(fs.access)(brickPath);
         await $$.promisify(fs.unlink)(brickPath);
 
-        const brickDirPath = fsBrickPathsManager.resolveBrickDirname(this.domain, hash);
+        const brickDirPath = this.fsBrickPathsManager.resolveBrickDirname(this.domain, hash);
         await $$.promisify(fs.access)(brickDirPath);
         await $$.promisify(removeDir)(brickDirPath, { recursive: true });
-    }
-
-    get utils() {
-        return ({ ...fsBrickPathsManager.getUtils() })
     }
 }
 

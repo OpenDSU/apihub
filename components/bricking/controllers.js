@@ -6,7 +6,14 @@ async function brickExists(request, response) {
 
     const {domain, hashLink} = request.params;
     let brickExists;
-    brickExists = await request.fsBrickStorage.brickExists(hashLink);
+    try {
+        brickExists = await request.fsBrickStorage.brickExists(hashLink);
+    } catch (e) {
+
+    }
+    if (!brickExists) {
+        brickExists = request.oldFsBrickStorage.brickExists(hashLink);
+    }
     return response.send(200, brickExists);
 }
 
@@ -16,7 +23,15 @@ async function getBrick(request, response) {
 
     const {domain, hashLink} = request.params;
     try {
-        const brick = await getBrickWithExternalProvidersFallbackAsync(request, domain, hashLink, request.fsBrickStorage);
+        let brick;
+        try {
+            brick = await getBrickWithExternalProvidersFallbackAsync(request, domain, hashLink, request.fsBrickStorage);
+        } catch (e) {
+            logger.error("Failed to get brick", e); 
+        }
+        if (!brick) {
+            brick = await getBrickWithExternalProvidersFallbackAsync(request, domain, hashLink, request.oldFsBrickStorage);
+        }
         response.write(brick);
         return response.send(200);
     } catch (error) {
