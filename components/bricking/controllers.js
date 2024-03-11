@@ -12,7 +12,7 @@ async function brickExists(request, response) {
 
     }
     if (!brickExists) {
-        brickExists = request.oldFsBrickStorage.brickExists(hashLink);
+        brickExists = await request.oldFsBrickStorage.brickExists(hashLink);
     }
     return response.send(200, brickExists);
 }
