@@ -382,7 +382,7 @@ function getDecryptedAccessToken(accessTokenCookie, callback) {
     })
 }
 
-function getSSODetectedIdFromObj(obj) {
+function getSSODetectedIdFromPayload(obj) {
     return obj.email || obj.preferred_username || obj.upn || obj.sub;
 }
 
@@ -398,7 +398,7 @@ function getSSODetectedIdAndUserId(tokenSet, callback) {
         payload = parsedToken.payload;
         const res =  {
             SSOUserId: payload.sub,
-            SSODetectedId: getSSODetectedIdFromObj(payload)
+            SSODetectedId: getSSODetectedIdFromPayload(payload)
         }
         SSODetectedIdsAndUserIds[tokenSet.access_token] = res;
         return callback(undefined, res);
@@ -414,7 +414,7 @@ function getSSODetectedIdAndUserId(tokenSet, callback) {
 
             const res =  {
                 SSOUserId: userInfo.sub,
-                SSODetectedId: getSSODetectedIdFromObj(userInfo)
+                SSODetectedId: getSSODetectedIdFromPayload(userInfo)
             }
             SSODetectedIdsAndUserIds[tokenSet.access_token] = res;
             return callback(undefined, res);
@@ -586,5 +586,6 @@ module.exports = {
     getSSODetectedIdAndUserId,
     getSSODetectedIdFromEncryptedToken,
     updateAccessTokenExpiration,
-    printDebugLog
+    printDebugLog,
+    getSSODetectedIdFromPayload
 }
