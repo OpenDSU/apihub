@@ -19,6 +19,7 @@ function ClientCredentialsOauth(server) {
                 return res.end("Invalid token");
             }
 
+            req.headers["user-id"] = util.getSSODetectedIdFromPayload(util.parseAccessToken(token).payload);
             req.skipSSO = true
             next();
         })
