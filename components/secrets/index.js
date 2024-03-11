@@ -1,7 +1,6 @@
-const SecretsService = require("./SecretsService");
-const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
-
 function secrets(server) {
+    const whitelistedContainers = ["DSU_Fabric", "Demiurge"];
+    const whitelistedSecrets = ["credential"];
     const logger = $$.getLogger("secrets", "apihub/secrets");
     const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
     const constants = require("./constants");
@@ -11,16 +10,20 @@ function secrets(server) {
       secretsService =  await SecretsService.getSecretsServiceInstanceAsync(server.rootFolder);
     })
 
-    const containerIsReadonly = (containerName) => {
-        const readonlyContainers = Object.values(constants.CONTAINERS);
-        return readonlyContainers.includes(containerName);
+    const containerIsWhitelisted = (containerName) => {
+        return whitelistedContainers.includes(containerName);
     }
+
+    const secretIsWhitelisted = (secretName) => {
+        return whitelistedSecrets.includes(secretName);
+    }
+
     const getSSOSecret = (request, response) => {
         let userId = request.headers["user-id"];
         let appName = request.params.appName;
-        if(containerIsReadonly(appName)){
+        if(!containerIsWhitelisted(appName) && !secretIsWhitelisted(userId)){
             response.statusCode = 403;
-            response.end(`Container ${appName} is readonly`);
+            response.end("Forbidden");
             return;
         }
         let secret;
@@ -113,9 +116,9 @@ function secrets(server) {
 
     function getDIDSecret(req, res) {
         let {did, name} = req.params;
-        if(containerIsReadonly(did)){
+        if(!containerIsWhitelisted(did) && !secretIsWhitelisted(name)){
             res.statusCode = 403;
-            res.end(`Container ${did} is readonly`);
+            res.end("Forbidden");
             return;
         }
         let secret;
