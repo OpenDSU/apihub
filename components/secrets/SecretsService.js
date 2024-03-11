@@ -174,7 +174,7 @@ function SecretsService(serverRootFolder) {
         return await $$.promisify(getDecryptedSecrets, this)(secretsContainerName);
     }
 
-    this.putSecretAsync = async (secretsContainerName, userId, secret, isAdmin) => {
+    this.putSecretAsync = async (secretsContainerName, secretName, secret, isAdmin) => {
         await lock.lock();
         let res;
         try {
@@ -184,13 +184,13 @@ function SecretsService(serverRootFolder) {
                 console.info("Initializing secrets container", secretsContainerName)
             }
             if (typeof isAdmin !== "undefined") {
-                containers[secretsContainerName][userId] = {};
-                containers[secretsContainerName][userId].secret = secret;
-                containers[secretsContainerName][userId].isAdmin = isAdmin;
+                containers[secretsContainerName][secretName] = {};
+                containers[secretsContainerName][secretName].secret = secret;
+                containers[secretsContainerName][secretName].isAdmin = isAdmin;
             } else {
-                containers[secretsContainerName][userId] = secret;
+                containers[secretsContainerName][secretName] = secret;
             }
-            res = await writeSecretsAsync(secretsContainerName, userId);
+            res = await writeSecretsAsync(secretsContainerName, secretName);
         } catch (e) {
             await lock.unlock();
             throw e;
@@ -203,7 +203,7 @@ function SecretsService(serverRootFolder) {
         return await this.putSecretAsync(DEFAULT_CONTAINER_NAME, secretName, secret);
     }
 
-    this.getSecretSync = (secretsContainerName, userId) => {
+    this.getSecretSync = (secretsContainerName, secretName) => {
         if (readonlyMode) {
             throw createError(555, `Secrets Service is in readonly mode`);
         }
@@ -211,9 +211,9 @@ function SecretsService(serverRootFolder) {
             containers[secretsContainerName] = {};
             console.info("Initializing secrets container", secretsContainerName);
         }
-        const secret = containers[secretsContainerName][userId];
+        const secret = containers[secretsContainerName][secretName];
         if (!secret) {
-            throw createError(404, `Secret for user ${userId} not found`);
+            throw createError(404, `Secret for user ${secretName} not found`);
         }
 
         return secret;
@@ -282,7 +282,7 @@ function SecretsService(serverRootFolder) {
         return await this.putSecretInDefaultContainerAsync(secretName, secret);
     }
 
-    this.deleteSecretAsync = async (secretsContainerName, userId) => {
+    this.deleteSecretAsync = async (secretsContainerName, secretName) => {
         await lock.lock();
         try {
             await loadContainerAsync(secretsContainerName);
@@ -290,10 +290,10 @@ function SecretsService(serverRootFolder) {
                 containers[secretsContainerName] = {};
                 console.info("Initializing secrets container", secretsContainerName)
             }
-            if (!containers[secretsContainerName][userId]) {
-                throw createError(404, `Secret for user ${userId} not found`);
+            if (!containers[secretsContainerName][secretName]) {
+                throw createError(404, `Secret for user ${secretName} not found`);
             }
-            delete containers[secretsContainerName][userId];
+            delete containers[secretsContainerName][secretName];
             await writeSecretsAsync(secretsContainerName);
         } catch (e) {
             await lock.unlock();
