@@ -213,7 +213,7 @@ function SecretsService(serverRootFolder) {
         }
         const secret = containers[secretsContainerName][secretName];
         if (!secret) {
-            throw createError(404, `Secret for user ${secretName} not found`);
+            throw createError(404, `Secret ${secretName} not found`);
         }
 
         return secret;
@@ -237,8 +237,12 @@ function SecretsService(serverRootFolder) {
         await this.deleteSecretAsync(API_KEY_CONTAINER_NAME, keyId);
     }
 
+    this.containerIsEmpty = (secretsContainerName) => {
+        return Object.keys(containers[secretsContainerName] || {}).length === 0;
+    }
+
     this.apiKeysContainerIsEmpty = () => {
-        return Object.keys(containers[API_KEY_CONTAINER_NAME] || {}).length === 0;
+        return this.containerIsEmpty(API_KEY_CONTAINER_NAME);
     }
 
     this.validateAPIKey = async (apiKey) => {
@@ -291,7 +295,7 @@ function SecretsService(serverRootFolder) {
                 console.info("Initializing secrets container", secretsContainerName)
             }
             if (!containers[secretsContainerName][secretName]) {
-                throw createError(404, `Secret for user ${secretName} not found`);
+                throw createError(404, `Secret ${secretName} not found`);
             }
             delete containers[secretsContainerName][secretName];
             await writeSecretsAsync(secretsContainerName);
