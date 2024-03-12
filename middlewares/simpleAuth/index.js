@@ -70,6 +70,17 @@ module.exports = function (server) {
             return next();
         }
 
+        if (req.headers.authorization) {
+            const [username, password] = req.headers.authorization.split(" ")[1].split(":");
+            const index = htpPwdSecrets.findIndex(entry => entry.startsWith(username));
+            let [user, pwd, mail, ssoId] = htpPwdSecrets[index].split(':');
+            const hashedPassword = crypto.sha256JOSE(pwd).toString("hex");
+            if (hashedPassword === password) {
+                req.headers["user-id"] = ssoId;
+                return next();
+            }
+        }
+
         let {SimpleAuthorisation} = cookieUtils.parseCookies(req.headers.cookie);
 
         if (!SimpleAuthorisation) {
