@@ -154,9 +154,25 @@ function OAuthMiddleware(server) {
         res.end();
     }
 
+    const CHECK_IF_SESSION_HAS_EXPIRED = "/checkIfSessionHasExpired";
+    const LOGOUT_WAS_TRIGGERED = "/logoutWasTriggered";
     server.use(function (req, res, next) {
         let {url} = req;
 
+        if (url === CHECK_IF_SESSION_HAS_EXPIRED) {
+            const {sessionExpiryTime} = util.parseCookies(req.headers.cookie);
+            res.statusCode = 200;
+            if (sessionExpiryTime && parseInt(sessionExpiryTime) < Date.now()) {
+                return res.end("true");
+            }
+            return res.end("false");
+        }
+
+        if (url === LOGOUT_WAS_TRIGGERED) {
+            const {logout} = util.parseCookies(req.headers.cookie);
+            res.statusCode = 200;
+            return res.end(logout);
+        }
         function isSetSSODetectedIdPhaseActive() {
             return url === "/setSSODetectedId";
         }
