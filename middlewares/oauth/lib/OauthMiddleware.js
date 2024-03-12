@@ -134,7 +134,7 @@ function OAuthMiddleware(server) {
             post_logout_redirect_uri: oauthConfig.client.postLogoutRedirectUrl, client_id: oauthConfig.client.clientId,
         };
 
-        let cookies = ["logout=true; Path=/;", "accessTokenCookie=; Max-Age=0; HttpOnly", "isActiveSession=; Max-Age=0; HttpOnly", "refreshTokenCookie=; Max-Age=0; HttpOnly", "loginContextCookie=; Path=/; Max-Age=0", `logoutUrl=${logoutUrl.href}; Path=/; HttpOnly`, `postLogoutRedirectUrl=${oauthConfig.client.postLogoutRedirectUrl}; Path=/; HttpOnly`];
+        let cookies = ["logout=true; Path=/; HttpOnly", "accessTokenCookie=; Max-Age=0; HttpOnly", "isActiveSession=; Max-Age=0; HttpOnly", "refreshTokenCookie=; Max-Age=0; HttpOnly", "loginContextCookie=; Path=/; HttpOnly; Max-Age=0", `logoutUrl=${logoutUrl.href}; Path=/; HttpOnly`, `postLogoutRedirectUrl=${oauthConfig.client.postLogoutRedirectUrl}; Path=/; HttpOnly`];
         logger.info("SSO redirect (http 301) triggered for:", req.url);
         if (oauthConfig.usePostForLogout) {
             res.writeHead(301, {
