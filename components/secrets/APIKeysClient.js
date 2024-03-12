@@ -35,11 +35,11 @@ function APIKeysClient(baseUrl) {
     }
 
     this.makeSysAdmin = async (userId, apiKey, accessToken) => {
-        return await _sendRequest(`/makeSysAdmin/${userId}`, "PUT", apiKey, accessToken);
+        return await _sendRequest(`/makeSysAdmin/${encodeURIComponent(userId)}`, "PUT", apiKey, accessToken);
     }
 
     this.deleteAdmin = async (userId, accessToken) => {
-        return await _sendRequest(`/deleteAdmin/${userId}`, "DELETE", undefined, accessToken);
+        return await _sendRequest(`/deleteAdmin/${encodeURIComponent(userId)}`, "DELETE", undefined, accessToken);
     }
 
     this.associateAPIKey = async (appName, name, userId, apiKey, accessToken) => {

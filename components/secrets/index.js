@@ -198,7 +198,7 @@ function secrets(server) {
                 return;
             }
 
-            await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.senderId, req.body);
+            await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"], req.body);
             res.statusCode = 200;
             res.end('System administrator added successfully.');
         } catch (error) {
@@ -209,13 +209,14 @@ function secrets(server) {
 
     server.put('/makeSysAdmin', httpUtils.bodyParser);
     server.put('/makeSysAdmin/:userId', async (req, res) => {
-        const userId = req.params.userId;
+        const userId = decodeURIComponent(req.params.userId);
         try {
             // Create a new Admin APIKey and associate it with another user
             let sysadminAPIKey;
             try{
-                secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.senderId);
+                sysadminAPIKey = secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"]);
             }catch (e) {
+                console.log(e)
                 // ignored and handled below
             }
 
@@ -236,11 +237,11 @@ function secrets(server) {
 
 
     server.delete('/deleteAdmin/:userId', async (req, res) => {
-        const userId = req.params.userId;
+        const userId = decodeURIComponent(req.params.userId);
         try {
             let sysadminAPIKey;
             try{
-                secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.senderId);
+                secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"]);
             }catch (e) {
                 // ignored and handled below
             }
@@ -261,6 +262,7 @@ function secrets(server) {
     });
 
 
+    server.put('/associateAPIKey/*', httpUtils.bodyParser);
     server.put('/associateAPIKey/:appName/:name/:userId', async (req, res) => {
         const appName = decodeURIComponent(req.params.appName);
         const name = decodeURIComponent(req.params.name);
@@ -277,7 +279,7 @@ function secrets(server) {
     });
 
 
-    server.delete('/deleteAPIKey/:appName/:apiName/:userId', async (req, res) => {
+    server.delete('/deleteAPIKey/:appName/:name/:userId', async (req, res) => {
         const appName = decodeURIComponent(req.params.appName);
         const name = decodeURIComponent(req.params.name);
         const userId = decodeURIComponent(req.params.userId);
@@ -292,7 +294,7 @@ function secrets(server) {
         }
     });
 
-    server.get('/getAPIKey/:appName/:apiName/:userId', async (req, res) => {
+    server.get('/getAPIKey/:appName/:name/:userId', async (req, res) => {
         const appName = decodeURIComponent(req.params.appName);
         const name = decodeURIComponent(req.params.name);
         const userId = decodeURIComponent(req.params.userId);
