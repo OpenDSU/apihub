@@ -1,13 +1,16 @@
 function secrets(server) {
+    const openDSU = require("opendsu");
+    const crypto = openDSU.loadAPI("crypto");
     const whitelistedContainers = ["DSU_Fabric", "Demiurge"];
     const whitelistedSecrets = ["credential"];
     const logger = $$.getLogger("secrets", "apihub/secrets");
     const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
     const constants = require("./constants");
+    const CONTAINERS = constants.CONTAINERS;
     const SecretsService = require("./SecretsService");
     let secretsService;
-    setTimeout(async ()=>{
-      secretsService =  await SecretsService.getSecretsServiceInstanceAsync(server.rootFolder);
+    setTimeout(async () => {
+        secretsService = await SecretsService.getSecretsServiceInstanceAsync(server.rootFolder);
     })
 
     const containerIsWhitelisted = (containerName) => {
@@ -21,7 +24,7 @@ function secrets(server) {
     const getSSOSecret = (request, response) => {
         let userId = request.headers["user-id"];
         let appName = request.params.appName;
-        if(!containerIsWhitelisted(appName) && !secretIsWhitelisted(userId)){
+        if (!containerIsWhitelisted(appName) && !secretIsWhitelisted(userId)) {
             response.statusCode = 403;
             response.end("Forbidden");
             return;
@@ -116,7 +119,7 @@ function secrets(server) {
 
     function getDIDSecret(req, res) {
         let {did, name} = req.params;
-        if(!containerIsWhitelisted(did) && !secretIsWhitelisted(name)){
+        if (!containerIsWhitelisted(did) && !secretIsWhitelisted(name)) {
             res.statusCode = 403;
             res.end("Forbidden");
             return;
@@ -151,7 +154,7 @@ function secrets(server) {
 
     const senderIsAdmin = (req) => {
         const authorizationHeader = req.headers.authorization;
-        if(!authorizationHeader) {
+        if (!authorizationHeader) {
             return !!secretsService.apiKeysContainerIsEmpty();
         }
 
@@ -160,7 +163,7 @@ function secrets(server) {
 
     server.post("/apiKey/*", httpUtils.bodyParser);
     server.post("/apiKey/:keyId/:isAdmin", async (req, res) => {
-        if(!senderIsAdmin(req)){
+        if (!senderIsAdmin(req)) {
             res.statusCode = 403;
             res.end("Forbidden");
             return;
@@ -172,7 +175,7 @@ function secrets(server) {
     });
 
     server.delete("/apiKey/:keyId", async (req, res) => {
-        if(!senderIsAdmin(req)){
+        if (!senderIsAdmin(req)) {
             res.statusCode = 403;
             res.end("Forbidden");
             return;
@@ -182,6 +185,127 @@ function secrets(server) {
         res.statusCode = 200;
         res.end();
     })
+
+    server.put('/becomeSysAdmin', httpUtils.bodyParser);
+    server.put('/becomeSysAdmin', async (req, res) => {
+        try {
+            // Logic to check if a system administrator exists and add a new Admin API Key
+            const adminContainerIsEmpty = secretsService.containerIsEmpty(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME);
+
+            if(!adminContainerIsEmpty){
+                res.statusCode = 403;
+                res.end("Forbidden");
+                return;
+            }
+
+            await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.senderId, req.body);
+            res.statusCode = 200;
+            res.end('System administrator added successfully.');
+        } catch (error) {
+            res.statusCode = 500;
+            res.end(error.message);
+        }
+    });
+
+    server.put('/makeSysAdmin', httpUtils.bodyParser);
+    server.put('/makeSysAdmin/:userId', async (req, res) => {
+        const userId = req.params.userId;
+        try {
+            // Create a new Admin APIKey and associate it with another user
+            let sysadminAPIKey;
+            try{
+                secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.senderId);
+            }catch (e) {
+                // ignored and handled below
+            }
+
+            if(!sysadminAPIKey){
+                res.statusCode = 403;
+                res.end("Forbidden");
+                return;
+            }
+
+            await secretsService.putSecretAsync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, userId, req.body);
+            res.statusCode = 200;
+            res.end('System administrator added successfully.');
+        } catch (error) {
+            res.statusCode = 500;
+            res.end(error.message);
+        }
+    });
+
+
+    server.delete('/deleteAdmin/:userId', async (req, res) => {
+        const userId = req.params.userId;
+        try {
+            let sysadminAPIKey;
+            try{
+                secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.senderId);
+            }catch (e) {
+                // ignored and handled below
+            }
+
+            if(!sysadminAPIKey){
+                res.statusCode = 403;
+                res.end("Forbidden");
+                return;
+            }
+
+            await secretsService.deleteSecretAsync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, userId);
+            res.statusCode = 200;
+            res.end('System administrator added successfully.');
+        } catch (error) {
+            res.statusCode = 500;
+            res.end(error.message);
+        }
+    });
+
+
+    server.put('/associateAPIKey/:appName/:name/:userId', async (req, res) => {
+        const appName = decodeURIComponent(req.params.appName);
+        const name = decodeURIComponent(req.params.name);
+        const userId = decodeURIComponent(req.params.userId);
+        try {
+            const secretName = crypto.sha256JOSE(appName + name + userId, "base64url");
+            await secretsService.putSecretAsync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName, req.body);
+            res.statusCode = 200;
+            res.end('API key associated successfully.');
+        } catch (error) {
+            res.statusCode = 500;
+            res.end(error.message);
+        }
+    });
+
+
+    server.delete('/deleteAPIKey/:appName/:apiName/:userId', async (req, res) => {
+        const appName = decodeURIComponent(req.params.appName);
+        const name = decodeURIComponent(req.params.name);
+        const userId = decodeURIComponent(req.params.userId);
+        try {
+            const secretName = crypto.sha256JOSE(appName + name + userId, "base64url");
+            await secretsService.deleteSecretAsync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
+            res.statusCode = 200;
+            res.end('API key deleted successfully.');
+        } catch (error) {
+            res.statusCode = 500;
+            res.end(error.message);
+        }
+    });
+
+    server.get('/getAPIKey/:appName/:apiName/:userId', async (req, res) => {
+        const appName = decodeURIComponent(req.params.appName);
+        const name = decodeURIComponent(req.params.name);
+        const userId = decodeURIComponent(req.params.userId);
+        try {
+            const secretName = crypto.sha256JOSE(appName + name + userId, "base64url");
+            const apiKey = secretsService.getSecretSync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
+            res.statusCode = 200;
+            res.end(apiKey);
+        } catch (error) {
+            res.statusCode = 500;
+            res.end(error.message);
+        }
+    });
 
     server.put('/putSSOSecret/*', httpUtils.bodyParser);
     server.get("/getSSOSecret/:appName", getSSOSecret);
