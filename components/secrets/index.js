@@ -192,7 +192,7 @@ function secrets(server) {
             // Logic to check if a system administrator exists and add a new Admin API Key
             const adminContainerIsEmpty = secretsService.containerIsEmpty(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME);
 
-            if(!adminContainerIsEmpty){
+            if (!adminContainerIsEmpty) {
                 res.statusCode = 403;
                 res.end("Forbidden");
                 return;
@@ -213,14 +213,14 @@ function secrets(server) {
         try {
             // Create a new Admin APIKey and associate it with another user
             let sysadminAPIKey;
-            try{
+            try {
                 sysadminAPIKey = secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"]);
-            }catch (e) {
+            } catch (e) {
                 console.log(e)
                 // ignored and handled below
             }
 
-            if(!sysadminAPIKey){
+            if (!sysadminAPIKey) {
                 res.statusCode = 403;
                 res.end("Forbidden");
                 return;
@@ -240,13 +240,13 @@ function secrets(server) {
         const userId = decodeURIComponent(req.params.userId);
         try {
             let sysadminAPIKey;
-            try{
+            try {
                 secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"]);
-            }catch (e) {
+            } catch (e) {
                 // ignored and handled below
             }
 
-            if(!sysadminAPIKey){
+            if (!sysadminAPIKey) {
                 res.statusCode = 403;
                 res.end("Forbidden");
                 return;
@@ -268,8 +268,19 @@ function secrets(server) {
         const name = decodeURIComponent(req.params.name);
         const userId = decodeURIComponent(req.params.userId);
         try {
-            const secretName = crypto.sha256JOSE(appName + name + userId, "base64url");
-            await secretsService.putSecretAsync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName, req.body);
+            const secretName = crypto.sha256JOSE(appName + userId, "base64url");
+            let secret;
+            try {
+                secret = secretsService.getSecretSync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
+                secret = JSON.parse(secret);
+            } catch (e) {
+                // ignored and handled below
+            }
+            if(!secret){
+                secret = {}
+                secret[name] = req.body;
+            }
+            await secretsService.putSecretAsync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName, JSON.stringify(secret));
             res.statusCode = 200;
             res.end('API key associated successfully.');
         } catch (error) {
@@ -284,8 +295,21 @@ function secrets(server) {
         const name = decodeURIComponent(req.params.name);
         const userId = decodeURIComponent(req.params.userId);
         try {
-            const secretName = crypto.sha256JOSE(appName + name + userId, "base64url");
-            await secretsService.deleteSecretAsync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
+            const secretName = crypto.sha256JOSE(appName + userId, "base64url");
+            let secret;
+            try {
+                secret = secretsService.getSecretSync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
+                secret = JSON.parse(secret);
+            }catch (e) {
+                // ignored and handled below
+            }
+            if(!secret){
+                res.statusCode = 404;
+                res.end('API key not found.');
+                return;
+            }
+            delete secret[name];
+            await secretsService.putSecretAsync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName, JSON.stringify(secret));
             res.statusCode = 200;
             res.end('API key deleted successfully.');
         } catch (error) {
@@ -299,10 +323,18 @@ function secrets(server) {
         const name = decodeURIComponent(req.params.name);
         const userId = decodeURIComponent(req.params.userId);
         try {
-            const secretName = crypto.sha256JOSE(appName + name + userId, "base64url");
-            const apiKey = secretsService.getSecretSync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
+            const secretName = crypto.sha256JOSE(appName + userId, "base64url");
+            let secret;
+            try {
+                secret = secretsService.getSecretSync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
+                secret = JSON.parse(secret);
+            } catch (e) {
+                res.statusCode = 404;
+                res.end('API key not found.');
+                return;
+            }
             res.statusCode = 200;
-            res.end(apiKey);
+            res.end(secret[name]);
         } catch (error) {
             res.statusCode = 500;
             res.end(error.message);

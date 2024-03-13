@@ -221,6 +221,10 @@ function SecretsService(serverRootFolder) {
 
     this.readSecretSync = this.getSecretSync;
 
+    this.getUserIdAPIKey = (secretName) => {
+        return this.getSecretSync(containers.USER_API_KEY_CONTAINER_NAME, secretName);
+    }
+
     this.getSecretFromDefaultContainerSync = (secretName) => {
         return this.getSecretSync(DEFAULT_CONTAINER_NAME, secretName);
     }
@@ -336,6 +340,8 @@ const getSecretsServiceInstanceAsync = async (serverRootFolder) => {
         secretsServiceInstance = new SecretsService(serverRootFolder);
         await secretsServiceInstance.loadContainersAsync();
     }
+
+    secretsServiceInstance.constants = require("./constants");
     return secretsServiceInstance;
 }
 
