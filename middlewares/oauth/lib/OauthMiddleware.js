@@ -19,6 +19,7 @@ function OAuthMiddleware(server) {
 
     const LOADER_PATH = "/loader";
     logger.debug(`Registering OAuthMiddleware`);
+    const staticContentIdentifiers = ["text/html", "application/xhtml+xml", "application/xml"];
     const config = require("../../../config");
     const oauthConfig = config.getConfig("oauthConfig");
     const path = require("path");
@@ -324,7 +325,16 @@ function OAuthMiddleware(server) {
         if (!accessTokenCookie) {
             if (!isActiveSession) {
                 util.printDebugLog("Redirect to login because accessTokenCookie and isActiveSession are missing.")
-                return redirectToLogin(req, res);
+                if(!req.headers.accept){
+                    return redirectToLogin(req, res);
+                }
+                const acceptHeadersIdentifiers = req.headers.accept.split(",");
+                if (acceptHeadersIdentifiers.some((acceptHeader) => staticContentIdentifiers.includes(acceptHeader))) {
+                    return redirectToLogin(req, res);
+                }
+                res.statusCode = 401;
+                return res.end("Unauthorized");
+
             } else {
                 util.printDebugLog("Logout because accessTokenCookie is missing and isActiveSession is present.")
                 return startLogoutPhase(res);
