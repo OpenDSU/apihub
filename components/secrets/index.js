@@ -207,7 +207,7 @@ function secrets(server) {
         }
     });
 
-    server.put('/makeSysAdmin', httpUtils.bodyParser);
+    server.put('/makeSysAdmin/:userId', httpUtils.bodyParser);
     server.put('/makeSysAdmin/:userId', async (req, res) => {
         const userId = decodeURIComponent(req.params.userId);
         try {
@@ -241,7 +241,7 @@ function secrets(server) {
         try {
             let sysadminAPIKey;
             try {
-                secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"]);
+                sysadminAPIKey = secretsService.getSecretSync(constants.CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"]);
             } catch (e) {
                 // ignored and handled below
             }
@@ -333,6 +333,12 @@ function secrets(server) {
                 res.end('API key not found.');
                 return;
             }
+            if(!secret[name]){
+                res.statusCode = 404;
+                res.end('API key not found.');
+                return;
+            }
+
             res.statusCode = 200;
             res.end(secret[name]);
         } catch (error) {
