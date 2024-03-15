@@ -1,5 +1,6 @@
 const util = require("./util");
 const urlModule = require("url");
+const {httpUtils} = require("../../../libs/http-wrapper");
 
 function OAuthMiddleware(server) {
     const logger = $$.getLogger("OAuthMiddleware", "apihub/oauth");
@@ -41,9 +42,9 @@ function OAuthMiddleware(server) {
         res.end();
     }
 
-    function setSSODetectedId(ssoDetectedId, SSOUserId, req, res) {
+    function setSSODetectedId(ssoDetectedId, SSOUserId, accessTokenCookie, req, res) {
         res.writeHead(200, {'Content-Type': 'text/html'});
-        return res.end(`<script>localStorage.setItem('SSODetectedId', '${ssoDetectedId}'); localStorage.setItem('SSOUserId', '${SSOUserId}'); window.location.href = '/redirect.html';</script>`);
+        return res.end(`<script>localStorage.setItem('SSODetectedId', '${ssoDetectedId}'); localStorage.setItem('SSOUserId', '${SSOUserId}'); localStorage.setItem('accessTokenCookie', '${accessTokenCookie}');window.location.href = '/redirect.html';</script>`);
     }
 
     function startAuthFlow(req, res) {
@@ -261,7 +262,7 @@ function OAuthMiddleware(server) {
         const parsedCookies = util.parseCookies(req.headers.cookie);
         let {accessTokenCookie, refreshTokenCookie, isActiveSession, SSODetectedId, SSOUserId} = parsedCookies;
         if (isSetSSODetectedIdPhaseActive()) {
-            return setSSODetectedId(SSODetectedId, SSOUserId, req, res);
+            return setSSODetectedId(SSODetectedId, SSOUserId, accessTokenCookie, req, res);
         }
         let logoutCookie = parsedCookies.logout;
         let cookies = [];
@@ -390,6 +391,56 @@ function OAuthMiddleware(server) {
             })
         })
     });
+
+    const GET_USER_ID = "/clientAuthenticationProxy/getUserId";
+    server.post(GET_USER_ID, httpUtils.bodyParser);
+    server.post(GET_USER_ID, async (req, res) => {
+        try{
+            req.body = JSON.parse(req.body);
+        } catch (e) {
+            res.statusCode = 400;
+            res.end("Invalid request body");
+            return;
+        }
+        const {clientId, clientSecret, scope, tokenEndpoint} = req.body;
+
+        const params = new URLSearchParams();
+        params.append('grant_type', 'client_credentials');
+        params.append('client_id', clientId);
+        params.append('client_secret', clientSecret);
+        params.append('scope', scope);
+
+        let response;
+        try {
+            response = await fetch(tokenEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params
+            })
+        } catch (e) {
+            res.statusCode = 500;
+            res.end(e.message);
+            return;
+        }
+        if (response.status !== 200) {
+            res.statusCode = response.status;
+            res.end(response.statusText);
+            return;
+        }
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            res.statusCode = 500;
+            res.end(e.message);
+            return;
+        }
+        const {payload} = util.parseAccessToken(data.access_token);
+        res.statusCode = 200;
+        res.end(payload.sub);
+    })
 }
 
 module.exports = OAuthMiddleware;
