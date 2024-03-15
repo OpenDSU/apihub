@@ -189,18 +189,35 @@ function secrets(server) {
     server.put('/becomeSysAdmin', httpUtils.bodyParser);
     server.put('/becomeSysAdmin', async (req, res) => {
         try {
-            // Logic to check if a system administrator exists and add a new Admin API Key
             const adminContainerIsEmpty = secretsService.containerIsEmpty(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME);
+            if (adminContainerIsEmpty) {
+                await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"], req.body);
+                res.statusCode = 200;
+                res.end('System administrator added successfully.');
+                return;
+            }
 
-            if (!adminContainerIsEmpty) {
+            let body = req.body;
+            try {
+                body = JSON.parse(body);
+            } catch (e) {
                 res.statusCode = 403;
                 res.end("Forbidden");
                 return;
             }
 
-            await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"], req.body);
-            res.statusCode = 200;
-            res.end('System administrator added successfully.');
+            if (body.secret) {
+                const adminSecrets = secretsService.getAllSecretsSync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME);
+                if (Object.values(adminSecrets).includes(body.secret)) {
+                    await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"], body.apiKey);
+                    res.statusCode = 200;
+                    res.end('System administrator added successfully.');
+                    return;
+                }
+            }
+
+            res.statusCode = 403;
+            res.end("Forbidden");
         } catch (error) {
             res.statusCode = 500;
             res.end(error.message);
@@ -276,7 +293,7 @@ function secrets(server) {
             } catch (e) {
                 // ignored and handled below
             }
-            if(!secret){
+            if (!secret) {
                 secret = {}
                 secret[name] = req.body;
             }
@@ -300,16 +317,16 @@ function secrets(server) {
             try {
                 secret = secretsService.getSecretSync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
                 secret = JSON.parse(secret);
-            }catch (e) {
+            } catch (e) {
                 // ignored and handled below
             }
-            if(!secret){
+            if (!secret) {
                 res.statusCode = 404;
                 res.end('API key not found.');
                 return;
             }
             delete secret[name];
-            if(Object.keys(secret).length === 0){
+            if (Object.keys(secret).length === 0) {
                 await secretsService.deleteSecretAsync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
                 res.statusCode = 200;
                 res.end('API key deleted successfully.');
@@ -340,7 +357,7 @@ function secrets(server) {
                 res.end('API key not found.');
                 return;
             }
-            if(!secret[name]){
+            if (!secret[name]) {
                 res.statusCode = 404;
                 res.end('API key not found.');
                 return;
