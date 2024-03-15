@@ -309,6 +309,13 @@ function secrets(server) {
                 return;
             }
             delete secret[name];
+            if(Object.keys(secret).length === 0){
+                await secretsService.deleteSecretAsync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
+                res.statusCode = 200;
+                res.end('API key deleted successfully.');
+                return;
+            }
+
             await secretsService.putSecretAsync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName, JSON.stringify(secret));
             res.statusCode = 200;
             res.end('API key deleted successfully.');
