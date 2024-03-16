@@ -1,12 +1,12 @@
 function secrets(server) {
     const openDSU = require("opendsu");
     const crypto = openDSU.loadAPI("crypto");
-    const whitelistedContainers = ["DSU_Fabric", "Demiurge"];
+    const constants = require("./constants");
+    const CONTAINERS = constants.CONTAINERS;
+    const whitelistedContainers = [CONTAINERS.DSU_FABRIC, CONTAINERS.DEMIURGE];
     const whitelistedSecrets = ["credential"];
     const logger = $$.getLogger("secrets", "apihub/secrets");
     const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
-    const constants = require("./constants");
-    const CONTAINERS = constants.CONTAINERS;
     const SecretsService = require("./SecretsService");
     let secretsService;
     setTimeout(async () => {
@@ -186,6 +186,24 @@ function secrets(server) {
         res.end();
     })
 
+    server.post("/createSysadminSecret", async (req, res) => {
+        let sysadminSecret
+        try {
+            sysadminSecret = secretsService.getSecretSync(CONTAINERS.API_KEY_CONTAINER_NAME, constants.SYSADMIN_SECRET);
+        } catch (e) {
+            // ignored and handled below
+        }
+        if (sysadminSecret) {
+            res.statusCode = 403;
+            res.end("Forbidden");
+            return;
+        }
+        const secret = crypto.sha256JOSE(crypto.generateRandom(32), "base64");
+        await secretsService.putSecretAsync(CONTAINERS.API_KEY_CONTAINER_NAME, constants.SYSADMIN_SECRET, secret);
+        res.statusCode = 200;
+        res.end(secret);
+    });
+
     server.put('/becomeSysAdmin', httpUtils.bodyParser);
     server.put('/becomeSysAdmin', async (req, res) => {
         try {
@@ -207,8 +225,8 @@ function secrets(server) {
             }
 
             if (body.secret) {
-                const adminSecrets = secretsService.getAllSecretsSync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME);
-                if (Object.values(adminSecrets).includes(body.secret)) {
+                const sysadminSecret = secretsService.getSecretSync(CONTAINERS.API_KEY_CONTAINER_NAME, constants.SYSADMIN_SECRET);
+                if (sysadminSecret === body.secret) {
                     await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"], body.apiKey);
                     res.statusCode = 200;
                     res.end('System administrator added successfully.');
