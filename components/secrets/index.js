@@ -273,6 +273,7 @@ function secrets(server) {
             res.statusCode = 200;
             res.end('System administrator added successfully.');
         } catch (error) {
+            console.log(error);
             res.statusCode = 500;
             res.end(error.message);
         }
