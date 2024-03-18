@@ -43,6 +43,22 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 		restartIntervalCheck = CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL;
 	}
 
+	const openDSU = require("opendsu");
+	const http = openDSU.loadAPI("http");
+	const crypto = openDSU.loadAPI("crypto");
+	const interceptor = (data, callback) => {
+		let {url, headers} = data;
+		if(!headers){
+			headers = {};
+		}
+
+		console.log("############################################################################", url);
+		headers["x-api-key"] = process.env.SSO_SECRETS_ENCRYPTION_KEY;
+		callback(undefined, {url, headers});
+	}
+
+	http.registerInterceptor(interceptor);
+
 	let port = listeningPort || 8080;
 	const conf =  require('./config').getConfig();
 	const server = new Server(sslConfig);
@@ -275,9 +291,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 				new AuthorisationMiddleware(server);
 			}
 
-			if (conf.enableAPIKeyAuth) {
-                APIKeyAuthorisation(server);
-			}
+            APIKeyAuthorisation(server);
 
 			if(conf.enableClientCredentialsOauth) {
 				ClientCredentialsOAuth(server);
