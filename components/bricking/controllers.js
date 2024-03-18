@@ -14,6 +14,10 @@ async function brickExists(request, response) {
     if (!brickExists) {
         brickExists = await request.oldFsBrickStorage.brickExists(hashLink);
     }
+
+    if(!brickExists){
+        return response.send(404, "Brick not found");
+    }
     return response.send(200, brickExists);
 }
 

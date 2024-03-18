@@ -28,8 +28,8 @@ class FSBrickStorage {
             await $$.promisify(fs.access)(brickPath);
             return true;
         } catch (error) {
-            return false;
         }
+        return false
     }
     addBrick(data, callback) {
         callback = $$.makeSaneCallback(callback);
