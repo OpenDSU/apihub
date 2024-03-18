@@ -1,3 +1,5 @@
+const constants = require("./constants");
+
 function secrets(server) {
     const openDSU = require("opendsu");
     const crypto = openDSU.loadAPI("crypto");
@@ -186,52 +188,39 @@ function secrets(server) {
         res.end();
     })
 
-    server.post("/createSysadminSecret", async (req, res) => {
-        let sysadminSecret
-        try {
-            sysadminSecret = secretsService.getSecretSync(CONTAINERS.API_KEY_CONTAINER_NAME, constants.SYSADMIN_SECRET);
-        } catch (e) {
-            // ignored and handled below
-        }
-        if (sysadminSecret) {
-            res.statusCode = 403;
-            res.end("Forbidden");
-            return;
-        }
-        const secret = crypto.sha256JOSE(crypto.generateRandom(32), "base64");
-        await secretsService.putSecretAsync(CONTAINERS.API_KEY_CONTAINER_NAME, constants.SYSADMIN_SECRET, secret);
-        res.statusCode = 200;
-        res.end(secret);
-    });
-
     server.put('/becomeSysAdmin', httpUtils.bodyParser);
     server.put('/becomeSysAdmin', async (req, res) => {
         try {
+            let body = req.body;
+            try {
+                body = JSON.parse(body);
+            } catch (e) {
+                res.statusCode = 400;
+                res.end("Body should be a valid JSON object.");
+                return;
+            }
+
+            if (!body.secret || !body.apiKey) {
+                res.statusCode = 400;
+                res.end("Body should contain secret and apiKey fields.");
+                return;
+            }
+
             const adminContainerIsEmpty = secretsService.containerIsEmpty(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME);
             if (adminContainerIsEmpty) {
                 await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"], req.body);
+                await secretsService.putSecretAsync(CONTAINERS.API_KEY_CONTAINER_NAME, constants.SYSADMIN_SECRET, body.secret);
                 res.statusCode = 200;
                 res.end('System administrator added successfully.');
                 return;
             }
 
-            let body = req.body;
-            try {
-                body = JSON.parse(body);
-            } catch (e) {
-                res.statusCode = 403;
-                res.end("Forbidden");
+            const sysadminSecret = secretsService.getSecretSync(CONTAINERS.API_KEY_CONTAINER_NAME, constants.SYSADMIN_SECRET);
+            if (sysadminSecret === body.secret) {
+                await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"], body.apiKey);
+                res.statusCode = 200;
+                res.end('System administrator added successfully.');
                 return;
-            }
-
-            if (body.secret) {
-                const sysadminSecret = secretsService.getSecretSync(CONTAINERS.API_KEY_CONTAINER_NAME, constants.SYSADMIN_SECRET);
-                if (sysadminSecret === body.secret) {
-                    await secretsService.putSecretAsync(CONTAINERS.ADMIN_API_KEY_CONTAINER_NAME, req.headers["user-id"], body.apiKey);
-                    res.statusCode = 200;
-                    res.end('System administrator added successfully.');
-                    return;
-                }
             }
 
             res.statusCode = 403;
