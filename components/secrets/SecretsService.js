@@ -19,10 +19,21 @@ function SecretsService(serverRootFolder) {
     const openDSU = require("opendsu");
     const crypto = openDSU.loadAPI("crypto");
     const encryptionKeys = process.env.SSO_SECRETS_ENCRYPTION_KEY ? process.env.SSO_SECRETS_ENCRYPTION_KEY.split(",") : undefined;
-    let latestEncryptionKey = encryptionKeys ? encryptionKeys[0].trim() : undefined;
-    let successfulEncryptionKeyIndex = 0;
+    let readonlyMode;
+
+    let writeEncryptionKey = encryptionKeys ? encryptionKeys[0].trim() : undefined;
+    if (typeof writeEncryptionKey === "undefined") {
+        readonlyMode = true;
+        console.warn("No encryption key found. Readonly mode activated");
+        return;
+    }
+    writeEncryptionKey = $$.Buffer.from(writeEncryptionKey, "base64");
+
+    let previousEncryptionKey = encryptionKeys.length === 2 ? encryptionKeys[1].trim() : undefined;
+    if (typeof previousEncryptionKey !== "undefined") {
+        previousEncryptionKey = $$.Buffer.from(previousEncryptionKey, "base64");
+    }
     const containers = {};
-    let readonlyMode = false;
 
     const apiKeyExists = (apiKeysContainer, apiKey) => {
         const apiKeys = Object.values(apiKeysContainer);
@@ -52,7 +63,7 @@ function SecretsService(serverRootFolder) {
         }
     }
 
-    this.loadContainersAsync = async () => {
+    this.loadAsync = async () => {
         ensureFolderExists(getStorageFolderPath());
         let secretsContainersNames = fs.readdirSync(getStorageFolderPath());
         if (secretsContainersNames.length) {
@@ -69,22 +80,6 @@ function SecretsService(serverRootFolder) {
         }
     }
 
-    this.forceWriteSecretsAsync = async () => {
-        ensureFolderExists(getStorageFolderPath());
-        let secretsContainersNames = fs.readdirSync(getStorageFolderPath());
-        if (secretsContainersNames.length) {
-            secretsContainersNames = secretsContainersNames.map((containerName) => {
-                const extIndex = containerName.lastIndexOf(".");
-                return path.basename(containerName).substring(0, extIndex);
-            })
-
-            for (let containerName of secretsContainersNames) {
-                await writeSecretsAsync(containerName);
-            }
-        } else {
-            logger.info("No secrets containers found");
-        }
-    }
     const createError = (code, message) => {
         const err = Error(message);
         err.code = code
@@ -93,16 +88,7 @@ function SecretsService(serverRootFolder) {
     }
 
     const encryptSecret = (secret) => {
-        const encryptionKeys = process.env.SSO_SECRETS_ENCRYPTION_KEY ? process.env.SSO_SECRETS_ENCRYPTION_KEY.split(",") : undefined;
-        if (!encryptionKeys) {
-            throw Error("process.env.SSO_SECRETS_ENCRYPTION_KEY is empty")
-        }
-        let latestEncryptionKey = encryptionKeys[0];
-        if (!$$.Buffer.isBuffer(latestEncryptionKey)) {
-            latestEncryptionKey = $$.Buffer.from(latestEncryptionKey, "base64");
-        }
-
-        return crypto.encrypt(secret, latestEncryptionKey);
+        return crypto.encrypt(secret, writeEncryptionKey);
     }
 
     const writeSecrets = (secretsContainerName, callback) => {
@@ -132,13 +118,39 @@ function SecretsService(serverRootFolder) {
         return path.join(folderPath, `${secretsContainerName}.secret`);
     }
 
-    const decryptSecret = async (secretsContainerName, encryptedSecret) => {
-        let bufferEncryptionKey = latestEncryptionKey;
-        if (!$$.Buffer.isBuffer(bufferEncryptionKey)) {
-            bufferEncryptionKey = $$.Buffer.from(bufferEncryptionKey, "base64");
+    const decryptAndParseSecrets = (secretsContainerName, encryptedSecret, encryptionKey) => {
+        let decryptedSecrets;
+        try {
+            decryptedSecrets = crypto.decrypt(encryptedSecret, encryptionKey);
+            decryptedSecrets = JSON.parse(decryptedSecrets.toString());
+            containers[secretsContainerName] = decryptedSecrets;
+            return decryptedSecrets;
+        } catch (e) {
+            logger.error(`Failed to parse secrets`);
+            throw createError(555, `Failed to parse secrets`);
         }
-
-        return crypto.decrypt(encryptedSecret, bufferEncryptionKey);
+    }
+    const decryptSecret = async (secretsContainerName, encryptedSecret) => {
+        let decryptedSecret;
+        try {
+            decryptedSecret = decryptAndParseSecrets(secretsContainerName, encryptedSecret, writeEncryptionKey);
+            readonlyMode = false;
+            return decryptedSecret;
+        } catch (e) {
+            try {
+                decryptedSecret = decryptAndParseSecrets(secretsContainerName, encryptedSecret, previousEncryptionKey);
+                logger.info(0x501, "Secrets Encryption Key rotation detected");
+                await writeSecretsAsync(secretsContainerName);
+                logger.info(0x501, `Re-encrypting Recovery Passphrases on disk completed`);
+                readonlyMode = false;
+                return decryptedSecret;
+            } catch (e) {
+                logger.error(`Failed to decrypt secrets`);
+                readonlyMode = true;
+                console.log("Readonly mode activated")
+                throw createError(555, `Failed to decrypt secrets`);
+            }
+        }
     };
 
     const getDecryptedSecrets = (secretsContainerName, callback) => {
@@ -153,17 +165,7 @@ function SecretsService(serverRootFolder) {
             try {
                 decryptedSecrets = await decryptSecret(secretsContainerName, secrets);
             } catch (e) {
-                logger.error(`Failed to decrypt secrets`);
-                readonlyMode = true;
-                console.log("Readonly mode activated")
-                return callback(createError(555, `Failed to decrypt secrets`));
-            }
-
-            try {
-                decryptedSecrets = JSON.parse(decryptedSecrets.toString());
-            } catch (e) {
-                logger.error(`Failed to parse secrets`);
-                return callback(createError(555, `Failed to parse secrets`));
+                return callback(e);
             }
 
             callback(undefined, decryptedSecrets);
@@ -221,10 +223,6 @@ function SecretsService(serverRootFolder) {
 
     this.readSecretSync = this.getSecretSync;
 
-    this.getUserIdAPIKey = (secretName) => {
-        return this.getSecretSync(containers.USER_API_KEY_CONTAINER_NAME, secretName);
-    }
-
     this.getSecretFromDefaultContainerSync = (secretName) => {
         return this.getSecretSync(DEFAULT_CONTAINER_NAME, secretName);
     }
@@ -250,6 +248,10 @@ function SecretsService(serverRootFolder) {
     }
 
     this.validateAPIKey = async (apiKey) => {
+        console.debug("Validating internal call");
+        if(apiKey === process.env.SSO_SECRETS_ENCRYPTION_KEY){
+            return true;
+        }
         await loadContainerAsync(CONTAINERS.API_KEY_CONTAINER_NAME);
         const container = containers[API_KEY_CONTAINER_NAME];
         if (!container) {
@@ -274,22 +276,6 @@ function SecretsService(serverRootFolder) {
         return index !== -1;
     }
 
-    this.getAllSecretsSync = (secretsContainerName) => {
-        if (readonlyMode) {
-            throw createError(555, `Secrets Service is in readonly mode`);
-        }
-        if (!containers[secretsContainerName]) {
-            containers[secretsContainerName] = {};
-            console.info("Initializing secrets container", secretsContainerName);
-        }
-        return containers[secretsContainerName];
-    }
-
-    this.generateServerSecretAsync = async (secretName) => {
-        const secret = crypto.generateRandom(32).toString("base64");
-        return await this.putSecretInDefaultContainerAsync(secretName, secret);
-    }
-
     this.deleteSecretAsync = async (secretsContainerName, secretName) => {
         await lock.lock();
         try {
@@ -309,42 +295,26 @@ function SecretsService(serverRootFolder) {
         }
         await lock.unlock();
     }
-
-    this.rotateKeyAsync = async () => {
-        let writeKey = encryptionKeys[0].trim();
-        let readKey = encryptionKeys.length === 2 ? encryptionKeys[1].trim() : writeKey;
-
-        if (readonlyMode) {
-            if (encryptionKeys.length !== 2) {
-                logger.info(0x501, `Rotation not possible`);
-                return;
-            }
-            logger.info(0x501, "Secrets Encryption Key rotation detected");
-            readonlyMode = false;
-            latestEncryptionKey = readKey;
-            await this.loadContainersAsync();
-            if (readonlyMode) {
-                logger.info(0x501, `Rotation not possible because wrong decryption key was provided. The old key should be the second one in the list`);
-                return;
-            }
-            latestEncryptionKey = writeKey;
-            await this.forceWriteSecretsAsync();
-            logger.info(0x501, `Re-encrypting Recovery Passphrases on disk completed`)
-        }
-    }
 }
 
 let secretsServiceInstance;
 const getSecretsServiceInstanceAsync = async (serverRootFolder) => {
     if (!secretsServiceInstance) {
         secretsServiceInstance = new SecretsService(serverRootFolder);
-        await secretsServiceInstance.loadContainersAsync();
+        await secretsServiceInstance.loadAsync();
     }
 
     secretsServiceInstance.constants = require("./constants");
     return secretsServiceInstance;
 }
 
+const resetInstance = async (serverRootFolder) => {
+    secretsServiceInstance = new SecretsService(serverRootFolder);
+    await secretsServiceInstance.loadAsync();
+    return secretsServiceInstance;
+}
+
 module.exports = {
-    getSecretsServiceInstanceAsync
+    getSecretsServiceInstanceAsync,
+    resetInstance
 };
