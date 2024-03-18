@@ -52,7 +52,6 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 			headers = {};
 		}
 
-		console.log("############################################################################", url);
 		headers["x-api-key"] = process.env.SSO_SECRETS_ENCRYPTION_KEY;
 		callback(undefined, {url, headers});
 	}
