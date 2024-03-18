@@ -175,9 +175,11 @@ function OAuthMiddleware(server) {
             res.statusCode = 200;
             return res.end(logout);
         }
+
         function isSetSSODetectedIdPhaseActive() {
             return url === "/setSSODetectedId";
         }
+
         function isCallbackPhaseActive() {
             const redirectUrlObj = new urlModule.URL(oauthConfig.client.redirectPath);
             const redirectPath = oauthConfig.client.redirectPath.slice(redirectUrlObj.origin.length);
@@ -214,7 +216,7 @@ function OAuthMiddleware(server) {
         }
 
 
-        if(req.skipSSO){
+        if (req.skipSSO) {
             return next();
         }
 
@@ -326,16 +328,14 @@ function OAuthMiddleware(server) {
         if (!accessTokenCookie) {
             if (!isActiveSession) {
                 util.printDebugLog("Redirect to login because accessTokenCookie and isActiveSession are missing.")
-                if(!req.headers.accept){
-                    return redirectToLogin(req, res);
-                }
-                const acceptHeadersIdentifiers = req.headers.accept.split(",");
-                if (acceptHeadersIdentifiers.some((acceptHeader) => staticContentIdentifiers.includes(acceptHeader))) {
-                    return redirectToLogin(req, res);
+                if (req.headers && req.headers.accept) {
+                    const acceptHeadersIdentifiers = req.headers.accept.split(",");
+                    if (acceptHeadersIdentifiers.some((acceptHeader) => staticContentIdentifiers.includes(acceptHeader))) {
+                        return redirectToLogin(req, res);
+                    }
                 }
                 res.statusCode = 401;
                 return res.end("Unauthorized");
-
             } else {
                 util.printDebugLog("Logout because accessTokenCookie is missing and isActiveSession is present.")
                 return startLogoutPhase(res);
@@ -395,7 +395,7 @@ function OAuthMiddleware(server) {
     const GET_USER_ID = "/clientAuthenticationProxy/getUserId";
     server.post(GET_USER_ID, httpUtils.bodyParser);
     server.post(GET_USER_ID, async (req, res) => {
-        try{
+        try {
             req.body = JSON.parse(req.body);
         } catch (e) {
             res.statusCode = 400;
