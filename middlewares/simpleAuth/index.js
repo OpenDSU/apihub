@@ -96,6 +96,9 @@ module.exports = function (server) {
             return res.end();
         }
 
+        const index = htpPwdSecrets.findIndex(entry => entry.startsWith(authorisationData[0]));
+        let [user, pwd, mail, ssoId] = htpPwdSecrets[index].split(':');
+        req.headers["user-id"] = ssoId;
         next();
     });
 
