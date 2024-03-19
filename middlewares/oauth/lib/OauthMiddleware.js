@@ -25,13 +25,15 @@ function OAuthMiddleware(server) {
     const oauthConfig = config.getConfig("oauthConfig");
     const path = require("path");
     const ENCRYPTION_KEYS_LOCATION = oauthConfig.encryptionKeysLocation || path.join(server.rootFolder, "external-volume", "encryption-keys");
-    const urlsToSkip = util.getUrlsToSkip();
+    let urlsToSkip = util.getUrlsToSkip() ;
 
     const WebClient = require("./WebClient");
     const webClient = new WebClient(oauthConfig);
     const errorMessages = require("./errorMessages");
 
-    const defaultUrlsToSkip = ["brick-exists", "get-all-versions", "get-last-version", "get-brick", "credential"];
+    const defaultUrlsToSkip = ["installation-details", "ready-probe"];
+    urlsToSkip = urlsToSkip.concat(defaultUrlsToSkip);
+    const defaultActionsToSkip = ["brick-exists", "get-all-versions", "get-last-version", "get-brick", "credential"];
 
     //we let KeyManager to boot and prepare ...
     util.initializeKeyManager(ENCRYPTION_KEYS_LOCATION, oauthConfig.keyTTL);
@@ -234,7 +236,7 @@ function OAuthMiddleware(server) {
             //ignored on purpose
         }
 
-        if (defaultUrlsToSkip.indexOf(action) !== -1) {
+        if (defaultActionsToSkip.indexOf(action) !== -1) {
             next();
             return;
         }
