@@ -59,7 +59,7 @@ module.exports = function (server) {
     }
 
     function getIdentifier(fixedUrl) {
-        return Buffer.from(fixedUrl).toString("base64");
+        return Buffer.from(fixedUrl).toString("base64url");
     }
 
     const indexer = {
