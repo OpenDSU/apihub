@@ -464,3 +464,5 @@ module.exports.middlewares = {
 module.exports.getSecretsServiceInstanceAsync = require("./components/secrets/SecretsService").getSecretsServiceInstanceAsync;
 
 module.exports.anchoringStrategies = require("./components/anchoring/strategies");
+
+module.exports.TokenBucket = require("./libs/TokenBucket");
