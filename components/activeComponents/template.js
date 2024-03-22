@@ -26,7 +26,7 @@ $$HEADER
     <div class="row">
         <div class="cell">TYPE</div>
         <div class="cell">HTTP METHOD</div>
-        <div class="cell">URL [MIDDLEWARE NAME]</div>
+        <div class="cell">PATH [MIDDLEWARE NAME]</div>
         <div class="cell">ACTIVE</div>
     </div>
     $$ACTIVE_COMPONENTS

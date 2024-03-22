@@ -20,7 +20,7 @@ module.exports = function (server){
         let enabled = "* possible to be disabled in readOnly";
         return `<div class="row">
                     <div class="cell">middleware</div>
-                    <div class="cell">${endpoint.method ? endpoint.method : "-"}</div>
+                    <div class="cell">${endpoint.method ? endpoint.method : "ALL"}</div>
                     <div class="cell">${endpoint.url ? endpoint.url : "-"} [${endpoint.fn.name}]</div>
                     <div class="cell">${enabled}</div>
                 </div>`;
