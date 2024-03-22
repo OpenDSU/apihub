@@ -43,6 +43,8 @@ function Server(sslOptions) {
         middleware.use("HEAD", reqUrl, reqResolver);
     };
 
+    this.getRegisteredMiddlewareFunctions = middleware.getRegisteredMiddlewareFunctions;
+
     this.makeLocalRequest = function (method,path, body,headers, callback)
     {
         if (typeof headers === "function")

@@ -35,6 +35,7 @@ const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
 	require('./components/stream');
 	require('./components/requestForwarder');
 	require('./components/lightDBEnclave');
+	require("./components/activeComponents");
 	//end
 })();
 
@@ -352,6 +353,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 		function addComponents(cb) {
             const requiredComponentNames = ["config"];
             addComponent("config", {module: "./components/config"});
+			addComponent("activeComponents", {module: "./components/activeComponents"});
 
             // take only the components that have configurations and that are not part of the required components
 			const middlewareList = [...conf.activeComponents]

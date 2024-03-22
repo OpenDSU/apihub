@@ -72,6 +72,9 @@ const defaultConfig = {
             "comment": "this is a standard middleware but its config is here to make it as uniform as possible",
             "statusLogInterval": 3000,
             "longRequests":["/mq/"]
+        },
+        "activeComponents":{
+            "module": "./components/activeComponents",
         }
     },
     "tokenBucket": {

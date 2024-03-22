@@ -63,6 +63,10 @@ function MiddlewareRegistry() {
         registeredMiddlewareFunctions.push({method, url, fn});
     }
 
+    this.getRegisteredMiddlewareFunctions = function() {
+        return registeredMiddlewareFunctions;
+    }
+
     this.use = function (...params) {
 	    let args = [ undefined, undefined, undefined ];
 
