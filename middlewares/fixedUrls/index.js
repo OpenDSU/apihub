@@ -186,6 +186,9 @@ module.exports = function (server) {
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, target.pk, callback);
         },
         schedule: function (criteria, callback) {
+            if(server.readOnlyModeActive){
+                return callback(new Error("FixedURL scheduling is not possible when server is in readOnly mode"));
+            }
             lightDBEnclaveClient.filter($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, criteria, function (err, records) {
                 if (err) {
                     if (err.code === 404) {
@@ -244,6 +247,10 @@ module.exports = function (server) {
             });
         },
         status: function () {
+            if(server.readOnlyModeActive){
+                //preventing log noise in readOnly mode
+                return ;
+            }
             let inProgressCounter = Object.keys(taskRegistry.inProgress);
             logger.debug(`Number of tasks that are in progress: ${inProgressCounter ? inProgressCounter.length : 0}`);
 
@@ -382,6 +389,10 @@ module.exports = function (server) {
             }
         },
         status: function () {
+            if(server.readOnlyModeActive){
+                //preventing log noise in readOnly mode
+                return ;
+            }
             let pendingReq = Object.keys(taskRunner.pendingRequests);
             let counter = 0;
             for (let pendingUrl of pendingReq) {
@@ -395,38 +406,40 @@ module.exports = function (server) {
         }
     };
 
-    fs.mkdir(storage, {recursive: true}, (err) => {
-        if (err) {
-            logger.error("Failed to ensure folder structure due to", err);
-        }
-        lightDBEnclaveClient = enclaveAPI.initialiseLightDBEnclave(DATABASE);
-        lightDBEnclaveClient.createDatabase(DATABASE, (err) => {
+    if(!server.readOnlyModeActive){
+        fs.mkdir(storage, {recursive: true}, (err) => {
             if (err) {
-                logger.debug("Failed to create database", err.message, err.code, err.rootCause);
+                logger.error("Failed to ensure folder structure due to", err);
             }
-
-            lightDBEnclaveClient.hasWriteAccess($$.SYSTEM_IDENTIFIER, (err, hasAccess) => {
+            lightDBEnclaveClient = enclaveAPI.initialiseLightDBEnclave(DATABASE);
+            lightDBEnclaveClient.createDatabase(DATABASE, (err) => {
                 if (err) {
-                    logger.debug("Failed to check if we have write access", err.message, err.code, err.rootCause);
+                    logger.debug("Failed to create database", err.message, err.code, err.rootCause);
                 }
 
-                if (hasAccess) {
-                    setInterval(taskRunner.execute, INTERVAL_TIME);
-                    setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
-                    return;
-                }
-
-                lightDBEnclaveClient.grantWriteAccess($$.SYSTEM_IDENTIFIER, (err) => {
+                lightDBEnclaveClient.hasWriteAccess($$.SYSTEM_IDENTIFIER, (err, hasAccess) => {
                     if (err) {
-                        logger.debug("Failed to grant write access to the enclave", err.message, err.code, err.rootCause);
+                        logger.debug("Failed to check if we have write access", err.message, err.code, err.rootCause);
                     }
 
-                    setInterval(taskRunner.execute, INTERVAL_TIME);
-                    setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
+                    if (hasAccess) {
+                        setInterval(taskRunner.execute, INTERVAL_TIME);
+                        setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
+                        return;
+                    }
+
+                    lightDBEnclaveClient.grantWriteAccess($$.SYSTEM_IDENTIFIER, (err) => {
+                        if (err) {
+                            logger.debug("Failed to grant write access to the enclave", err.message, err.code, err.rootCause);
+                        }
+
+                        setInterval(taskRunner.execute, INTERVAL_TIME);
+                        setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
+                    })
                 })
             })
-        })
-    });
+        });
+    }
 
     server.put("/registerFixedURLs", require("./../../utils/middlewares").bodyReaderMiddleware);
     server.put("/registerFixedURLs", function register(req, res, next) {
@@ -610,6 +623,24 @@ module.exports = function (server) {
         taskRegistry.isKnown(fixedUrl, (err, known) => {
             //if reached this point it might be a fixed url that is not known yet, and it should get registered and scheduled for resolving...
             //this case could catch params combinations that are not captured...
+
+            if(server.readOnlyModeActive){
+                //this case of readOnlyModeActive needs to be handled carefully in order to prevent any writes possible
+                if(known){
+                    return indexer.get(fixedUrl, (err, content) => {
+                        if (err) {
+                            logger.warn(`Failed to load content for fixedUrl; This could happen when the task is not yet resolved by full container`);
+                            //no current task and no cache... let's move on to resolving the req
+                            return next();
+                        }
+                        //known fixed url let's respond to the client
+                        respond(res, content);
+                    });
+                }else{
+                    return next();
+                }
+            }
+
             if (!known) {
                 return taskRegistry.register(fixedUrl, (err) => {
                     if (err) {
