@@ -31,7 +31,7 @@ function OAuthMiddleware(server) {
     const webClient = new WebClient(oauthConfig);
     const errorMessages = require("./errorMessages");
 
-    const defaultUrlsToSkip = ["installation-details", "ready-probe"];
+    const defaultUrlsToSkip = ["/installation-details", "/ready-probe"];
     urlsToSkip = urlsToSkip.concat(defaultUrlsToSkip);
     const defaultActionsToSkip = ["brick-exists", "get-all-versions", "get-last-version", "get-brick", "credential"];
 
