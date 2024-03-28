@@ -8,7 +8,7 @@ function Logger(server) {
         return (diff[0] * 1e9 + diff[1]) / 1e6;
     };
 
-    let ms = 3000;
+    let ms = 10000;
     let longRequests = [];
     const config = server.config.componentsConfig;
     if (config.requestLogger) {
