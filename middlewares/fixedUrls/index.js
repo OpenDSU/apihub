@@ -264,6 +264,22 @@ module.exports = function (server) {
                     logger.debug(`Number of fixed urls: ${tasks ? tasks.length : 0}`);
                 }
             });
+        },
+        httpStatus: async function(req, res){
+            let inProgressCounter = Object.keys(taskRegistry.inProgress);
+            let status = {};
+            try{
+                status.inProgress = inProgressCounter ? inProgressCounter.length : 0;
+                let scheduledTasks = await $$.promisify(lightDBEnclaveClient.getAllRecords)($$.SYSTEM_IDENTIFIER, TASKS_TABLE);
+                status.scheduled = scheduledTasks ? scheduledTasks.length : 0;
+                let tasks = await $$.promisify(lightDBEnclaveClient.getAllRecords)($$.SYSTEM_IDENTIFIER, HISTORY_TABLE);
+                status.total = tasks ? tasks.length : 0;
+            }catch(err){
+                res.statusCode = 500;
+                res.end();
+            }
+            res.statusCode = 200;
+            res.end(JSON.stringify(status));
         }
     };
     const taskRunner = {
@@ -423,7 +439,6 @@ module.exports = function (server) {
 
                     if (hasAccess) {
                         setInterval(taskRunner.execute, INTERVAL_TIME);
-                        setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
                         return;
                     }
 
@@ -433,7 +448,6 @@ module.exports = function (server) {
                         }
 
                         setInterval(taskRunner.execute, INTERVAL_TIME);
-                        setInterval(taskRunner.status, 1 * 60 * 1000);//each minute
                     })
                 })
             })
@@ -660,4 +674,5 @@ module.exports = function (server) {
     });
     server.use("*", getTimestampHandler);
     server.get("/mtime/*", getTimestampHandler);
+    server.get("/statusFixedURL", taskRegistry.httpStatus);
 }
