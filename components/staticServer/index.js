@@ -5,6 +5,7 @@ function StaticServer(server) {
     const config = require("../../config");
     let componentsConfig = config.getConfig("componentsConfig");
     const logger = $$.getLogger("StaticServer", "apihub/staticServer");
+    const excludedFiles = ["apihub.json"];
     let excludedFilesRegex;
     if (componentsConfig && componentsConfig.staticServer && componentsConfig.staticServer.excludedFiles) {
         excludedFilesRegex = componentsConfig.staticServer.excludedFiles.map(str => new RegExp(str));
@@ -185,6 +186,11 @@ function StaticServer(server) {
     }
 
     function sendFile(res, file) {
+        if (excludedFiles.includes(require("path").basename(file))) {
+            res.statusCode = 403;
+            res.end();
+            return;
+        }
         if (excludedFilesRegex) {
             let index = excludedFilesRegex.findIndex(regExp => file.match(regExp) !== null);
             if (index >= 0) {
