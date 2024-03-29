@@ -16,7 +16,7 @@ module.exports = function (server) {
 
     const workingDir = path.join(server.rootFolder, "external-volume", "fixed-urls");
     const storage = path.join(workingDir, "storage");
-    let lightDBEnclaveClient;
+    let lightDBEnclaveClient = enclaveAPI.initialiseLightDBEnclave(DATABASE);
 
     let watchedUrls = [];
     //we inject a helper function that can be called by different components or middleware to signal that their requests
@@ -411,7 +411,6 @@ module.exports = function (server) {
             if (err) {
                 logger.error("Failed to ensure folder structure due to", err);
             }
-            lightDBEnclaveClient = enclaveAPI.initialiseLightDBEnclave(DATABASE);
             lightDBEnclaveClient.createDatabase(DATABASE, (err) => {
                 if (err) {
                     logger.debug("Failed to create database", err.message, err.code, err.rootCause);
@@ -419,7 +418,7 @@ module.exports = function (server) {
 
                 lightDBEnclaveClient.hasWriteAccess($$.SYSTEM_IDENTIFIER, (err, hasAccess) => {
                     if (err) {
-                        logger.debug("Failed to check if we have write access", err.message, err.code, err.rootCause);
+                        logger.error("Failed to check if we have write access", err.message, err.code, err.rootCause);
                     }
 
                     if (hasAccess) {
@@ -430,7 +429,7 @@ module.exports = function (server) {
 
                     lightDBEnclaveClient.grantWriteAccess($$.SYSTEM_IDENTIFIER, (err) => {
                         if (err) {
-                            logger.debug("Failed to grant write access to the enclave", err.message, err.code, err.rootCause);
+                            logger.error("Failed to grant write access to the enclave", err.message, err.code, err.rootCause);
                         }
 
                         setInterval(taskRunner.execute, INTERVAL_TIME);
