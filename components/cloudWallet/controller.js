@@ -279,6 +279,7 @@ function handleSetSSAppTokenRequest(request, response) {
         name: SSAPP_TOKEN_COOKIE_NAME,
         value: JSON.stringify(ssappTokenCookieValue),
         httpOnly: true,
+        secure: true,
         path: "/",
         maxAge: 2147483647, // (2038-01-19 04:14:07) maximum value to avoid integer overflow on older browsers
     });

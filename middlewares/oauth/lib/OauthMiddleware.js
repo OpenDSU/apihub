@@ -57,7 +57,7 @@ function OAuthMiddleware(server) {
             if (err) {
                 return sendUnauthorizedResponse(req, res, "Unable to encrypt login info");
             }
-            let cookies = [`loginContextCookie=${encryptedContext}; Path=/; HttpOnly`];
+            let cookies = [`loginContextCookie=${encryptedContext}; Path=/; HttpOnly; Secure`];
             logger.info("SSO redirect (http 301) triggered for:", req.url);
             res.writeHead(301, {
                 Location: loginContext.redirect,
@@ -120,7 +120,7 @@ function OAuthMiddleware(server) {
                         util.printDebugLog("SSODetectedId", SSODetectedId);
                         res.writeHead(301, {
                             Location: "/setSSODetectedId",
-                            "Set-Cookie": [`logout=false; Path=/; HttpOnly`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}; Max-age=86400; HttpOnly`, "isActiveSession=true; Max-age=86400; HttpOnly", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}; Max-age=86400; HttpOnly`, `SSOUserId=${SSOUserId}; Max-age=86400; HttpOnly`, `SSODetectedId=${SSODetectedId}; Max-age=86400; HttpOnly`, `loginContextCookie=; Max-Age=0; Path=/; HttpOnly`],
+                            "Set-Cookie": [`logout=false; Path=/; HttpOnly; Secure`, `accessTokenCookie=${encryptedTokenSet.encryptedAccessToken}; Max-age=86400; HttpOnly; Secure`, "isActiveSession=true; Max-age=86400; HttpOnly; Secure", `refreshTokenCookie=${encryptedTokenSet.encryptedRefreshToken}; Max-age=86400; HttpOnly; Secure`, `SSOUserId=${SSOUserId}; Max-age=86400; HttpOnly; Secure`, `SSODetectedId=${SSODetectedId}; Max-age=86400; HttpOnly; Secure`, `loginContextCookie=; Max-Age=0; Path=/; HttpOnly; Secure`],
                             "Cache-Control": "no-store, no-cache, must-revalidate, post-check=0, pre-check=0"
                         });
                         res.end();
@@ -138,7 +138,7 @@ function OAuthMiddleware(server) {
             post_logout_redirect_uri: oauthConfig.client.postLogoutRedirectUrl, client_id: oauthConfig.client.clientId,
         };
 
-        let cookies = ["logout=true; Path=/; HttpOnly", "accessTokenCookie=; Max-Age=0; HttpOnly", "isActiveSession=; Max-Age=0; HttpOnly", "refreshTokenCookie=; Max-Age=0; HttpOnly", "loginContextCookie=; Path=/; HttpOnly; Max-Age=0", `logoutUrl=${logoutUrl.href}; Path=/; HttpOnly`, `postLogoutRedirectUrl=${oauthConfig.client.postLogoutRedirectUrl}; Path=/; HttpOnly`];
+        let cookies = ["logout=true; Path=/; HttpOnly; Secure", "accessTokenCookie=; Max-Age=0; HttpOnly; Secure", "isActiveSession=; Max-Age=0; HttpOnly; Secure", "refreshTokenCookie=; Max-Age=0; HttpOnly; Secure", "loginContextCookie=; Path=/; HttpOnly; Secure; Max-Age=0", `logoutUrl=${logoutUrl.href}; Path=/; HttpOnly; Secure`, `postLogoutRedirectUrl=${oauthConfig.client.postLogoutRedirectUrl}; Path=/; HttpOnly; Secure`];
         logger.info("SSO redirect (http 301) triggered for:", req.url);
         if (oauthConfig.usePostForLogout) {
             res.writeHead(301, {
@@ -195,7 +195,7 @@ function OAuthMiddleware(server) {
         }
 
         function startLogoutPhase(res) {
-            let cookies = ["accessTokenCookie=; Max-Age=0; HttpOnly", "isActiveSession=; Max-Age=0; HttpOnly", "refreshTokenCookie=; Max-Age=0; HttpOnly", "loginContextCookie=; Path=/; Max-Age=0; HttpOnly"];
+            let cookies = ["accessTokenCookie=; Max-Age=0; HttpOnly; Secure", "isActiveSession=; Max-Age=0; HttpOnly; Secure", "refreshTokenCookie=; Max-Age=0; HttpOnly; Secure", "loginContextCookie=; Path=/; Max-Age=0; HttpOnly; Secure"];
             logger.info("SSO redirect (http 301) triggered for:", req.url);
             res.writeHead(301, {
                 Location: "/logout",
@@ -361,7 +361,7 @@ function OAuthMiddleware(server) {
                         return sendUnauthorizedResponse(req, res, "Unable to refresh token");
                     }
 
-                    cookies = cookies.concat([`accessTokenCookie=${tokenSet.encryptedAccessToken}; Max-age=86400; HttpOnly`, `refreshTokenCookie=${tokenSet.encryptedRefreshToken}; HttpOnly`]);
+                    cookies = cookies.concat([`accessTokenCookie=${tokenSet.encryptedAccessToken}; Max-age=86400; HttpOnly; Secure`, `refreshTokenCookie=${tokenSet.encryptedRefreshToken}; HttpOnly; Secure`]);
                     logger.info("SSO redirect (http 301) triggered for:", req.url);
                     res.writeHead(301, {Location: "/", "Set-Cookie": cookies});
                     res.end();
@@ -386,7 +386,7 @@ function OAuthMiddleware(server) {
                     }
 
                     const sessionExpiryTime = Date.now() + oauthConfig.sessionTimeout;
-                    cookies = cookies.concat([`sessionExpiryTime=${sessionExpiryTime}; Path=/; HttpOnly`, `accessTokenCookie=${encryptedAccessToken}; Path=/; Max-age=86400; HttpOnly`]);
+                    cookies = cookies.concat([`sessionExpiryTime=${sessionExpiryTime}; Path=/; HttpOnly; Secure`, `accessTokenCookie=${encryptedAccessToken}; Path=/; Max-age=86400; HttpOnly; Secure`]);
                     res.setHeader("Set-Cookie", cookies);
                     next();
                 })
