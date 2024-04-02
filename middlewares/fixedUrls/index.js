@@ -125,7 +125,8 @@ module.exports = function (server) {
                     record.counter = 0;
                 }
                 record.counter++;
-                return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, record.pk, record, callback)
+                record.__fallbackToInsert = true;
+                return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, record.pk, record, callback);
             });
         },
         remove: function (task, callback) {
