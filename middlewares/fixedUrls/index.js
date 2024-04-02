@@ -137,6 +137,7 @@ module.exports = function (server) {
                 }
                 if (record.counter && record.counter > 1) {
                     record.counter = 1;
+                    record.__fallbackToInsert = true;
                     return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, toBeRemoved.pk, record, callback);
                 }
 
@@ -277,7 +278,7 @@ module.exports = function (server) {
                 status.total = tasks ? tasks.length : 0;
             }catch(err){
                 res.statusCode = 500;
-                res.end();
+                res.end(`Failed to generate status info ${err.message}`);
             }
             res.statusCode = 200;
             res.end(JSON.stringify(status));
@@ -483,7 +484,7 @@ module.exports = function (server) {
             taskRegistry.register(fixedUrl, function (err) {
                 if (err) {
                     res.statusCode = 500;
-                    return res.end(err.message);
+                    return res.end(`Failed to register url because: ${err.message}`);
                 }
                 recursiveRegistry();
             });
@@ -503,7 +504,7 @@ module.exports = function (server) {
             if (err) {
                 logger.log(err);
                 res.statusCode = 500;
-                return res.end();
+                return res.end(`Failed to schedule task ${err.message}`);
             }
             res.statusCode = 200;
             res.end();
@@ -521,7 +522,7 @@ module.exports = function (server) {
             if (err) {
                 logger.log(err);
                 res.statusCode = 500;
-                return res.end();
+                return res.end(`Failed to cancel task ${err.message}`);
             }
             res.statusCode = 200;
             res.end();
