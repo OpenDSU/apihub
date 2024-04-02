@@ -17,7 +17,7 @@ module.exports = function (server){
 
     function getMiddlewareRow(endpoint){
         //return endpoint;
-        let enabled = "* possible to be disabled in readOnly";
+        let enabled = "PUT, POST, DELETE methods are disabled in readOnly";
         return `<div class="row">
                     <div class="cell">middleware</div>
                     <div class="cell">${endpoint.method ? endpoint.method : "ALL"}</div>
