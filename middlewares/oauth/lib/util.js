@@ -484,7 +484,7 @@ function validateAccessToken(jwksEndpoint, accessToken, callback) {
             return callback(err);
         }
 
-        crypto.joseAPI.verify(accessToken, publicKey, callback);
+        crypto.jsonWebTokenAPI.verify(accessToken, publicKey, callback);
     })
 }
 
