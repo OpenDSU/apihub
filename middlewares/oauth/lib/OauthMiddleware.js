@@ -1,6 +1,7 @@
 const util = require("./util");
 const urlModule = require("url");
 const {httpUtils} = require("../../../libs/http-wrapper");
+const {printDebugLog} = require("./util");
 
 function OAuthMiddleware(server) {
     const logger = $$.getLogger("OAuthMiddleware", "apihub/oauth");
@@ -241,14 +242,9 @@ function OAuthMiddleware(server) {
             return;
         }
 
-        if (!config.getConfig("enableLocalhostAuthorization") && req.headers.host.indexOf("localhost") === 0) {
-            next();
-            return;
-        }
-
         //this if is meant to help debugging "special" situation of wrong localhost req being checked with sso even if localhostAuthorization is disabled
         if (!config.getConfig("enableLocalhostAuthorization") && req.headers.host.indexOf("localhost") !== -1) {
-            logger.debug("SSO verification activated on 'local' request", "host header", req.headers.headers.host, JSON.stringify(req.headers));
+            printDebugLog("SSO verification activated on 'local' request", "host header", req.headers.host, JSON.stringify(req.headers));
         }
 
         if (isCallbackPhaseActive()) {
