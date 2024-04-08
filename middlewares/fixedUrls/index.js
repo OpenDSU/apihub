@@ -254,7 +254,7 @@ module.exports = function (server) {
                 return ;
             }
             let inProgressCounter = Object.keys(taskRegistry.inProgress);
-            logger.debug(`Number of tasks that are in progress: ${inProgressCounter ? inProgressCounter.length : 0}`);
+            logger.debug(`Number of tasks that are in progress: ${inProgressCounter.length ? inProgressCounter.length : 0}`);
 
             lightDBEnclaveClient.getAllRecords($$.SYSTEM_IDENTIFIER, TASKS_TABLE, (err, scheduledTasks) => {
                 if (!err) {

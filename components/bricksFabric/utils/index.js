@@ -22,7 +22,7 @@ const getBricksFabricStrategy = () => {
             return;
         }
     }
-    domainConfig = clone(domainConfig || {});
+    domainConfig = clone(domainConfig);
     return domainConfig;
 };
 

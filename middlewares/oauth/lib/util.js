@@ -372,16 +372,6 @@ function decryptAccessTokenCookie(accessTokenCookie, callback) {
     })
 }
 
-function getDecryptedAccessToken(accessTokenCookie, callback) {
-    decryptAccessTokenCookie(accessTokenCookie, (err, decryptedAccessTokenCookie) => {
-        if (err) {
-            return callback(err);
-        }
-
-        callback(undefined, decryptedAccessTokenCookie.token);
-    })
-}
-
 function getSSODetectedIdFromPayload(obj) {
     return obj.email || obj.preferred_username || obj.upn || obj.sub;
 }

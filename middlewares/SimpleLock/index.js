@@ -70,7 +70,7 @@ module.exports = function (server) {
         });
     }
 
-    function checkIfLockExists(id, secret, callback){
+    function checkIfLockExists(id, callback){
         getLockData(id, (err, lockData)=>{
             if(err){
                 return callback(err);
@@ -97,7 +97,7 @@ module.exports = function (server) {
     }
 
     function putLock(id, secret, period, callback){
-        checkIfLockExists(id, secret, (err, locked)=>{
+        checkIfLockExists(id, (err, locked)=>{
             if(err){
                 return callback(err);
             }
