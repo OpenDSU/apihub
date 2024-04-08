@@ -26,7 +26,7 @@ function FSLock(filePath, maxTimeMilliSeconds, forcedLockDelay) {
                 return callback(err);
             }
             if (isMyLock) {
-                return removeDir(getLockPath(filePath), {recursive: true}, callback);
+                return removeDir(getLockPath(), {recursive: true}, callback);
             }
 
             callback(Error(`The lock is owned by another instance.`));
