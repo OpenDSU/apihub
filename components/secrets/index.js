@@ -87,7 +87,7 @@ function secrets(server) {
         const key = "presetEncryptionKeyForInitialLog";
         const text = "TheQuickBrownFoxJumpedOverTheLazyDog";
 
-        logger.info(0x500, "Recovery Passphrase Encryption Check\nPlain text: " + text);
+        logger.info(0x500, "Recovery Passphrase Encryption Check. Plain text: " + text);
         logger.info(0x500, "Preset encryption key: " + key);
 
         const filePath = require("path").join(server.rootFolder, "initialEncryptionTest");
