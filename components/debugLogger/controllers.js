@@ -15,19 +15,19 @@ const levels = {
 
 const logger = $$.getLogger("debugLogger", "apihub/debugLogger");
 
-function createHandlerAppendToLog(server) {
+function createHandlerAppendToLog() {
   return function appendToLog(request, response) {
     if (!request.body || !request.body.message) {
       response.send(400);
       return;
     }
-    const message = request.body && request.body.message;
+    const message = request.body.message;
     const anchorID = request.params.anchorID;
     const logLevel = levels[request.params.logLevel] || levels['info'];
 
     let data;
 
-    if (message && typeof message === 'string') {
+    if (typeof message === 'string') {
       data = { date: new Date().toISOString(), level: logLevel, anchorID: anchorID, message: message };
     } else {
       response.send(400);
@@ -74,7 +74,7 @@ function createHandlerAppendToLog(server) {
   };
 }
 
-function createHandlerReadFromLog(server) {
+function createHandlerReadFromLog() {
   return function readFromLog(request, response) {
     logger.debug('running');
     const today = new Date().toISOString().split('T')[0];
@@ -102,6 +102,7 @@ function createHandlerReadFromLog(server) {
           fs.readFile(fileName, (err, data) => {
             if (err) {
               reject(err);
+              return;
             }
             data = JSON.parse(data);
             data = data.filter((log) => log.anchorID === anchorID);

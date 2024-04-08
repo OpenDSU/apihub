@@ -45,28 +45,19 @@ function Server(sslOptions) {
 
     this.getRegisteredMiddlewareFunctions = middleware.getRegisteredMiddlewareFunctions;
 
-    this.makeLocalRequest = function (method,path, body,headers, callback)
-    {
-        if (typeof headers === "function")
-        {
+    this.makeLocalRequest = function (method,path, body,headers, callback) {
+        if (typeof headers === "function") {
             callback = headers;
             headers = undefined;
         }
 
-        if (typeof body === "function")
-        {
+        if (typeof body === "function") {
             callback = body;
             headers = undefined;
             body = undefined;
         }
 
         const protocol =  require(this.protocol);
-
-        let hostName = "127.0.0.1";
-        if(process.env.BDNS_ROOT_HOSTS){
-            let hostUrl = new URL(process.env.BDNS_ROOT_HOSTS);
-            hostName = hostUrl.hostname;
-        }
 
         const options = {
             hostname : '127.0.0.1',
@@ -127,15 +118,15 @@ function Server(sslOptions) {
         try {
             const makeLocalRequest = $$.promisify(this.makeLocalRequest.bind(this));
             let response = await makeLocalRequest(method, path, body, headers);
-    
+
             if (response) {
                 try {
                     response = JSON.parse(response);
                 } catch (error) {
                     // the response isn't a JSON so we keep it as it is
-                }           
+                }
             }
-    
+
             return response;
         } catch (error) {
             // console.warn(`Failed to call ${method} on '${path}'`, error);

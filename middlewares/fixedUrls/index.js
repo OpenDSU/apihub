@@ -271,7 +271,7 @@ module.exports = function (server) {
             let inProgressCounter = Object.keys(taskRegistry.inProgress);
             let status = {};
             try{
-                status.inProgress = inProgressCounter ? inProgressCounter.length : 0;
+                status.inProgress = inProgressCounter.length ? inProgressCounter.length : 0;
                 let scheduledTasks = await $$.promisify(lightDBEnclaveClient.getAllRecords)($$.SYSTEM_IDENTIFIER, TASKS_TABLE);
                 status.scheduled = scheduledTasks ? scheduledTasks.length : 0;
                 let tasks = await $$.promisify(lightDBEnclaveClient.getAllRecords)($$.SYSTEM_IDENTIFIER, HISTORY_TABLE);

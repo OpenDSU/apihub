@@ -566,18 +566,13 @@ function printDebugLog(...args) {
 
 module.exports = {
     pkce,
-    pkceChallenge,
     urlEncodeForm,
-    encodeCookie,
-    decodeCookie,
     parseCookies,
     initializeKeyManager,
     parseAccessToken,
     encryptTokenSet,
-    encryptAccessToken,
     encryptLoginInfo,
     decryptLoginInfo,
-    decryptAccessTokenCookie,
     decryptRefreshTokenCookie,
     getPublicKey,
     validateAccessToken,

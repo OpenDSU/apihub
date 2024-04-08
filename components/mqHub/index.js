@@ -1,4 +1,3 @@
-const config = require("../../config");
 const URL_PREFIX = "/mq";
 //known implementations for the MQ adapters
 const adapterImpls = {

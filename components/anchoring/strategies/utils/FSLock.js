@@ -34,7 +34,7 @@ function FSLock(filePath, maxTimeMilliSeconds, forcedLockDelay) {
     }
 
     this.isMyLock = (callback) => {
-        getLockCreationTime(filePath).then(creationTime => {
+        getLockCreationTime().then(creationTime => {
             let isOwnLock = false;
             if (creationTime === lockCreationTime) {
                 isOwnLock = true;

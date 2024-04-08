@@ -1,5 +1,3 @@
-const constants = require("./constants");
-
 function secrets(server) {
     const openDSU = require("opendsu");
     const crypto = openDSU.loadAPI("crypto");

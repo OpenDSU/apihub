@@ -1,5 +1,3 @@
-const {getAllVersions, getLastVersion, totalNumberOfAnchors} = require("./controllers");
-
 function Anchoring(server) {
     function requestServerMiddleware(request, response, next) {
         request.server = server;
@@ -12,8 +10,7 @@ function Anchoring(server) {
         createOrUpdateMultipleAnchors,
         getAllVersions,
         getLastVersion,
-        totalNumberOfAnchors,
-        dumpAnchors
+        totalNumberOfAnchors
     } = require("./controllers");
 
     const {responseModifierMiddleware, requestBodyJSONMiddleware} = require("../../utils/middlewares");

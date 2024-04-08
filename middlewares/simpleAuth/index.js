@@ -6,7 +6,6 @@ const crypto = openDSU.loadAPI("crypto");
 const querystring = require('querystring');
 const cookieUtils = require("../../utils/cookie-utils");
 const SecretsService = require("../../components/secrets/SecretsService");
-const util = require("../oauth/lib/util");
 const appName = 'simpleAuth'
 const PUT_SECRETS_URL_PATH = "/putSSOSecret/simpleAuth";
 const GET_SECRETS_URL_PATH = "/getSSOSecret/simpleAuth";

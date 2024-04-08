@@ -1,4 +1,3 @@
-const template = require("./template");
 module.exports = function (server){
 
     function getEndpointRow(endpoint){

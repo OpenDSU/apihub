@@ -85,10 +85,7 @@ module.exports = function (server) {
                 });
             }
 
-            if(lockData.expire){
-                logger.debug("cleaning lock files, time to expire", Number(lockData.expire) < Date.now());
-            }
-
+            logger.debug("cleaning lock files, time to expire", Number(lockData.expire) < Date.now());
             logger.debug("cleaning lock files", lockData);
             return callback(undefined, true);
 

@@ -114,7 +114,7 @@ function SecretsService(serverRootFolder) {
 
 
     const getSecretFilePath = (secretsContainerName) => {
-        const folderPath = getStorageFolderPath(secretsContainerName);
+        const folderPath = getStorageFolderPath();
         return path.join(folderPath, `${secretsContainerName}.secret`);
     }
 
@@ -192,7 +192,7 @@ function SecretsService(serverRootFolder) {
             } else {
                 containers[secretsContainerName][secretName] = secret;
             }
-            res = await writeSecretsAsync(secretsContainerName, secretName);
+            res = await writeSecretsAsync(secretsContainerName);
         } catch (e) {
             await lock.unlock();
             throw e;

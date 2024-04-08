@@ -24,7 +24,7 @@ const getAnchoringDomainConfig = async (domain) => {
         }
     }
 
-    domainConfig = clone(domainConfig || {});
+    domainConfig = clone(domainConfig);
     domainConfig.option = domainConfig.option || {};
     domainConfig.option.path = require("path").join(config.getConfig("externalStorage"), `domains/${domain}/anchors`);
 

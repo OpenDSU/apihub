@@ -19,7 +19,6 @@ function OAuthMiddleware(server) {
         res.end(returnHtml);
     }
 
-    const LOADER_PATH = "/loader";
     logger.debug(`Registering OAuthMiddleware`);
     const staticContentIdentifiers = ["text/html", "application/xhtml+xml", "application/xml"];
     const config = require("../../../config");
@@ -39,13 +38,13 @@ function OAuthMiddleware(server) {
     //we let KeyManager to boot and prepare ...
     util.initializeKeyManager(ENCRYPTION_KEYS_LOCATION, oauthConfig.keyTTL);
 
-    function redirectToLogin(req, res) {
+    function redirectToLogin(res) {
         res.statusCode = 200;
         res.write(`<html><body><script>sessionStorage.setItem('initialURL', window.location.href); window.location.href = "/login";</script></body></html>`);
         res.end();
     }
 
-    function setSSODetectedId(ssoDetectedId, SSOUserId, accessTokenCookie, req, res) {
+    function setSSODetectedId(ssoDetectedId, SSOUserId, accessTokenCookie, res) {
         res.writeHead(200, {'Content-Type': 'text/html'});
         return res.end(`<script>localStorage.setItem('SSODetectedId', '${ssoDetectedId}'); localStorage.setItem('SSOUserId', '${SSOUserId}'); localStorage.setItem('accessTokenCookie', '${accessTokenCookie}');window.location.href = '/redirect.html';</script>`);
     }
@@ -262,7 +261,7 @@ function OAuthMiddleware(server) {
         const parsedCookies = util.parseCookies(req.headers.cookie);
         let {accessTokenCookie, refreshTokenCookie, isActiveSession, SSODetectedId, SSOUserId} = parsedCookies;
         if (isSetSSODetectedIdPhaseActive()) {
-            return setSSODetectedId(SSODetectedId, SSOUserId, accessTokenCookie, req, res);
+            return setSSODetectedId(SSODetectedId, SSOUserId, accessTokenCookie, res);
         }
         let logoutCookie = parsedCookies.logout;
         let cookies = [];
@@ -329,7 +328,7 @@ function OAuthMiddleware(server) {
                 if (req.headers && req.headers.accept) {
                     const acceptHeadersIdentifiers = req.headers.accept.split(",");
                     if (acceptHeadersIdentifiers.some((acceptHeader) => staticContentIdentifiers.includes(acceptHeader))) {
-                        return redirectToLogin(req, res);
+                        return redirectToLogin(res);
                     }
                 }
                 res.statusCode = 401;

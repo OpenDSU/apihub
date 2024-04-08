@@ -4,7 +4,7 @@ const logger = $$.getLogger("apihub", "bricking");
 async function brickExists(request, response) {
     response.setHeader("Cache-control", "No-Cache"); // set brick cache to expire in 1 year
 
-    const {domain, hashLink} = request.params;
+    const {hashLink} = request.params;
     let brickExists;
     try {
         brickExists = await request.fsBrickStorage.brickExists(hashLink);
