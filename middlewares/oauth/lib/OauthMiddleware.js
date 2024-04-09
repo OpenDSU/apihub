@@ -425,10 +425,19 @@ function OAuthMiddleware(server) {
             res.statusCode = response.status;
             try {
                 const data = await response.json();
-                res.end(data.error_description);
+                if (data.error_description) {
+                    res.end(data.error_description);
+                    return;
+                }
+                if(data.error){
+                    res.end(data.error);
+                    return;
+                }
             } catch (e) {
-                res.end(response.statusText);
+                // ignored and handled below
             }
+
+            res.end(response.statusText);
             return;
         }
         let data;
