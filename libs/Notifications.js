@@ -214,7 +214,6 @@ function NotificationsManager(workingFolderPath, storageFolderPath) {
 				}
 
 				let counter = 0;
-				let totalCount = 0;
 				for (const msg of queue) {
 					if (++counter > msgBatchSize) {
 						break;
@@ -226,7 +225,6 @@ function NotificationsManager(workingFolderPath, storageFolderPath) {
 					// Remove expired message
 					if (elapsed >= msg.ttl) {
 						queue.remove(msg);
-						totalCount++;
 					}
 				}
 			}

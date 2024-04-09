@@ -5,7 +5,7 @@ function InstallationDetails(server){
 		const path = require("path");
 
 		const basicProcOptions = {cwd: path.resolve(targetPath), stdio: [0, "pipe", "pipe"]};
-		child_process.exec(" git log -n 1  --pretty=oneline", basicProcOptions, function (err, stdout, stderr) {
+		child_process.exec(" git log -n 1  --pretty=oneline", basicProcOptions, function (err, stdout) {
 			if (err) {
 				return callback(err);
 			}

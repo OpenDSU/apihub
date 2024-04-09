@@ -68,41 +68,41 @@ function MiddlewareRegistry() {
     }
 
     this.use = function (...params) {
-	    let args = [ undefined, undefined, undefined ];
+    let args = [ undefined, undefined, undefined ];
 
-	    switch (params.length) {
-            case 0:
-				throw Error('Use method needs at least one argument.');
-				
-            case 1:
-                if (typeof params[0] !== 'function') {
-                    throw Error('If only one argument is provided it must be a function');
-                }
+    switch (params.length) {
+        case 0:
+            throw Error('Use method needs at least one argument.');
 
-                args[2] = params[0];
+        case 1:
+            if (typeof params[0] !== 'function') {
+                throw Error('If only one argument is provided it must be a function');
+            }
 
-                break;
-            case 2:
-                if (typeof params[0] !== 'string' || typeof params[1] !== 'function') {
-                    throw Error('If two arguments are provided the first one must be a string (url) and the second a function');
-                }
+            args[2] = params[0];
 
-                args[1]=params[0];
-                args[2]=params[1];
+            break;
+        case 2:
+            if (typeof params[0] !== 'string' || typeof params[1] !== 'function') {
+                throw Error('If two arguments are provided the first one must be a string (url) and the second a function');
+            }
 
-                break;
-            default:
-                if (typeof params[0] !== 'string' || typeof params[1] !== 'string' || typeof params[2] !== 'function') {
-                    throw Error('If three or more arguments are provided the first one must be a string (HTTP verb), the second a string (url) and the third a function');
-                }
+            args[1]=params[0];
+            args[2]=params[1];
 
-                if (!([ 'get', 'post', 'put', 'delete', 'patch', 'head', 'connect', 'options', 'trace' ].includes(params[0].toLowerCase()))) {
-                    throw new Error('If three or more arguments are provided the first one must be a HTTP verb but none could be matched');
-                }
+            break;
+        default:
+            if (typeof params[0] !== 'string' || typeof params[1] !== 'string' || typeof params[2] !== 'function') {
+                throw Error('If three or more arguments are provided the first one must be a string (HTTP verb), the second a string (url) and the third a function');
+            }
 
-                args = params;
+            if (!([ 'get', 'post', 'put', 'delete', 'patch', 'head', 'connect', 'options', 'trace' ].includes(params[0].toLowerCase()))) {
+                throw new Error('If three or more arguments are provided the first one must be a HTTP verb but none could be matched');
+            }
 
-                break;
+            args = params;
+
+            break;
         }
 
         use.apply(this, args);
@@ -139,11 +139,11 @@ function MiddlewareRegistry() {
             return;
         }
 
-	    const registeredMethod = registeredMiddlewareFunctions[index].method;
-	    const registeredUrl = registeredMiddlewareFunctions[index].url;
-	    const fn = registeredMiddlewareFunctions[index].fn;
+        const registeredMethod = registeredMiddlewareFunctions[index].method;
+        const registeredUrl = registeredMiddlewareFunctions[index].url;
+        const fn = registeredMiddlewareFunctions[index].fn;
 
-	    if (!methodMatch(registeredMethod, method)) {
+        if (!methodMatch(registeredMethod, method)) {
             execute(++index, method, url, ...params);
             return;
         }

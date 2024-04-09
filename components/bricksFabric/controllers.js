@@ -1,7 +1,7 @@
 
 function createHandler(flow, server) {
 
-    return function storeTransaction (request, response, next) {
+    return function storeTransaction (request, response) {
 
         //strategy is already booted up
         flow.storeData(request.body, server, (err, result) => {

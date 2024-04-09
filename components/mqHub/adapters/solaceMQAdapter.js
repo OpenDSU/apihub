@@ -1,4 +1,4 @@
-function SolaceMQAdapter(configuration){
+function SolaceMQAdapter(){
 	throw new Error("Not Implemented!!!");
 }
 

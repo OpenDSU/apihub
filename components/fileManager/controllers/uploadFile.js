@@ -18,7 +18,7 @@ function uploadFile(req, res) {
             res.end(JSON.stringify(result));
         }
     })
-};
+}
 
 function upload(req, callback) {
     const fs = require('fs');

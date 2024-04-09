@@ -1,1 +1,0 @@
-var server = require("../index").createInstance(9080, "../../../tmp");

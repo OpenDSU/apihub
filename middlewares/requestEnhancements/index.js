@@ -4,7 +4,7 @@ function setupRequestEnhancements(server) {
     const constants = require("./../../moduleConstants");
 
 	server.use(function (req, res, next) {
-	    const logs = [];
+        const logs = [];
         req.log = function(...args){
             logs.push(args);
         };

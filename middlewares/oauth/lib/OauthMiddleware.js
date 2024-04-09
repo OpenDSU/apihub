@@ -12,7 +12,7 @@ function OAuthMiddleware(server) {
         const loginUrl = oauthConfig.client.postLogoutRedirectUrl;
         const returnHtml = "<html>" +
             `<body>We apologize for the inconvenience. The automated login attempt was unsuccessful. 
-                    You can either <a href=\"${loginUrl}\">retry the login</a> or if the issue persists, please restart your browser.
+                    You can either <a href="${loginUrl}">retry the login</a> or if the issue persists, please restart your browser.
                     <script>sessionStorage.setItem('initialURL', window.location.href);</script>
                 </body>` +
             "</html>";

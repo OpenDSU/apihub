@@ -3,7 +3,6 @@ require("../../../../../../builds/output/testsRuntime");
 const dc = require("double-check");
 const assert = dc.assert;
 const FSLock = require("../utils/FSLock");
-const fs = require("fs");
 const path = require("path");
 assert.callback("Acquire and release lock", (callback) => {
     dc.createTestFolder("testFolder", (err, folder) => {

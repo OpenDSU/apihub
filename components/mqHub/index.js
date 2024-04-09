@@ -7,11 +7,6 @@ const adapterImpls = {
 	lightdb: require("./adapters/lighDBEnclaveAdapter.js")
 };
 
-//just to expose the possibility to add new implementations for the adapters
-function registerMQAdapterImpl(adapterName, adapterImpl) {
-	adapterImpls[adapterName] = adapterImpl;
-}
-
 const defaultSettings = {
 	// normally there are gateways timeouts of 30seconds
 	mq_client_timeout: 60 * 1000,//sec

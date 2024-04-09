@@ -1,5 +1,3 @@
-
-
 function AutoSavePendingTransactions (flow, timeout, server) {
     flow.completeBlock(server);
     setTimeout (  () => {
@@ -46,11 +44,6 @@ function BricksFabric(server) {
     server.put(`${URL_PREFIX}/add`, requestBodyJSONMiddleware);
 
     server.put(`${URL_PREFIX}/add`, storeTransaction);
-};
-
-
-
-
-
+}
 
 module.exports = BricksFabric;

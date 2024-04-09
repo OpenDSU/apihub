@@ -74,7 +74,7 @@ function BDNS(server) {
         }
     }
 
-    async function bdnsHandler(request, response, next) {
+    async function bdnsHandler(request, response) {
         try {
             await initialize();
         } catch (e) {

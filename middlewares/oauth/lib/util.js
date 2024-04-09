@@ -234,7 +234,7 @@ function getPreviousEncryptionKey(callback) {
 const SSODetectedIdsAndUserIds = {};
 function encryptTokenSet(tokenSet, callback) {
     delete SSODetectedIdsAndUserIds[tokenSet.access_token];
-    getSSODetectedIdAndUserId(tokenSet, (err, {SSODetectedId, SSOUserId})=>{
+    getSSODetectedIdAndUserId(tokenSet, (err, {SSODetectedId})=>{
         if (err) {
             return callback(err);
         }

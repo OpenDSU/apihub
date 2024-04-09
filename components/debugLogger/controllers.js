@@ -4,7 +4,7 @@ const path = require('swarmutils').path;
 const API_HUB = require('apihub');
 
 let config = API_HUB.getServerConfig();
-const rootFolder = arguments.rootFolder || path.resolve(config.storage);
+const rootFolder = path.resolve(config.storage);
 
 const levels = {
   error: 'error',

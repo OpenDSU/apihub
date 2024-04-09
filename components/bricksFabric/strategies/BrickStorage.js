@@ -31,15 +31,13 @@ function BrickStorage() {
     }
 
     this.completeBlock = function (server, callback) {
-        if (callback === undefined)
-        {
-            callback = (err, result) => {
+        if (callback === undefined) {
+            callback = () => {
                 // Autosave callback.
             };
         }
 
-        if (this.pendingTransactions.length === 0)
-        {
+        if (this.pendingTransactions.length === 0) {
             //No pending transactions
             return;
         }
