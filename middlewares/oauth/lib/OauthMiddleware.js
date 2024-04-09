@@ -434,7 +434,7 @@ function OAuthMiddleware(server) {
                     return;
                 }
             } catch (e) {
-                // ignored and handled below
+                console.error(e);
             }
 
             res.end(response.statusText);
