@@ -423,21 +423,22 @@ function OAuthMiddleware(server) {
         }
         if (response.status !== 200) {
             res.statusCode = response.status;
+            let errMessage = response.statusText;
             try {
                 const data = await response.json();
-                if (data.error_description) {
-                    res.end(data.error_description);
-                    return;
+                if (data.error) {
+                    errMessage = data.error;
+                    logger.error(data.error);
                 }
-                if(data.error){
-                    res.end(data.error);
-                    return;
+
+                if (data.error_description) {
+                    logger.error(data.error_description);
+                    errMessage = data.error_description;
                 }
             } catch (e) {
-                console.error(e);
+                logger.error(e);
             }
-
-            res.end(response.statusText);
+            res.end(errMessage);
             return;
         }
         let data;
