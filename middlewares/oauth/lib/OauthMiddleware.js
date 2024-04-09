@@ -25,7 +25,7 @@ function OAuthMiddleware(server) {
     const oauthConfig = config.getConfig("oauthConfig");
     const path = require("path");
     const ENCRYPTION_KEYS_LOCATION = oauthConfig.encryptionKeysLocation || path.join(server.rootFolder, "external-volume", "encryption-keys");
-    let urlsToSkip = util.getUrlsToSkip() ;
+    let urlsToSkip = util.getUrlsToSkip();
 
     const WebClient = require("./WebClient");
     const webClient = new WebClient(oauthConfig);
@@ -423,7 +423,12 @@ function OAuthMiddleware(server) {
         }
         if (response.status !== 200) {
             res.statusCode = response.status;
-            res.end(response.statusText);
+            try {
+                const data = await response.json();
+                res.end(data.error_description);
+            } catch (e) {
+                res.end(response.statusText);
+            }
             return;
         }
         let data;
