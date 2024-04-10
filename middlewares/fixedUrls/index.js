@@ -96,12 +96,8 @@ module.exports = function (server) {
         },
         register: function (task, callback) {
             let newRecord = taskRegistry.createModel(task);
-            lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, newRecord.pk, function (err, record) {
-                if (err || !record) {
-                    return lightDBEnclaveClient.insertRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, newRecord.pk, newRecord,  callback);
-                }
-                return callback(undefined);
-            });
+            newRecord.__fallbackToInsert = true
+            return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, newRecord.pk, newRecord,  callback);
         },
         add: function (task, callback) {
             let newRecord = taskRegistry.createModel(task);
