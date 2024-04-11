@@ -31,7 +31,7 @@ async function getBrick(request, response) {
         try {
             brick = await getBrickWithExternalProvidersFallbackAsync(request, domain, hashLink, request.fsBrickStorage);
         } catch (e) {
-            logger.error("Failed to get brick", e); 
+            logger.debug("Failed to get brick", e);
         }
         if (!brick) {
             brick = await getBrickWithExternalProvidersFallbackAsync(request, domain, hashLink, request.oldFsBrickStorage);
