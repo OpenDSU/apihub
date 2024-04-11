@@ -107,12 +107,11 @@ module.exports = function (server) {
                         //if we fail... could be that the task is ready register by another request due to concurency
                         //we do another getrecord and if fails we return the original insert record error
                         if(insertError){
-                            return lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, function (err, record) {
-                                if (err || !record) {
-                                    return callback(insertError);
-                                }
-                                callback(undefined);
-                            });
+                            //we set the counter to 2 just in case there is a task with a counter value that we don't know,
+                            // and we hope to have enough invalidation of the task to don't have garbage
+                            newRecord.counter = 2;
+                            newRecord.__fallbackToInsert = true;
+                            return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, record.pk, record, callback);
                         }
                         callback(undefined);
                     });
