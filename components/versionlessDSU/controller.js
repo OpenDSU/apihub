@@ -54,6 +54,16 @@ async function handleGetVersionlessDSURequest(request, response) {
         if(resolvedFilePath.indexOf(versionlessDSUFolderPath) === -1){
             throw Error("Trying to read outside of VersionLess storage folder");
         }
+
+        try{
+            await $$.promisify(fs.access)(filePath, fs.constants.F_OK);
+        }catch(err){
+            logger.info(`[VersionlessDSU] Unable to locate storage file ${filePath}`, err);
+            response.statusCode = 404;
+            response.end();
+            return;
+        }
+
         const fileContent = await $$.promisify(fs.readFile)(filePath);
         logger.debug(`[VersionlessDSU] Reading existing versionlessDSU from ${filePath}`);
         response.setHeader('content-type', "application/octet-stream"); // required in order for opendsu http fetch to properly work
