@@ -26,7 +26,7 @@ module.exports = async () => {
                 range = range.split("=")[1];
             }
             if (range.indexOf("-") !== -1) {
-                parts = range.split("-");
+                let parts = range.split("-");
                 start = parseInt(parts[0], 10);
                 if (parts[1]) {
                     end = parseInt(parts[1], 10);

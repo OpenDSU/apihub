@@ -1,6 +1,5 @@
 const zeroMQModuleName = "zeromq";
 const zmq = require(zeroMQModuleName);
-const child_process = require("child_process");
 
 const pubsAddress = "tcp://127.0.0.1:7000";
 const subsAddress = "tcp://127.0.0.1:7001";
@@ -16,9 +15,9 @@ random_publisher.connect(pubsAddress);
 let channels = [];
 let waitingToConnect = {};
 
-const subscriberOneSocket = createSubscriber("miqu");
-const subscriberTwoSocket = createSubscriber("tra");
-const subscriberThreeSocket = createSubscriber("bu");
+createSubscriber("miqu");
+createSubscriber("tra");
+createSubscriber("bu");
 
 function createSubscriber(channelName){
     let subscriber = zmq.createSocket("sub");

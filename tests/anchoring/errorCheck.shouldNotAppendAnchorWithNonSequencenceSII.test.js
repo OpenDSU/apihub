@@ -11,7 +11,7 @@ const  utils =  require('./utils');
 
 assert.callback('Should not append anchor with non sequence SSI test', async (callback) => {
 
-    dc.createTestFolder('createDSU', async (err, folder) => {
+    dc.createTestFolder('createDSU', async () => {
         const vaultDomainConfig = {
             "anchoring": {
                 "type": "FSX",

@@ -53,10 +53,6 @@ function generateRandomFile(filePath, fileSize) {
     });
 }
 
-function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 async function compareOriginalFileWithOneFromDSU(originalFilePath, chunkSize, streamUrl) {
     const originalFileReadStream = fs.createReadStream(originalFilePath, { highWaterMark: chunkSize });
     let startIndex = 0;

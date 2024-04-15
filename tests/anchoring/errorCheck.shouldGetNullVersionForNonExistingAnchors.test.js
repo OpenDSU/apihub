@@ -10,7 +10,7 @@ const  utils =  require('./utils');
 
 assert.callback('Should get null or empty array version for non existing anchors', async (callback) => {
 
-    dc.createTestFolder('createDSU', async (err, folder) => {
+    dc.createTestFolder('createDSU', async () => {
         const vaultDomainConfig = {
             "anchoring": {
                 "type": "FSX",

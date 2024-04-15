@@ -139,7 +139,7 @@ function FileOperations() {
             return callback(new Error("No fileId specified."));
         }
 
-        let forbiddenCharacters = new RegExp(/[~`!#$%^&*+=\-\[\]\\';,/{}|":<>?]/g);
+        let forbiddenCharacters = new RegExp(/[~`!#$%^&*+=\-[\]\\';,/{}|":<>?]/g);
         if (forbiddenCharacters.test(anchorId)) {
             logger.error(`Found forbidden characters in anchorId ${anchorId}`);
             return callback(new Error(`anchorId ${anchorId} contains forbidden characters`));

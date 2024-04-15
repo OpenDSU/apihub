@@ -66,12 +66,12 @@ async function boot(validatorDID, serverUrl, domain, domainConfig, rootFolder, s
             if (command.type === "nonced") {
                 return bricksledgerInstance.executeNoncedCommand(command, commandExecutionCallback);
             }
-            return callback(`Unknown command type '${type}' specified`);
+            return callback(`Unknown command type '${command.type}' specified`);
         };
 
         parentPort.on("message", (message) => {
             if (!message) {
-                return callback(`${logPrefix} Received empty message!`);
+                throw Error(`${logPrefix} Received empty message!`);
             }
 
             const command = bricksledger.createCommand(message);

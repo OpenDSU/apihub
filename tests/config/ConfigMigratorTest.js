@@ -1,6 +1,4 @@
 require("../../../../builds/output/testsRuntime");
-const testIntegration = require("../../../../psknode/tests/util/tir");
-
 const fs = require("fs");
 const path = require("path");
 

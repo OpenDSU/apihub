@@ -150,7 +150,7 @@ function Server(sslOptions) {
     }
 
     return new Proxy(this, {
-       get(target, prop, receiver) {
+       get(target, prop) {
            if(typeof target[prop] !== "undefined") {
                return target[prop];
            }

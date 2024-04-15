@@ -72,7 +72,9 @@ module.exports = function (server) {
         if (req.headers.authorization) {
             const [username, password] = req.headers.authorization.split(" ")[1].split(":");
             const index = htpPwdSecrets.findIndex(entry => entry.startsWith(username));
-            let [user, pwd, mail, ssoId] = htpPwdSecrets[index].split(':');
+            const splitSecrets= htpPwdSecrets[index].split(':');
+            const pwd = splitSecrets[1];
+            const ssoId = splitSecrets[3];
             if (pwd === password) {
                 req.headers["user-id"] = ssoId;
                 return next();
@@ -96,8 +98,8 @@ module.exports = function (server) {
         }
 
         const index = htpPwdSecrets.findIndex(entry => entry.startsWith(authorisationData[0]));
-        let [user, pwd, mail, ssoId] = htpPwdSecrets[index].split(':');
-        req.headers["user-id"] = ssoId;
+        const splitSecrets= htpPwdSecrets[index].split(':');
+        req.headers["user-id"] = splitSecrets[3];
         next();
     });
 
@@ -153,7 +155,7 @@ module.exports = function (server) {
         return res.end(returnHtml);
     })
 
-    const simpleAuthHandler = async (req, res, next) => {
+    const simpleAuthHandler = async (req, res) => {
         const {body} = req;
         const formResult = querystring.parse(body);
         const hashedPassword = crypto.sha256JOSE(formResult.password).toString("hex");

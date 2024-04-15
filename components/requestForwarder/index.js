@@ -3,7 +3,7 @@ const logger = $$.getLogger("requestForwarder", "apihub/requestForwarder");
 module.exports = function(server){
     server.post(registeredUrl, require("./../../utils/middlewares/index").requestBodyJSONMiddleware);
 
-    server.post(registeredUrl, function(req, res, next){
+    server.post(registeredUrl, function(req, res){
         let url = req.body.url;
 
         if(!url){
@@ -31,7 +31,7 @@ module.exports = function(server){
             response.on('end', res.end);
           });
 
-          request.on("error", (err) => {
+          request.on("error", () => {
             res.statusCode = 500;
             res.end();
           });

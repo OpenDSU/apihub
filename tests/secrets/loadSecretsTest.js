@@ -1,12 +1,7 @@
 require("../../../../builds/output/testsRuntime");
-const tir = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
 const assert = dc.assert;
-const path = require("path");
-const fs = require("fs");
-const config = require("../../config");
 const openDSU = require("opendsu");
-const SecretsService = require("../../components/secrets/SecretsService");
 const crypto = openDSU.loadAPI("crypto");
 const generateEncryptionKey = () => {
     return crypto.generateRandom(32).toString("base64");
