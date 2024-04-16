@@ -1,4 +1,3 @@
-
 const HASH_MAX_SIZE = process.env.FOLDER_NAME_SIZE || 5;
 
 function verifyBrickHash(brickHash) {

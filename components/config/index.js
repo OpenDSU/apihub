@@ -1,10 +1,10 @@
 const config = require("../../config");
 
 function Config(server) {
-    const { requestBodyJSONMiddleware, responseModifierMiddleware } = require("../../utils/middlewares");
+    const {requestBodyJSONMiddleware, responseModifierMiddleware} = require("../../utils/middlewares");
 
     function getDomainConfig(request, response) {
-        const { domain } = request.params;
+        const {domain} = request.params;
         const domainConfig = config.getDomainConfig(domain);
 
         if (!domainConfig) {
@@ -14,7 +14,7 @@ function Config(server) {
     }
 
     function getDomainKeySSI(request, response) {
-        const { domain } = request.params;
+        const {domain} = request.params;
         const domainConfig = config.getDomainConfig(domain);
         const domainKeySSI = domainConfig && domainConfig.contracts ? domainConfig.contracts.constitution : null;
         response.send(200, domainKeySSI);
@@ -28,7 +28,7 @@ function Config(server) {
     }
 
     function updateDomainConfig(request, response) {
-        const { domain } = request.params;
+        const {domain} = request.params;
         const domainConfig = request.body;
         config.updateDomainConfig(domain, domainConfig, (error) => {
             if (error) {

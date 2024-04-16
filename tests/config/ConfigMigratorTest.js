@@ -201,7 +201,7 @@ assert.callback(
         try {
             const folder = await $$.promisify(dc.createTestFolder)("test");
             const configFolderPath = path.join(folder, "/external-volume/config");
-            await $$.promisify(fs.mkdir)(configFolderPath, { recursive: true });
+            await $$.promisify(fs.mkdir)(configFolderPath, {recursive: true});
 
             const serverJsonFilePath = path.join(configFolderPath, "server.json");
             await $$.promisify(fs.writeFile)(serverJsonFilePath, JSON.stringify(initialConfig));
@@ -228,7 +228,6 @@ assert.callback(
                 fs.accessSync(domainConfigFilePath);
             });
 
-            
 
             testFinished();
         } catch (error) {

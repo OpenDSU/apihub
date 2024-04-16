@@ -30,10 +30,10 @@ const defaultConfig = {
             "enableSignatureCheck": true
         },
         "bricks": {
-            "module": "./components/bricks",           
+            "module": "./components/bricks",
         },
         "anchoring": {
-            "module": "./components/anchoring",            
+            "module": "./components/anchoring",
         },
         "staticServer": {
             "module": "./components/staticServer"
@@ -56,17 +56,17 @@ const defaultConfig = {
     "enableRequestLogger": false,
     "enableJWTAuthorisation": false,
     "skipJWTAuthorisation": [
-      "/leaflet-wallet",
-      "/anchor",
-      "/bricks",
-      "/bricksFabric",
-      "/create-channel",
-      "/forward-zeromq",
-      "/send-message",
-      "/receive-message",
-      "/files",
-      "/notifications",
-      "/mq"
+        "/leaflet-wallet",
+        "/anchor",
+        "/bricks",
+        "/bricksFabric",
+        "/create-channel",
+        "/forward-zeromq",
+        "/send-message",
+        "/receive-message",
+        "/files",
+        "/notifications",
+        "/mq"
     ],
 };
 

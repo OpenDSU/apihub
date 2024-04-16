@@ -5,7 +5,7 @@ const assert = dc.assert;
 const FSLock = require("../utils/FSLock");
 const path = require("path");
 assert.callback("Trying to acquire multiple locks", (callback) => {
-    dc.createTestFolder("testFolder", (err, folder)=>{
+    dc.createTestFolder("testFolder", (err, folder) => {
         if (err) {
             throw err;
         }
@@ -14,9 +14,9 @@ assert.callback("Trying to acquire multiple locks", (callback) => {
         const fsLock = new FSLock(filePath, 1000, 1000);
         const newFsLock = new FSLock(filePath, 1000, 1000);
 
-        fsLock.acquireLock((err)=>{
+        fsLock.acquireLock((err) => {
             assert.true(typeof err === "undefined");
-            newFsLock.acquireLock((err)=>{
+            newFsLock.acquireLock((err) => {
                 assert.true(typeof err !== "undefined");
                 callback();
             })

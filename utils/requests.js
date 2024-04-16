@@ -1,4 +1,3 @@
-
 const http = require("http");
 const https = require("https");
 
@@ -57,7 +56,7 @@ function isJSON(data) {
 
 function getHeaders(data, headers) {
     const dataString = data ? JSON.stringify(data) : null;
-    return Object.assign({}, { 'Content-Type': 'application/json' }, dataString ? { 'Content-Length': dataString.length } : null, headers);
+    return Object.assign({}, {'Content-Type': 'application/json'}, dataString ? {'Content-Length': dataString.length} : null, headers);
 }
 
 module.exports = makeRequest;

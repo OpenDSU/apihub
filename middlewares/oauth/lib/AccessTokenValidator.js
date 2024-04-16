@@ -30,7 +30,7 @@ function AccessTokenValidator(server) {
         }
 
         const jwksEndpoint = config.getConfig("oauthJWKSEndpoint");
-        util.validateAccessToken(jwksEndpoint, authorisation,  (err) => {
+        util.validateAccessToken(jwksEndpoint, authorisation, (err) => {
             if (err) {
                 return sendUnauthorizedResponse(req, res, "Failed to validate token");
             }

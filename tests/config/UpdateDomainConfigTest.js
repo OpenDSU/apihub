@@ -96,8 +96,8 @@ assert.callback(
                 },
             };
 
-            const { port, storageFolder } = await testIntegration.launchConfigurableApiHubTestNodeAsync({
-                domains: [{ name: domain, config: initialDomainConfig }],
+            const {port, storageFolder} = await testIntegration.launchConfigurableApiHubTestNodeAsync({
+                domains: [{name: domain, config: initialDomainConfig}],
             });
 
             const firstDomainConfigResponse = await $$.promisify(getDomainConfigFromApihub)(port, domain);

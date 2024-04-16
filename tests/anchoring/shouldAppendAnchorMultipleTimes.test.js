@@ -7,7 +7,7 @@ const http = openDSU.loadApi("http");
 const doPut = $$.promisify(http.doPut);
 
 
-const  utils =  require('./utils');
+const utils = require('./utils');
 
 assert.callback('Should append anchor multiple times test', async (callback) => {
 
@@ -19,24 +19,29 @@ assert.callback('Should append anchor multiple times test', async (callback) => 
             }
         }
         const domain = 'default';
-        const apiHub = await tir.launchConfigurableApiHubTestNodeAsync({domains: [{name: "default", config: vaultDomainConfig}]});
+        const apiHub = await tir.launchConfigurableApiHubTestNodeAsync({
+            domains: [{
+                name: "default",
+                config: vaultDomainConfig
+            }]
+        });
         console.log(apiHub);
         const seedSSI = utils.generateSeedSSI();
         const anchorId = await utils.getAnchorId(seedSSI);
-        const hashlink = await utils.getSignedHashLink(seedSSI,null);
-        const hashlink2 = await utils.getSignedHashLink(seedSSI,hashlink);
-        const hashlink3 = await utils.getSignedHashLink(seedSSI,hashlink2);
-        const hashlink4 = await utils.getSignedHashLink(seedSSI,hashlink3);
-        const mainNodeUrl =  apiHub.url;
+        const hashlink = await utils.getSignedHashLink(seedSSI, null);
+        const hashlink2 = await utils.getSignedHashLink(seedSSI, hashlink);
+        const hashlink3 = await utils.getSignedHashLink(seedSSI, hashlink2);
+        const hashlink4 = await utils.getSignedHashLink(seedSSI, hashlink3);
+        const mainNodeUrl = apiHub.url;
 
-        await $$.promisify(doPut)(`${mainNodeUrl}/anchor/${domain}/create-anchor/${anchorId}`, {"hashLinkSSI" : hashlink},async (err) =>{
+        await $$.promisify(doPut)(`${mainNodeUrl}/anchor/${domain}/create-anchor/${anchorId}`, {"hashLinkSSI": hashlink}, async (err) => {
             assert.true(typeof err === 'undefined');
 
-            await $$.promisify(doPut)(`${mainNodeUrl}/anchor/${domain}/append-to-anchor/${anchorId}`, {"hashLinkSSI" : hashlink2}, async (err) =>{
+            await $$.promisify(doPut)(`${mainNodeUrl}/anchor/${domain}/append-to-anchor/${anchorId}`, {"hashLinkSSI": hashlink2}, async (err) => {
                 assert.true(typeof err === 'undefined');
-                await $$.promisify(doPut)(`${mainNodeUrl}/anchor/${domain}/append-to-anchor/${anchorId}`, {"hashLinkSSI" : hashlink3}, async (err) => {
+                await $$.promisify(doPut)(`${mainNodeUrl}/anchor/${domain}/append-to-anchor/${anchorId}`, {"hashLinkSSI": hashlink3}, async (err) => {
                     assert.true(typeof err === 'undefined');
-                    await $$.promisify(doPut)(`${mainNodeUrl}/anchor/${domain}/append-to-anchor/${anchorId}`, {"hashLinkSSI" : hashlink4}, async (err) => {
+                    await $$.promisify(doPut)(`${mainNodeUrl}/anchor/${domain}/append-to-anchor/${anchorId}`, {"hashLinkSSI": hashlink4}, async (err) => {
                         assert.true(typeof err === 'undefined');
 
                         const fetch = await http.fetch(`${mainNodeUrl}/anchor/${domain}/get-all-versions/${anchorId}`);

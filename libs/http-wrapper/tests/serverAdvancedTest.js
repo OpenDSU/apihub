@@ -36,11 +36,11 @@ server.get('/test/:id', function (req, res) {
     res.end('works');
 });
 
-server.post('/test2/:id', function(req, res) {
+server.post('/test2/:id', function (req, res) {
     res.end('post end');
 });
 
-server.use(function(req, res) {
+server.use(function (req, res) {
     res.end('404');
 });
 
@@ -49,14 +49,14 @@ server.use(function(req, res) {
 
 const client = new Client();
 
-client.get('http://127.0.0.1:8080/test/123', function(res) {
-   res.on('data', function(data) {
-       console.log(`client: ${data}`);
-   });
+client.get('http://127.0.0.1:8080/test/123', function (res) {
+    res.on('data', function (data) {
+        console.log(`client: ${data}`);
+    });
 });
 
-client.post('http://127.0.0.1:8080/test2/123', {}, function(res) {
-   res.on('data', function(data) {
-       console.log(`clinet post response: ${data}`);
-   })
+client.post('http://127.0.0.1:8080/test2/123', {}, function (res) {
+    res.on('data', function (data) {
+        console.log(`clinet post response: ${data}`);
+    })
 });

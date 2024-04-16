@@ -10,23 +10,23 @@ let publicKey;
 const PREVIOUS_ENCRYPTION_KEY_FILE = "previousEncryptionKey.secret";
 const CURRENT_ENCRYPTION_KEY_FILE = "currentEncryptionKey.secret";
 
-function KeyManager(storage, rotationInterval){
+function KeyManager(storage, rotationInterval) {
     let current;
     let previous;
 
     const logger = $$.getLogger("OAuthMiddleware", "oauth/keyManager");
 
-    function getPath(filename){
+    function getPath(filename) {
         const path = require("path");
         return path.join(storage, filename);
     }
 
-    function persist(filename, key, callback){
+    function persist(filename, key, callback) {
         logger.debug("Writing", filename);
         fs.writeFile(getPath(filename), key, callback);
     }
 
-    function getAge(lastModificationTime){
+    function getAge(lastModificationTime) {
         let timestamp = new Date().getTime();
         let converted = new Date(lastModificationTime).getTime();
         let age = timestamp - converted;
@@ -34,51 +34,52 @@ function KeyManager(storage, rotationInterval){
         return age;
     }
 
-    function checkIfExpired(lastModificationTime){
+    function checkIfExpired(lastModificationTime) {
         let res = getAge(lastModificationTime) > rotationInterval;
         logger.debug("expired", res);
         return res;
     }
 
     let self = this;
-    function tic(){
-        fs.stat(getPath(CURRENT_ENCRYPTION_KEY_FILE), (err, stats)=>{
-            if(stats && checkIfExpired(stats.mtime)){
+
+    function tic() {
+        fs.stat(getPath(CURRENT_ENCRYPTION_KEY_FILE), (err, stats) => {
+            if (stats && checkIfExpired(stats.mtime)) {
                 self.rotate();
             }
 
-            if(err || !stats){
+            if (err || !stats) {
                 //for any error we try as soon as possible again
                 setTimeout(tic, 0);
             }
         });
     }
 
-    function generateKey(){
+    function generateKey() {
         logger.debug("generating new key");
         return crypto.generateRandom(32);
     }
 
-    this.init = ()=>{
+    this.init = () => {
         let stats;
         try {
             stats = fs.statSync(getPath(CURRENT_ENCRYPTION_KEY_FILE));
-            if(stats){
+            if (stats) {
                 logger.debug("mtime of current encryption key is", stats.mtime);
-                if(checkIfExpired(stats.mtime)){
+                if (checkIfExpired(stats.mtime)) {
                     throw new Error("Current key is to old");
                 }
                 logger.info("Loading encryption keys");
                 current = fs.readFileSync(getPath(CURRENT_ENCRYPTION_KEY_FILE));
-                try{
+                try {
                     previous = fs.readFileSync(getPath(PREVIOUS_ENCRYPTION_KEY_FILE));
-                }catch(e){
+                } catch (e) {
                     logger.debug("Caught an error during previous key loading. This could mean that a restart was performed before any rotation and the previous key file doesn't exit.", e.message, e.code);
                 }
 
                 // let's schedule a quick check of key age
                 setTimeout(tic, getAge(stats.mtime));
-            }else{
+            } else {
                 logger.info("Initializing...");
                 throw new Error("Initialization required");
             }
@@ -91,23 +92,23 @@ function KeyManager(storage, rotationInterval){
         }
 
         //we split the "big" interval in smaller intervals
-        setInterval(tic, Math.round(rotationInterval/12));
+        setInterval(tic, Math.round(rotationInterval / 12));
     }
 
-    this.getCurrentEncryptionKey = ()=>{
+    this.getCurrentEncryptionKey = () => {
         return current;
     }
 
-    this.getPreviousEncryptionKey = ()=>{
+    this.getPreviousEncryptionKey = () => {
         return previous;
     }
 
-    this.rotate = ()=>{
-        if(!current && !previous){
+    this.rotate = () => {
+        if (!current && !previous) {
             logger.info("No current or previous key, there we generate current ant persist");
             current = generateKey();
-            return persist(CURRENT_ENCRYPTION_KEY_FILE, current, (err)=>{
-                if(err){
+            return persist(CURRENT_ENCRYPTION_KEY_FILE, current, (err) => {
+                if (err) {
                     logger.error("Failed to persist key");
                 }
             });
@@ -116,19 +117,19 @@ function KeyManager(storage, rotationInterval){
         previous = current;
         current = generateKey();
 
-        function saveState(lastGeneratedKey){
-            if(lastGeneratedKey !== current){
+        function saveState(lastGeneratedKey) {
+            if (lastGeneratedKey !== current) {
                 logger.error("Unable to persist keys until a new rotation time achieved");
                 //we weren't able to save the state until a new rotation
                 return;
             }
-            persist(PREVIOUS_ENCRYPTION_KEY_FILE, previous, (err)=>{
-                if(err){
+            persist(PREVIOUS_ENCRYPTION_KEY_FILE, previous, (err) => {
+                if (err) {
                     logger.debug("Caught error during key rotation", err);
                     return saveState(lastGeneratedKey);
                 }
-                persist(CURRENT_ENCRYPTION_KEY_FILE, current, (err)=>{
-                    if(err){
+                persist(CURRENT_ENCRYPTION_KEY_FILE, current, (err) => {
+                    if (err) {
                         logger.debug("Caught error during key rotation", err);
                         saveState(lastGeneratedKey);
                     }
@@ -145,9 +146,10 @@ function KeyManager(storage, rotationInterval){
 }
 
 let keyManager;
-function initializeKeyManager(storage, rotationInterval){
-    if(!keyManager){
-        keyManager =  new KeyManager(storage, rotationInterval);
+
+function initializeKeyManager(storage, rotationInterval) {
+    if (!keyManager) {
+        keyManager = new KeyManager(storage, rotationInterval);
     }
 }
 
@@ -216,7 +218,7 @@ function parseAccessToken(rawAccessToken) {
 }
 
 function getCurrentEncryptionKey(callback) {
-    if(!keyManager){
+    if (!keyManager) {
         return callback(new Error("keyManager not instantiated"));
     }
 
@@ -224,7 +226,7 @@ function getCurrentEncryptionKey(callback) {
 }
 
 function getPreviousEncryptionKey(callback) {
-    if(!keyManager){
+    if (!keyManager) {
         return callback(new Error("keyManager not instantiated"));
     }
 
@@ -232,9 +234,10 @@ function getPreviousEncryptionKey(callback) {
 }
 
 const SSODetectedIdsAndUserIds = {};
+
 function encryptTokenSet(tokenSet, callback) {
     delete SSODetectedIdsAndUserIds[tokenSet.access_token];
-    getSSODetectedIdAndUserId(tokenSet, (err, {SSODetectedId})=>{
+    getSSODetectedIdAndUserId(tokenSet, (err, {SSODetectedId}) => {
         if (err) {
             return callback(err);
         }
@@ -380,13 +383,13 @@ function getSSODetectedIdAndUserId(tokenSet, callback) {
     let parsedToken;
     let payload;
     const cachedSSODetectedIdObj = SSODetectedIdsAndUserIds[tokenSet.access_token];
-    if(cachedSSODetectedIdObj){
+    if (cachedSSODetectedIdObj) {
         return callback(undefined, cachedSSODetectedIdObj);
     }
     try {
         parsedToken = parseAccessToken(tokenSet.id_token);
         payload = parsedToken.payload;
-        const res =  {
+        const res = {
             SSOUserId: payload.sub,
             SSODetectedId: getSSODetectedIdFromPayload(payload)
         }
@@ -402,7 +405,7 @@ function getSSODetectedIdAndUserId(tokenSet, callback) {
                 return callback(err);
             }
 
-            const res =  {
+            const res = {
                 SSOUserId: userInfo.sub,
                 SSODetectedId: getSSODetectedIdFromPayload(userInfo)
             }

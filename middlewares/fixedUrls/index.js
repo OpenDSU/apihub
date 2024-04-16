@@ -97,16 +97,16 @@ module.exports = function (server) {
         register: function (task, callback) {
             let newRecord = taskRegistry.createModel(task);
             newRecord.__fallbackToInsert = true
-            return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, newRecord.pk, newRecord,  callback);
+            return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, newRecord.pk, newRecord, callback);
         },
         add: function (task, callback) {
             let newRecord = taskRegistry.createModel(task);
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, function (err, record) {
                 if (err || !record) {
-                    return lightDBEnclaveClient.insertRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, (insertError)=>{
+                    return lightDBEnclaveClient.insertRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, (insertError) => {
                         //if we fail... could be that the task is ready register by another request due to concurency
                         //we do another getrecord and if fails we return the original insert record error
-                        if(insertError){
+                        if (insertError) {
                             //we set the counter to 2 just in case there is a task with a counter value that we don't know,
                             // and we hope to have enough invalidation of the task to don't have garbage
                             newRecord.counter = 2;
@@ -183,7 +183,7 @@ module.exports = function (server) {
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, target.pk, callback);
         },
         schedule: function (criteria, callback) {
-            if(server.readOnlyModeActive){
+            if (server.readOnlyModeActive) {
                 return callback(new Error("FixedURL scheduling is not possible when server is in readOnly mode"));
             }
             lightDBEnclaveClient.filter($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, criteria, function (err, records) {
@@ -244,9 +244,9 @@ module.exports = function (server) {
             });
         },
         status: function () {
-            if(server.readOnlyModeActive){
+            if (server.readOnlyModeActive) {
                 //preventing log noise in readOnly mode
-                return ;
+                return;
             }
             let inProgressCounter = Object.keys(taskRegistry.inProgress);
             logger.debug(`Number of tasks that are in progress: ${inProgressCounter.length ? inProgressCounter.length : 0}`);
@@ -262,16 +262,16 @@ module.exports = function (server) {
                 }
             });
         },
-        httpStatus: async function(req, res){
+        httpStatus: async function (req, res) {
             let inProgressCounter = Object.keys(taskRegistry.inProgress);
             let status = {};
-            try{
+            try {
                 status.inProgress = inProgressCounter.length ? inProgressCounter.length : 0;
                 let scheduledTasks = await $$.promisify(lightDBEnclaveClient.getAllRecords)($$.SYSTEM_IDENTIFIER, TASKS_TABLE);
                 status.scheduled = scheduledTasks ? scheduledTasks.length : 0;
                 let tasks = await $$.promisify(lightDBEnclaveClient.getAllRecords)($$.SYSTEM_IDENTIFIER, HISTORY_TABLE);
                 status.total = tasks ? tasks.length : 0;
-            }catch(err){
+            } catch (err) {
                 res.statusCode = 500;
                 res.end(`Failed to generate status info ${err.message}`);
             }
@@ -317,7 +317,7 @@ module.exports = function (server) {
                         return taskRegistry.markAsDone(task.url, (err) => {
                             if (err) {
                                 logger.log("Failed to remove a task that we weren't able to resolve");
-                                return;
+
                             }
                         });
                     }
@@ -402,9 +402,9 @@ module.exports = function (server) {
             }
         },
         status: function () {
-            if(server.readOnlyModeActive){
+            if (server.readOnlyModeActive) {
                 //preventing log noise in readOnly mode
-                return ;
+                return;
             }
             let pendingReq = Object.keys(taskRunner.pendingRequests);
             let counter = 0;
@@ -419,7 +419,7 @@ module.exports = function (server) {
         }
     };
 
-    if(!server.readOnlyModeActive){
+    if (!server.readOnlyModeActive) {
         fs.mkdir(storage, {recursive: true}, (err) => {
             if (err) {
                 logger.error("Failed to ensure folder structure due to", err);
@@ -634,9 +634,9 @@ module.exports = function (server) {
             //if reached this point it might be a fixed url that is not known yet, and it should get registered and scheduled for resolving...
             //this case could catch params combinations that are not captured...
 
-            if(server.readOnlyModeActive){
+            if (server.readOnlyModeActive) {
                 //this case of readOnlyModeActive needs to be handled carefully in order to prevent any writes possible
-                if(known){
+                if (known) {
                     return indexer.get(fixedUrl, (err, content) => {
                         if (err) {
                             logger.warn(`Failed to load content for fixedUrl; This could happen when the task is not yet resolved by full container`);
@@ -646,7 +646,7 @@ module.exports = function (server) {
                         //known fixed url let's respond to the client
                         respond(res, content);
                     });
-                }else{
+                } else {
                     return next();
                 }
             }

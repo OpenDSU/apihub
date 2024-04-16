@@ -33,7 +33,7 @@ function ExpiringFileLock(folderLock, timeout) {
     this.unlock = async () => {
         try {
             await fsPromises.rmdir(folderLock);
-        }catch (e) {
+        } catch (e) {
             // Nothing to do
         }
     }

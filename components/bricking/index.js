@@ -4,11 +4,11 @@ function Bricks(server) {
         next();
     }
 
-    const { headersMiddleware, responseModifierMiddleware } = require('../../utils/middlewares');
+    const {headersMiddleware, responseModifierMiddleware} = require('../../utils/middlewares');
 
-    const { requestFSBrickStorageMiddleware } = require('./middlewares');
+    const {requestFSBrickStorageMiddleware} = require('./middlewares');
 
-    const { getBrick, putBrick, downloadMultipleBricks, brickExists} = require('./controllers');
+    const {getBrick, putBrick, downloadMultipleBricks, brickExists} = require('./controllers');
 
     server.use(`/bricking/:domain/*`, headersMiddleware);
     server.use(`/bricking/:domain/*`, responseModifierMiddleware);

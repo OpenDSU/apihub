@@ -16,7 +16,7 @@ function OBA(server, domainConfig, anchorId, anchorValue, ...args) {
             }
             logger.debug(`Optimistic create anchor ended with success.`);
 
-            ethSyncService.storeAnchor("createAnchor", anchorId, anchorValue, domainConfig,(err) => {
+            ethSyncService.storeAnchor("createAnchor", anchorId, anchorValue, domainConfig, (err) => {
                 if (err) {
                     logger.error(`Failed to store anchor ${fsHandler.commandData.anchorId} in db.`);
                     return;

@@ -1,7 +1,7 @@
-function AutoSavePendingTransactions (flow, timeout, server) {
+function AutoSavePendingTransactions(flow, timeout, server) {
     flow.completeBlock(server);
-    setTimeout (  () => {
-         AutoSavePendingTransactions(flow, timeout, server);
+    setTimeout(() => {
+        AutoSavePendingTransactions(flow, timeout, server);
     }, timeout);
 
 }
@@ -24,20 +24,20 @@ function BricksFabric(server) {
 
     //init strategy
     let flow = new global[strategyType];
-    flow.init(rootFolder,noOfTran);
+    flow.init(rootFolder, noOfTran);
 
     //resume if necessary
     flow.bootUp();
 
     const timeout = bricksFabricStrategy.option.timeout;
-    setTimeout (  () => {
+    setTimeout(() => {
         //start forever loop starting in timeout
         AutoSavePendingTransactions(flow, timeout, server);
     }, timeout);
 
-    const { URL_PREFIX } = require('./constants.js');
-    const { responseModifierMiddleware, requestBodyJSONMiddleware } = require('../../utils/middlewares');
-    const  storeTransaction  = require('./controllers')(flow, server);
+    const {URL_PREFIX} = require('./constants.js');
+    const {responseModifierMiddleware, requestBodyJSONMiddleware} = require('../../utils/middlewares');
+    const storeTransaction = require('./controllers')(flow, server);
 
     server.use(`${URL_PREFIX}/*`, responseModifierMiddleware);
     // request.body is populated with what data needs to be stored

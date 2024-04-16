@@ -1,9 +1,9 @@
 require("../../../../builds/output/testsRuntime");
 const testIntegration = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const { assert } = dc;
+const {assert} = dc;
 
-const { launchApiHubTestNodeWithDefaultContractAsync, getAnchorVersions, getBrick } = require("../contract-utils");
+const {launchApiHubTestNodeWithDefaultContractAsync, getAnchorVersions, getBrick} = require("../contract-utils");
 
 const openDSU = require("opendsu");
 const keySSIApi = openDSU.loadApi("keyssi");
@@ -44,7 +44,7 @@ assert.callback(
                     brickStorages: [mainNodeUrl, secondNodeUrl],
                     anchoringServices: [mainNodeUrl, secondNodeUrl],
                     contractServices: [mainNodeUrl],
-                    validators: [{ DID: "did:demo:id-0", URL: mainNodeUrl }],
+                    validators: [{DID: "did:demo:id-0", URL: mainNodeUrl}],
                 },
                 vault: {
                     replicas: [],
@@ -52,7 +52,7 @@ assert.callback(
                     brickStorages: [mainNodeUrl, secondNodeUrl],
                     anchoringServices: [mainNodeUrl, secondNodeUrl],
                     contractServices: [mainNodeUrl],
-                    validators: [{ DID: "did:demo:id-0", URL: mainNodeUrl }],
+                    validators: [{DID: "did:demo:id-0", URL: mainNodeUrl}],
                 }
             },
         });
@@ -62,7 +62,7 @@ assert.callback(
             useWorker: true,
             generateValidatorDID: true,
             port: secondNodePort,
-            domains: [{ name: domain, config: { contracts: { constitution: contractConstitution } } }, {
+            domains: [{name: domain, config: {contracts: {constitution: contractConstitution}}}, {
                 name: "vault", config: {
                     "anchoring": {
                         "type": "FS",
@@ -77,7 +77,7 @@ assert.callback(
                     brickStorages: [secondNodeUrl, thirdNodeUrl],
                     anchoringServices: [secondNodeUrl, thirdNodeUrl],
                     contractServices: [secondNodeUrl],
-                    validators: [{ DID: "did:demo:id-1", URL: secondNodeUrl }],
+                    validators: [{DID: "did:demo:id-1", URL: secondNodeUrl}],
                 },
                 vault: {
                     replicas: [],
@@ -85,7 +85,7 @@ assert.callback(
                     brickStorages: [secondNodeUrl, thirdNodeUrl],
                     anchoringServices: [secondNodeUrl, thirdNodeUrl],
                     contractServices: [secondNodeUrl],
-                    validators: [{ DID: "did:demo:id-1", URL: secondNodeUrl }],
+                    validators: [{DID: "did:demo:id-1", URL: secondNodeUrl}],
                 }
             },
         });
@@ -94,7 +94,7 @@ assert.callback(
             useWorker: true,
             generateValidatorDID: true,
             port: thirdNodePort,
-            domains: [{ name: domain, config: { contracts: { constitution: contractConstitution } } }],
+            domains: [{name: domain, config: {contracts: {constitution: contractConstitution}}}],
             bdns: {
                 default: {
                     replicas: [],
@@ -102,7 +102,7 @@ assert.callback(
                     brickStorages: [thirdNodeUrl, mainNodeUrl],
                     anchoringServices: [thirdNodeUrl, mainNodeUrl],
                     contractServices: [thirdNodeUrl],
-                    validators: [{ DID: "did:demo:id-2", URL: thirdNodeUrl }],
+                    validators: [{DID: "did:demo:id-2", URL: thirdNodeUrl}],
                 },
                 vault: {
                     replicas: [],
@@ -110,7 +110,7 @@ assert.callback(
                     brickStorages: [thirdNodeUrl, mainNodeUrl],
                     anchoringServices: [thirdNodeUrl, mainNodeUrl],
                     contractServices: [thirdNodeUrl],
-                    validators: [{ DID: "did:demo:id-2", URL: thirdNodeUrl }],
+                    validators: [{DID: "did:demo:id-2", URL: thirdNodeUrl}],
                 },
             },
         });

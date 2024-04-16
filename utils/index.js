@@ -1,4 +1,4 @@
-module.exports.clone = function(data) {
+module.exports.clone = function (data) {
     return JSON.parse(JSON.stringify(data));
 }
 

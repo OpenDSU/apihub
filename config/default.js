@@ -1,8 +1,7 @@
-
 const defaultConfig = {
-    "storage":  require("swarmutils").path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, "tmp"),
+    "storage": require("swarmutils").path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, "tmp"),
     "externalStorage": "./external-volume",
-    "sslFolder":  require("swarmutils").path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, "conf", "ssl"),
+    "sslFolder": require("swarmutils").path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, "conf", "ssl"),
     "port": 8080,
     "host": "0.0.0.0",
     "zeromqForwardAddress": "tcp://127.0.0.1:5001",
@@ -10,12 +9,12 @@ const defaultConfig = {
     // staticServer needs to load last
     "activeComponents": ["config", "mq", "secrets", "notifications", "bdns", "bricking", "anchoring", 'debugLogger', "mainDSU", "cloudWallet", "versionlessDSU", "stream", "lightDBEnclave", "staticServer"],
     "componentsConfig": {
-        "mq":{
+        "mq": {
             "module": "./components/mqHub",
             "function": "MQHub",
             "connectionTimeout": 10000
         },
-        "secrets":{
+        "secrets": {
             "module": "./components/secrets"
         },
         "notifications": {
@@ -62,18 +61,18 @@ const defaultConfig = {
         "versionlessDSU": {
             "module": "./components/versionlessDSU"
         },
-        "requestForwarder":{
+        "requestForwarder": {
             "module": "./components/requestForwarder"
         },
         "lightDBEnclave": {
             "module": "./components/lightDBEnclave",
         },
-        "requestLogger":{
+        "requestLogger": {
             "comment": "this is a standard middleware but its config is here to make it as uniform as possible",
             "statusLogInterval": 3000,
-            "longRequests":["/mq/"]
+            "longRequests": ["/mq/"]
         },
-        "activeComponents":{
+        "activeComponents": {
             "module": "./components/activeComponents",
         }
     },

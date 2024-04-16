@@ -13,6 +13,7 @@ class FSBrickPathsManager {
             throw Error(`[Bricking] Hash "${brickHash}" is too small`);
         }
     }
+
     storeDomainPath(domainName, domainFolder, serverRoot) {
         if (!this.brickPaths[domainName]) {
             this.brickPaths[domainName] = require("path").join(serverRoot || "", domainFolder || domainName);

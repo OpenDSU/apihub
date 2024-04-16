@@ -33,7 +33,7 @@ function getHeadersWithExcludedProvidersIncludingSelf(request) {
 }
 
 async function getLocalBdnsEntryListExcludingSelfAsync(request, domain, entryName) {
-    const { server } = request;
+    const {server} = request;
     let entries;
     const code = 0x401;
     try {
@@ -58,14 +58,14 @@ async function getLocalBdnsEntryListExcludingSelfAsync(request, domain, entryNam
         // remove self url from the list
         const currentApiHubUrl = getCurrentApiHubUrl(server);
         const {host} = require("./../config/default");
-        entries = entries.filter((url) =>{
+        entries = entries.filter((url) => {
             let result = false;
-            if(url){
-                if(url.indexOf(currentApiHubUrl) === -1){
+            if (url) {
+                if (url.indexOf(currentApiHubUrl) === -1) {
                     result = true;
                 }
 
-                if(url.indexOf(host) === -1){
+                if (url.indexOf(host) === -1) {
                     result = true;
                 }
             }

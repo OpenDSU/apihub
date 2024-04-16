@@ -3,7 +3,7 @@ module.exports = async () => {
     //we inject a supplementary tag in order make it more clear the source of the log
 
     const worker_threads = "worker_threads";
-    const { parentPort, workerData } = require(worker_threads);
+    const {parentPort, workerData} = require(worker_threads);
     logger.debug(`Node worker started for: `, workerData);
 
     const resolver = require("opendsu").loadApi("resolver");
@@ -15,8 +15,8 @@ module.exports = async () => {
 
     parentPort.on("message", async (task) => {
         logger.debug("Handling task", task);
-        const { requestedPath } = task;
-        let { range } = task;
+        const {requestedPath} = task;
+        let {range} = task;
 
         try {
             let start;
@@ -39,8 +39,11 @@ module.exports = async () => {
             }
             await $$.promisify(dsu.refresh)();
 
-            const streamRange = { start, end };
-            const { totalSize, stream } = await $$.promisify(dsu.createBigFileReadStreamWithRange)(requestedPath, streamRange);
+            const streamRange = {start, end};
+            const {
+                totalSize,
+                stream
+            } = await $$.promisify(dsu.createBigFileReadStreamWithRange)(requestedPath, streamRange);
             const actualEnd = Math.min(end, totalSize - 1);
             const contentLength = actualEnd - start + 1;
             const headers = {
@@ -58,11 +61,12 @@ module.exports = async () => {
                     stream.on("end", () => resolve(Buffer.concat(chunks)));
                 });
             }
+
             const buffer = await streamToBuffer(stream);
 
-            parentPort.postMessage({ result: { headers, buffer } });
+            parentPort.postMessage({result: {headers, buffer}});
         } catch (error) {
-            parentPort.postMessage({ error });
+            parentPort.postMessage({error});
         }
     });
 

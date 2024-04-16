@@ -56,9 +56,9 @@ function removeAnchoringPathConfig(config) {
 function extractDomainConfigsAndRemoveThemFromConfig(config) {
     const domainConfigs = {};
 
-    const { componentsConfig } = config;
+    const {componentsConfig} = config;
     if (componentsConfig) {
-        const { bricking, anchoring, bricksFabric } = componentsConfig;
+        const {bricking, anchoring, bricksFabric} = componentsConfig;
 
         if (bricking) {
             // remove the domains property from bricking since the only used config is "path" which is constructed by convention
@@ -66,7 +66,7 @@ function extractDomainConfigsAndRemoveThemFromConfig(config) {
         }
 
         if (anchoring && anchoring.domainStrategies) {
-            const { domainStrategies } = anchoring;
+            const {domainStrategies} = anchoring;
             Object.keys(domainStrategies).forEach((domain) => {
                 if (!domainConfigs[domain]) {
                     domainConfigs[domain] = {};
@@ -86,7 +86,7 @@ function extractDomainConfigsAndRemoveThemFromConfig(config) {
         }
 
         if (bricksFabric && bricksFabric.domainStrategies) {
-            const { domainStrategies } = bricksFabric;
+            const {domainStrategies} = bricksFabric;
             Object.keys(domainStrategies).forEach((domain) => {
                 if (!domainConfigs[domain]) {
                     domainConfigs[domain] = {};
@@ -108,8 +108,8 @@ function migrate(oldConfig, configFolderPath) {
     // create a clone in order to not influence config from outside of the migrator
     oldConfig = JSON.parse(JSON.stringify(oldConfig));
 
-    const { storage, sslFolder, port, host, preventRateLimit, tokenBucket } = oldConfig;
-    const { enableInstallationDetails, enableRequestLogger, enableLocalhostAuthorization } = oldConfig;
+    const {storage, sslFolder, port, host, preventRateLimit, tokenBucket} = oldConfig;
+    const {enableInstallationDetails, enableRequestLogger, enableLocalhostAuthorization} = oldConfig;
     const config = {
         storage,
         sslFolder,
@@ -139,13 +139,13 @@ function migrate(oldConfig, configFolderPath) {
     logger.debug(`Generating apihub.json config file at ${apihubJsonConfigPath}...`);
 
     if (!fs.existsSync(configFolderPath)) {
-        fs.mkdirSync(configFolderPath, { recursive: true });
+        fs.mkdirSync(configFolderPath, {recursive: true});
     }
     fs.writeFileSync(apihubJsonConfigPath, JSON.stringify(config, null, 2));
 
     const domainConfigsFolderPath = path.join(configFolderPath, "domains");
     if (!fs.existsSync(domainConfigsFolderPath)) {
-        fs.mkdirSync(domainConfigsFolderPath, { recursive: true });
+        fs.mkdirSync(domainConfigsFolderPath, {recursive: true});
     }
 
     Object.keys(domainConfigs).forEach((domain) => {

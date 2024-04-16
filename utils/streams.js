@@ -1,14 +1,14 @@
-function readStringFromStream(stream, callback){
+function readStringFromStream(stream, callback) {
     let data = "";
-    stream.on("data", (messagePart)=>{
+    stream.on("data", (messagePart) => {
         data += messagePart;
     });
 
-    stream.on("end", ()=>{
+    stream.on("end", () => {
         callback(null, data);
     });
 
-    stream.on("error", (err)=>{
+    stream.on("error", (err) => {
         callback(err);
     });
 }
@@ -48,7 +48,7 @@ function readMessageBufferFromHTTPStream(reqORres, callback) {
 
             write2Buffer(buffer, chunk, currentOffset);
             currentOffset = nextOffset;
-            
+
 
         });
         stream.on('end', function () {

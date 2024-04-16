@@ -15,7 +15,7 @@ function LightDBEnclaveAdapter(server, prefix, domain, configuration) {
     const DB_NAME = "mqDB";
     const lightDBEnclaveClient = require("opendsu").loadAPI("enclave").initialiseLightDBEnclave(DB_NAME);
     const ensureDBIsInitialised = (callback) => {
-        lightDBEnclaveClient.createDatabase(DB_NAME,(err) => {
+        lightDBEnclaveClient.createDatabase(DB_NAME, (err) => {
             if (!err) {
                 return lightDBEnclaveClient.hasWriteAccess($$.SYSTEM_IDENTIFIER, (err, hasAccess) => {
                     if (err) {

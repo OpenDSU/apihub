@@ -73,7 +73,7 @@ function bodyContentLength(request) {
         return;
     }
 
-    if (request.body.constructor.name in [ 'String', '$$.Buffer', 'ArrayBuffer' ]) {
+    if (request.body.constructor.name in ['String', '$$.Buffer', 'ArrayBuffer']) {
         request.options.headers['Content-Length'] = $$.Buffer.byteLength(request.body);
     }
 }
@@ -97,7 +97,9 @@ function Client() {
     function getReq(url, config, callback) {
         const modifiers = [
             urlToOptions,
-            (request) => {request.options.headers = config.headers || {};}
+            (request) => {
+                request.options.headers = config.headers || {};
+            }
         ];
 
         const packedRequest = request(new Request(url, config.body), modifiers);
@@ -110,8 +112,12 @@ function Client() {
     function postReq(url, config, callback) {
         const modifiers = [
             urlToOptions,
-            (request) => {request.options.method = 'POST'; },
-            (request) => {request.options.headers = config.headers || {}; },
+            (request) => {
+                request.options.method = 'POST';
+            },
+            (request) => {
+                request.options.headers = config.headers || {};
+            },
             serializeBody,
             bodyContentLength
         ];
@@ -121,8 +127,7 @@ function Client() {
 
         if (config.body instanceof stream.Readable) {
             config.body.pipe(httpRequest);
-        }
-        else {
+        } else {
             httpRequest.end(packedRequest.body, config.encoding || 'utf8');
         }
         return httpRequest;
@@ -131,8 +136,12 @@ function Client() {
     function deleteReq(url, config, callback) {
         const modifiers = [
             urlToOptions,
-            (request) => {request.options.method = 'DELETE';},
-            (request) => {request.options.headers = config.headers || {};},
+            (request) => {
+                request.options.method = 'DELETE';
+            },
+            (request) => {
+                request.options.headers = config.headers || {};
+            },
         ];
 
         const packedRequest = request(new Request(url, config.body), modifiers);
@@ -185,7 +194,7 @@ function parametersPreProcessing(params) {
     }
 
     const properties = Object.keys(params);
-    for(let i = 0, len = properties.length; i < len; ++i) {
+    for (let i = 0, len = properties.length; i < len; ++i) {
         res.push(params[properties[i]]);
     }
 

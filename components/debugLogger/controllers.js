@@ -7,128 +7,128 @@ let config = API_HUB.getServerConfig();
 const rootFolder = path.resolve(config.storage);
 
 const levels = {
-  error: 'error',
-  warning: 'warning',
-  info: 'info',
-  debug: 'debug',
+    error: 'error',
+    warning: 'warning',
+    info: 'info',
+    debug: 'debug',
 };
 
 const logger = $$.getLogger("debugLogger", "apihub/debugLogger");
 
 function createHandlerAppendToLog() {
-  return function appendToLog(request, response) {
-    if (!request.body || !request.body.message) {
-      response.send(400);
-      return;
-    }
-    const message = request.body.message;
-    const anchorID = request.params.anchorID;
-    const logLevel = levels[request.params.logLevel] || levels['info'];
+    return function appendToLog(request, response) {
+        if (!request.body || !request.body.message) {
+            response.send(400);
+            return;
+        }
+        const message = request.body.message;
+        const anchorID = request.params.anchorID;
+        const logLevel = levels[request.params.logLevel] || levels['info'];
 
-    let data;
+        let data;
 
-    if (typeof message === 'string') {
-      data = { date: new Date().toISOString(), level: logLevel, anchorID: anchorID, message: message };
-    } else {
-      response.send(400);
-      return;
-    }
+        if (typeof message === 'string') {
+            data = {date: new Date().toISOString(), level: logLevel, anchorID: anchorID, message: message};
+        } else {
+            response.send(400);
+            return;
+        }
 
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const fileName = `${rootFolder}/${today}.json`;
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const fileName = `${rootFolder}/${today}.json`;
 
-      const exists = fs.existsSync(fileName);
+            const exists = fs.existsSync(fileName);
 
-      if (exists) {
-        const existingData = fs.readFileSync(fileName);
-        const json = JSON.parse(existingData);
-        json.push(data);
-        fs.writeFile(fileName, JSON.stringify(json), (err) => {
-          if (err) {
-            response.send(500);
+            if (exists) {
+                const existingData = fs.readFileSync(fileName);
+                const json = JSON.parse(existingData);
+                json.push(data);
+                fs.writeFile(fileName, JSON.stringify(json), (err) => {
+                    if (err) {
+                        response.send(500);
+                        logger.error(err);
+                        logger.error(err);
+
+                    } else {
+                        response.send(200, data);
+
+                    }
+                });
+            } else {
+                fs.writeFile(fileName, JSON.stringify([data]), (err) => {
+                    if (err) {
+                        response.send(500);
+                        logger.error(err);
+
+                    } else {
+                        response.send(200, data);
+
+                    }
+                });
+            }
+        } catch (err) {
             logger.error(err);
-            logger.error(err);
-
-          } else {
-            response.send(200, data);
-
-          }
-        });
-      } else {
-        fs.writeFile(fileName, JSON.stringify([data]), (err) => {
-          if (err) {
-            response.send(500);
-            logger.error(err);
-
-          } else {
-            response.send(200, data);
-
-          }
-        });
-      }
-    } catch (err) {
-      logger.error(err);
-      logger.error('Error writing file to disk');
-    }
-  };
+            logger.error('Error writing file to disk');
+        }
+    };
 }
 
 function createHandlerReadFromLog() {
-  return function readFromLog(request, response) {
-    logger.debug('running');
-    const today = new Date().toISOString().split('T')[0];
-    const anchorID = request.params.anchorID;
-    const queryObject = url.parse(request.url, true).query;
-    const logLevel = levels[queryObject.logLevel] || levels['info'];
+    return function readFromLog(request, response) {
+        logger.debug('running');
+        const today = new Date().toISOString().split('T')[0];
+        const anchorID = request.params.anchorID;
+        const queryObject = url.parse(request.url, true).query;
+        const logLevel = levels[queryObject.logLevel] || levels['info'];
 
-    let fromDate = queryObject.from ? Date.parse(queryObject.from) : Date.parse(today);
-    const toDate = queryObject.to ? Date.parse(queryObject.to) : Date.parse(today);
-    const oneDay = 1000 * 60 * 60 * 24;
+        let fromDate = queryObject.from ? Date.parse(queryObject.from) : Date.parse(today);
+        const toDate = queryObject.to ? Date.parse(queryObject.to) : Date.parse(today);
+        const oneDay = 1000 * 60 * 60 * 24;
 
-    let promises = [];
+        let promises = [];
 
-    for (fromDate; fromDate <= toDate; fromDate += oneDay) {
-      const date = new Date(fromDate).toISOString().split('T')[0];
-      const fileName = `${rootFolder}/${date}.json`;
-      const exists = fs.existsSync(fileName);
+        for (fromDate; fromDate <= toDate; fromDate += oneDay) {
+            const date = new Date(fromDate).toISOString().split('T')[0];
+            const fileName = `${rootFolder}/${date}.json`;
+            const exists = fs.existsSync(fileName);
 
-      if (!exists) {
-        continue;
-      }
-
-      promises.push(
-        new Promise((resolve, reject) => {
-          fs.readFile(fileName, (err, data) => {
-            if (err) {
-              reject(err);
-              return;
+            if (!exists) {
+                continue;
             }
-            data = JSON.parse(data);
-            data = data.filter((log) => log.anchorID === anchorID);
-            data = data.filter((log) =>
-              logLevel === levels['debug']
-                ? log.level === levels['info'] ||
-                  log.level === levels['error'] ||
-                  log.level === levels['warning'] ||
-                  log.level === levels['debug']
-                : logLevel === levels['error']
-                ? log.level === levels['info'] || log.level === levels['error'] || log.level === levels['warning']
-                : logLevel === levels['warning']
-                ? log.level === levels['info'] || log.level === levels['warning']
-                : log.level === levels['info']
+
+            promises.push(
+                new Promise((resolve, reject) => {
+                    fs.readFile(fileName, (err, data) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+                        data = JSON.parse(data);
+                        data = data.filter((log) => log.anchorID === anchorID);
+                        data = data.filter((log) =>
+                            logLevel === levels['debug']
+                                ? log.level === levels['info'] ||
+                                log.level === levels['error'] ||
+                                log.level === levels['warning'] ||
+                                log.level === levels['debug']
+                                : logLevel === levels['error']
+                                    ? log.level === levels['info'] || log.level === levels['error'] || log.level === levels['warning']
+                                    : logLevel === levels['warning']
+                                        ? log.level === levels['info'] || log.level === levels['warning']
+                                        : log.level === levels['info']
+                        );
+
+                        resolve(data);
+                    });
+                })
             );
+        }
 
-            resolve(data);
-          });
-        })
-      );
-    }
-
-    Promise.all(promises).then((result) => {
-      response.send(200, result.flat());
-    });
-  };
+        Promise.all(promises).then((result) => {
+            response.send(200, result.flat());
+        });
+    };
 }
 
-module.exports = { createHandlerAppendToLog, createHandlerReadFromLog };
+module.exports = {createHandlerAppendToLog, createHandlerReadFromLog};

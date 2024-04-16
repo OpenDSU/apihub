@@ -1,9 +1,9 @@
 const http = require("http");
 const crypto = require("crypto");
 const worker_threads = "worker_threads";
-const { Worker } = require(worker_threads);
+const {Worker} = require(worker_threads);
 const config = require("../../config");
-const { parseCookies, stringifyCookies } = require("../../utils/cookie-utils");
+const {parseCookies, stringifyCookies} = require("../../utils/cookie-utils");
 const path = require("swarmutils").path;
 const logger = $$.getLogger("CloudWallet", "apihub/cloudWallet");
 let dsuBootPath;
@@ -98,7 +98,7 @@ function addDsuWorker(seed, walletAnchorId, cookie) {
 
 function forwardRequestToWorker(dsuWorker, req, res) {
     const method = req.method;
-    const { keySSI } = req.params;
+    const {keySSI} = req.params;
     let requestedPath = req.url.substr(req.url.indexOf(keySSI) + keySSI.length);
     if (!requestedPath) {
         requestedPath = "/";
@@ -126,7 +126,7 @@ function forwardRequestToWorker(dsuWorker, req, res) {
     }
 
     const workerRequest = http.request(options, (response) => {
-        const { statusCode, headers } = response;
+        const {statusCode, headers} = response;
         res.statusCode = statusCode;
         const contentType = headers ? headers["content-type"] : null;
         res.setHeader("Content-Type", contentType || "text/html");
@@ -252,7 +252,7 @@ function getSSappTokenCookieValue(request) {
 }
 
 function setRequestKeySSIFromSSAppToken(request, response, next) {
-    const { keySSI } = request.params;
+    const {keySSI} = request.params;
     const ssappTokenCookieValue = getSSappTokenCookieValue(request);
     if (ssappTokenCookieValue[keySSI]) {
         logger.info(`Found match for walletAnchorId ${keySSI}`);
@@ -263,8 +263,8 @@ function setRequestKeySSIFromSSAppToken(request, response, next) {
 }
 
 function handleSetSSAppTokenRequest(request, response) {
-    const { walletAnchorId } = request.params;
-    const { sReadSSI } = request.body;
+    const {walletAnchorId} = request.params;
+    const {sReadSSI} = request.body;
 
     if (!sReadSSI) {
         logger.error("Required sReadSSI body field not present");

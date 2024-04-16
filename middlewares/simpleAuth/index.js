@@ -72,7 +72,7 @@ module.exports = function (server) {
         if (req.headers.authorization) {
             const [username, password] = req.headers.authorization.split(" ")[1].split(":");
             const index = htpPwdSecrets.findIndex(entry => entry.startsWith(username));
-            const splitSecrets= htpPwdSecrets[index].split(':');
+            const splitSecrets = htpPwdSecrets[index].split(':');
             const pwd = splitSecrets[1];
             const ssoId = splitSecrets[3];
             if (pwd === password) {
@@ -98,7 +98,7 @@ module.exports = function (server) {
         }
 
         const index = htpPwdSecrets.findIndex(entry => entry.startsWith(authorisationData[0]));
-        const splitSecrets= htpPwdSecrets[index].split(':');
+        const splitSecrets = htpPwdSecrets[index].split(':');
         req.headers["user-id"] = splitSecrets[3];
         next();
     });

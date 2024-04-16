@@ -17,11 +17,11 @@ subscriberTwoSocket.connect(subsAddress);
 subscriberOneSocket.subscribe("channelOne");
 subscriberTwoSocket.subscribe("channelTwo");
 
-subscriberOneSocket.on("message", (channel, message)=>{
+subscriberOneSocket.on("message", (channel, message) => {
     console.log("SubOne", "Received on channel", channel, message.toString());
 });
 
-subscriberTwoSocket.on("message", (channel, message)=>{
+subscriberTwoSocket.on("message", (channel, message) => {
     console.log("SubTwo", "Received on channel", channel, message.toString());
 });
 

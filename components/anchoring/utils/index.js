@@ -1,4 +1,4 @@
-const { clone } = require("../../../utils");
+const {clone} = require("../../../utils");
 
 const getAnchoringDomainConfig = async (domain) => {
     const config = require("../../../config");
@@ -15,7 +15,7 @@ const getAnchoringDomainConfig = async (domain) => {
         const anchoringConfig = config.getConfig("componentsConfig", "anchoring");
 
         if (anchoringConfig) {
-            const { anchoringStrategy } = anchoringConfig;
+            const {anchoringStrategy} = anchoringConfig;
             domainConfig = {
                 type: anchoringStrategy,
             };
@@ -41,4 +41,4 @@ const getDomainFromKeySSI = function (ssiString) {
 const ALIAS_SYNC_ERR_CODE = "sync-error";
 const ANCHOR_ALREADY_EXISTS_ERR_CODE = "anchor-already-exists";
 
-module.exports = { getAnchoringDomainConfig, getDomainFromKeySSI, ALIAS_SYNC_ERR_CODE, ANCHOR_ALREADY_EXISTS_ERR_CODE };
+module.exports = {getAnchoringDomainConfig, getDomainFromKeySSI, ALIAS_SYNC_ERR_CODE, ANCHOR_ALREADY_EXISTS_ERR_CODE};

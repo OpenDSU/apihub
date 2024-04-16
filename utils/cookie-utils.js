@@ -5,7 +5,7 @@ function parseCookies(str) {
     if (!str) {
         return cookies;
     }
-    for (let m; (m = COOKIE_REGEX.exec(str)); ) {
+    for (let m; (m = COOKIE_REGEX.exec(str));) {
         cookies[m[1]] = decodeURIComponent(m[2]);
     }
     return cookies;

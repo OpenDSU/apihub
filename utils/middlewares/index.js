@@ -79,4 +79,10 @@ function sendUnauthorizedResponse(req, res, reason, error) {
     res.end();
 }
 
-module.exports = { requestBodyJSONMiddleware, responseModifierMiddleware, headersMiddleware , bodyReaderMiddleware, sendUnauthorizedResponse};
+module.exports = {
+    requestBodyJSONMiddleware,
+    responseModifierMiddleware,
+    headersMiddleware,
+    bodyReaderMiddleware,
+    sendUnauthorizedResponse
+};

@@ -31,7 +31,7 @@ assert.callback(
             };
 
             await testIntegration.launchConfigurableApiHubTestNodeAsync({
-                domains: [{ name: "test", config: testDomainConfig }],
+                domains: [{name: "test", config: testDomainConfig}],
             });
 
             const apihub = require("apihub");

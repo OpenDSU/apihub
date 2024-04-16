@@ -27,8 +27,8 @@ const templates = {
 
 const companies = ["nvs", "msd", "bayer", "takeda", "jnj", "gsk", "abbvie", "pfizer"];
 
-function getCompanyDNSDomain(name){
-    return name+"."+dnsDomain;
+function getCompanyDNSDomain(name) {
+    return name + "." + dnsDomain;
 }
 
 function getCompanySubDomain(name) {
@@ -94,7 +94,7 @@ async function registerTemplate(path, content) {
 
 (async () => {
 
-    for(let path in templates){
+    for (let path in templates) {
         let content = templates[path];
         await registerTemplate(path, content);
     }
@@ -107,11 +107,11 @@ async function registerTemplate(path, content) {
         vaultDomain: cloneVaultDomain,
     };
 
-    for(let prop in companyVars){
+    for (let prop in companyVars) {
         await storeVariable("admin.pla.health", prop, companyVars[prop]);
     }
 
-    for(let i=0; i<companies.length; i++){
+    for (let i = 0; i < companies.length; i++) {
         let companyName = companies[i];
 
         await createDomain(getCompanySubDomain(companyName), cloneMainDomain);
@@ -119,7 +119,7 @@ async function registerTemplate(path, content) {
 
         let companyDNS = getCompanyDNSDomain(companyName);
         let companyVars = getCompanyVars(companyName);
-        for(let prop in companyVars){
+        for (let prop in companyVars) {
             await storeVariable(companyDNS, prop, companyVars[prop]);
         }
     }

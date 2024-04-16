@@ -1,4 +1,4 @@
-const { getDomainFromKeySSI } = require("../../utils");
+const {getDomainFromKeySSI} = require("../../utils");
 
 class Contract {
     constructor(server, domainConfig, anchorId, jsonData) {
@@ -12,35 +12,35 @@ class Contract {
     }
 
     createAnchor(callback) {
-        const { anchorId } = this.commandData;
+        const {anchorId} = this.commandData;
         this._makeLocalContractRequest("createAnchor", [anchorId], callback);
     }
 
     createNFT(callback) {
-        const { anchorId } = this.commandData;
+        const {anchorId} = this.commandData;
         this._makeLocalContractRequest("createNFT", [anchorId], callback);
     }
 
     appendToAnchor(callback) {
         const {
             anchorId,
-            jsonData: { hashLinkIds, digitalProof, zkp },
+            jsonData: {hashLinkIds, digitalProof, zkp},
         } = this.commandData;
         this._makeLocalContractRequest("appendToAnchor", [anchorId, hashLinkIds, digitalProof, zkp], callback);
     }
 
     getAllVersions(callback) {
-        const { anchorId } = this.commandData;
+        const {anchorId} = this.commandData;
         this._makeLocalContractRequest("getAllVersions", [anchorId], callback);
     }
 
     getLatestVersion(callback) {
-        const { anchorId } = this.commandData;
+        const {anchorId} = this.commandData;
         this._makeLocalContractRequest("getLatestVersion", [anchorId], callback);
     }
 
     async _makeLocalContractRequest(methodName, methodParams, callback) {
-        const { domain } = this.commandData;
+        const {domain} = this.commandData;
 
         if (typeof methodParams === "function") {
             callback = methodParams;

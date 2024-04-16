@@ -31,6 +31,7 @@ class FSBrickStorage {
         }
         return false
     }
+
     addBrick(data, callback) {
         callback = $$.makeSaneCallback(callback);
 
@@ -47,7 +48,7 @@ class FSBrickStorage {
         // const pool = workers.createPool() or (pool probably should be at FSBrickStorage ctor level)
         // await $$.promisify(pool.runSyncFunction)("crypto", "sha256", data);
         const brickDirPath = this.fsBrickPathsManager.resolveBrickDirname(this.domain, hash);
-        await $$.promisify(fs.mkdir)(brickDirPath, { recursive: true });
+        await $$.promisify(fs.mkdir)(brickDirPath, {recursive: true});
         //await $$.promisify(fs.access)(brickDirPath);
 
         const brickPath = this.fsBrickPathsManager.resolveBrickPath(this.domain, hash);
@@ -72,7 +73,7 @@ class FSBrickStorage {
 
         const brickDirPath = this.fsBrickPathsManager.resolveBrickDirname(this.domain, hash);
         await $$.promisify(fs.access)(brickDirPath);
-        await $$.promisify(removeDir)(brickDirPath, { recursive: true });
+        await $$.promisify(removeDir)(brickDirPath, {recursive: true});
     }
 }
 

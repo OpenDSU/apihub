@@ -1,9 +1,9 @@
 require("../../../../builds/output/testsRuntime");
 const testIntegration = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const { assert } = dc;
+const {assert} = dc;
 
-const { launchApiHubTestNodeWithDefaultContractAsync, getAnchorVersions, getBrick } = require("../contract-utils");
+const {launchApiHubTestNodeWithDefaultContractAsync, getAnchorVersions, getBrick} = require("../contract-utils");
 
 const openDSU = require("opendsu");
 const keySSIApi = openDSU.loadApi("keyssi");
@@ -42,7 +42,7 @@ assert.callback(
             useWorker: true,
             generateValidatorDID: true,
             port: secondNodePort,
-            domains: [{ name: domain, config: { contracts: { constitution: contractConstitution } } }],
+            domains: [{name: domain, config: {contracts: {constitution: contractConstitution}}}],
             bdns: {
                 default: {
                     replicas: [],
@@ -50,7 +50,7 @@ assert.callback(
                     brickStorages: [mainNodeUrl, secondNodeUrl],
                     anchoringServices: [mainNodeUrl, secondNodeUrl],
                     contractServices: [mainNodeUrl],
-                    validators: [{ DID: "did:demo:id-1", URL: mainNodeUrl }],
+                    validators: [{DID: "did:demo:id-1", URL: mainNodeUrl}],
                 },
             },
         });
@@ -75,7 +75,7 @@ assert.callback(
             brickStorages: [mainNodeUrl, secondNodeUrl],
             anchoringServices: [mainNodeUrl, secondNodeUrl],
             contractServices: [mainNodeUrl],
-            validators: [{ DID: "did:demo:id-0", URL: mainNodeUrl }],
+            validators: [{DID: "did:demo:id-0", URL: mainNodeUrl}],
         };
         await generateNoncedCommand(mainNodeUrl, mainNode.validatorDID, domain, "bdns", "updateDomainInfo", [
             updatedMainNodeBdsn,
@@ -87,7 +87,7 @@ assert.callback(
             brickStorages: [secondNodeUrl, mainNodeUrl],
             anchoringServices: [secondNodeUrl, mainNodeUrl],
             contractServices: [secondNodeUrl],
-            validators: [{ DID: "did:demo:id-1", URL: secondNodeUrl }],
+            validators: [{DID: "did:demo:id-1", URL: secondNodeUrl}],
         };
         await generateNoncedCommand(secondNodeUrl, secondNode.validatorDID, domain, "bdns", "updateDomainInfo", [
             updatedSecondNodeBdsn,

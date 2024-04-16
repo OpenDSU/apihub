@@ -1,7 +1,7 @@
 require("../../../../builds/output/testsRuntime");
-const { launchApiHubTestNode } = require("../../../../psknode/tests/util/tir");
+const {launchApiHubTestNode} = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const { assert } = dc;
+const {assert} = dc;
 
 const DOMAIN = "default";
 const FILE_CHUNK_SIZE = 1024 * 1024; // 1MB
@@ -22,6 +22,7 @@ function generateRandomFile(filePath, fileSize) {
         const step = 1000;
         let i = fileSize;
         write();
+
         function write() {
             let ok = true;
             do {
@@ -54,12 +55,12 @@ function generateRandomFile(filePath, fileSize) {
 }
 
 async function compareOriginalFileWithOneFromDSU(originalFilePath, chunkSize, streamUrl) {
-    const originalFileReadStream = fs.createReadStream(originalFilePath, { highWaterMark: chunkSize });
+    const originalFileReadStream = fs.createReadStream(originalFilePath, {highWaterMark: chunkSize});
     let startIndex = 0;
     for await (const originalChunk of originalFileReadStream) {
         // not all time is the highWaterMark enforced, so we need to get the byteLength of the chunk that was actually read
         const actualChunkSize = originalChunk.byteLength;
-        const streamRange = { start: startIndex, end: startIndex + actualChunkSize - 1 };
+        const streamRange = {start: startIndex, end: startIndex + actualChunkSize - 1};
         console.log(`Checking chunk start: ${streamRange.start}, end: ${streamRange.end}, size: ${actualChunkSize}`);
 
         const streamResonse = await http.fetch(streamUrl, {
@@ -98,11 +99,11 @@ async function createWalletWithDSU(testFolder) {
 
     console.log(`Created DSU with dsuReadId: ${dsuReadId}`);
 
-    return { apiHubUrl, walletId, dsuReadId };
+    return {apiHubUrl, walletId, dsuReadId};
 }
 
 async function uploadFileInChunks(testFolder, fileChunkCount) {
-    const { apiHubUrl, walletId, dsuReadId } = await createWalletWithDSU();
+    const {apiHubUrl, walletId, dsuReadId} = await createWalletWithDSU();
 
     const originalFilePath = path.join(testFolder, "original");
     await generateRandomFile(originalFilePath, ORIGINAL_FILE_SIZE);
@@ -137,7 +138,7 @@ assert.callback(
     async (testFinished) => {
         try {
             const testFolder = await $$.promisify(dc.createTestFolder)("createWalletTest");
-            const { apiHubUrl, walletId, dsuReadId } = await createWalletWithDSU();
+            const {apiHubUrl, walletId, dsuReadId} = await createWalletWithDSU();
 
             const originalFilePath = path.join(testFolder, "original");
             await generateRandomFile(originalFilePath, ORIGINAL_FILE_SIZE);

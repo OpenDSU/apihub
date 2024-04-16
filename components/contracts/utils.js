@@ -56,7 +56,7 @@ function getNodeWorkerBootScript(validatorDID, domain, domainConfig, rootFolder,
 }
 
 const validateCommandInput = (request, response, next) => {
-    const { domain } = request.params;
+    const {domain} = request.params;
     if (!domain || typeof domain !== "string") {
         return response.send(400, "Invalid domain specified");
     }

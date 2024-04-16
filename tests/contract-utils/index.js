@@ -11,7 +11,7 @@ const domain = "default";
 async function launchApiHubTestNodeWithDefaultContractAsync(contractConfig, config) {
     config = config || {};
     if (contractConfig) {
-        config.domains = [{ name: domain, config: { contracts: contractConfig } }];
+        config.domains = [{name: domain, config: {contracts: contractConfig}}];
     }
     return testIntegration.launchApiHubTestNodeWithContractAsync(path.resolve(__dirname, "bin/build.file"), config);
 }

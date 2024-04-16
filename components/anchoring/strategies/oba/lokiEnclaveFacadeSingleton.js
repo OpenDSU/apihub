@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const getLokiEnclaveFacade = (storageFile) => {
-    if(typeof $$.lokiEnclaveFacade === "undefined") {
+    if (typeof $$.lokiEnclaveFacade === "undefined") {
         try {
             fs.accessSync(path.dirname(storageFile));
         } catch (e) {

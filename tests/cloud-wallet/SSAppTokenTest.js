@@ -1,7 +1,7 @@
 require("../../../../builds/output/testsRuntime");
-const { launchApiHubTestNode } = require("../../../../psknode/tests/util/tir");
+const {launchApiHubTestNode} = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const { assert } = dc;
+const {assert} = dc;
 
 const logger = $$.getLogger("CloudWalletTest", "apihub/cloud-wallet");
 

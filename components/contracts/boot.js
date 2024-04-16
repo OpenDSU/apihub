@@ -7,7 +7,7 @@ async function boot(validatorDID, serverUrl, domain, domainConfig, rootFolder, s
     );
 
     const worker_threads = "worker_threads";
-    const { parentPort } = require(worker_threads);
+    const {parentPort} = require(worker_threads);
 
     const bricksledger = require("bricksledger");
 
@@ -76,14 +76,14 @@ async function boot(validatorDID, serverUrl, domain, domainConfig, rootFolder, s
 
             const command = bricksledger.createCommand(message);
             handleCommand(command, (error, result) => {
-                parentPort.postMessage({ error, result });
+                parentPort.postMessage({error, result});
             });
         });
 
         logger.debug(`${logPrefix} ready`);
         parentPort.postMessage("ready");
     } catch (error) {
-        parentPort.postMessage({ error });
+        parentPort.postMessage({error});
         throw error;
     }
 

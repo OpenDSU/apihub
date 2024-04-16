@@ -1,9 +1,9 @@
 require("../../../../builds/output/testsRuntime");
 const testIntegration = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const { assert } = dc;
+const {assert} = dc;
 
-const { launchApiHubTestNodeWithDefaultContractAsync, getAnchorVersions, getBrick } = require("../contract-utils");
+const {launchApiHubTestNodeWithDefaultContractAsync, getAnchorVersions, getBrick} = require("../contract-utils");
 
 const openDSU = require("opendsu");
 const keySSIApi = openDSU.loadApi("keyssi");
@@ -45,7 +45,7 @@ assert.callback(
             useWorker: true,
             generateValidatorDID: true,
             port: secondNodePort,
-            domains: [{ name: domain, config: { contracts: { constitution: contractConstitution } } }],
+            domains: [{name: domain, config: {contracts: {constitution: contractConstitution}}}],
             bdns: {
                 default: {
                     replicas: [],
@@ -53,7 +53,7 @@ assert.callback(
                     brickStorages: [mainNodeUrl, secondNodeUrl],
                     anchoringServices: [mainNodeUrl, secondNodeUrl],
                     contractServices: [mainNodeUrl],
-                    validators: [{ DID: "did:demo:id-1", URL: mainNodeUrl }],
+                    validators: [{DID: "did:demo:id-1", URL: mainNodeUrl}],
                 },
             },
         });
@@ -62,7 +62,7 @@ assert.callback(
             useWorker: true,
             generateValidatorDID: true,
             port: thirdNodePort,
-            domains: [{ name: domain, config: { contracts: { constitution: contractConstitution } } }],
+            domains: [{name: domain, config: {contracts: {constitution: contractConstitution}}}],
             bdns: {
                 default: {
                     replicas: [],
@@ -70,7 +70,7 @@ assert.callback(
                     brickStorages: [mainNodeUrl, thirdNodeUrl],
                     anchoringServices: [mainNodeUrl, thirdNodeUrl],
                     contractServices: [mainNodeUrl],
-                    validators: [{ DID: "did:demo:id-2", URL: mainNodeUrl }],
+                    validators: [{DID: "did:demo:id-2", URL: mainNodeUrl}],
                 },
             },
         });
@@ -95,7 +95,7 @@ assert.callback(
             brickStorages: [mainNodeUrl, secondNodeUrl],
             anchoringServices: [mainNodeUrl, secondNodeUrl],
             contractServices: [mainNodeUrl],
-            validators: [{ DID: "did:demo:id-0", URL: mainNodeUrl }],
+            validators: [{DID: "did:demo:id-0", URL: mainNodeUrl}],
         };
         await generateNoncedCommand(mainNodeUrl, mainNode.validatorDID, domain, "bdns", "updateDomainInfo", [
             updatedMainNodeBdsn,
@@ -107,7 +107,7 @@ assert.callback(
             brickStorages: [secondNodeUrl, thirdNodeUrl],
             anchoringServices: [secondNodeUrl, thirdNodeUrl],
             contractServices: [secondNodeUrl],
-            validators: [{ DID: "did:demo:id-1", URL: secondNodeUrl }],
+            validators: [{DID: "did:demo:id-1", URL: secondNodeUrl}],
         };
         await generateNoncedCommand(secondNodeUrl, secondNode.validatorDID, domain, "bdns", "updateDomainInfo", [
             updatedSecondNodeBdsn,
@@ -119,7 +119,7 @@ assert.callback(
             brickStorages: [thirdNodeUrl, mainNodeUrl],
             anchoringServices: [thirdNodeUrl, mainNodeUrl],
             contractServices: [thirdNodeUrl],
-            validators: [{ DID: "did:demo:id-2", URL: thirdNodeUrl }],
+            validators: [{DID: "did:demo:id-2", URL: thirdNodeUrl}],
         };
         await generateNoncedCommand(thirdNodeUrl, thirdNode.validatorDID, domain, "bdns", "updateDomainInfo", [
             updatedThirdNodeBdsn,

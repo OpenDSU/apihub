@@ -1,9 +1,9 @@
-module.exports = function (server){
+module.exports = function (server) {
 
-    function getEndpointRow(endpoint){
+    function getEndpointRow(endpoint) {
         //return endpoint;
         let enabled = true;
-        if(["get", "head"].indexOf(endpoint.method) === -1 && server.readOnlyModeActive){
+        if (["get", "head"].indexOf(endpoint.method) === -1 && server.readOnlyModeActive) {
             enabled = false;
         }
         return `<div class="row">
@@ -14,7 +14,7 @@ module.exports = function (server){
                 </div>`;
     }
 
-    function getMiddlewareRow(endpoint){
+    function getMiddlewareRow(endpoint) {
         //return endpoint;
         let enabled = "PUT, POST, DELETE methods are disabled in readOnly";
         return `<div class="row">
@@ -25,15 +25,15 @@ module.exports = function (server){
                 </div>`;
     }
 
-    function testIfEndpoint(endpoint){
+    function testIfEndpoint(endpoint) {
         return !!endpoint.url && !!endpoint.method;
     }
 
-    function testIfMiddleware(endpoint){
+    function testIfMiddleware(endpoint) {
         return !testIfEndpoint(endpoint) && !!endpoint.fn.name;
     }
 
-    server.get("/listActiveComponents", async function(req, res){
+    server.get("/listActiveComponents", async function (req, res) {
         let template = require("./template.js");
         let $$HEADER = "";
 
@@ -41,12 +41,12 @@ module.exports = function (server){
         let $$ACTIVE_COMPONENTS = '';
         let endpointsCounter = 0;
         let middlewaresCounter = 0;
-        for(let endpoint of endpoints){
-            if(testIfEndpoint(endpoint)){
+        for (let endpoint of endpoints) {
+            if (testIfEndpoint(endpoint)) {
                 endpointsCounter++;
                 $$ACTIVE_COMPONENTS += getEndpointRow(endpoint);
             }
-            if(testIfMiddleware(endpoint)){
+            if (testIfMiddleware(endpoint)) {
                 middlewaresCounter++;
                 $$ACTIVE_COMPONENTS += getMiddlewareRow(endpoint);
             }

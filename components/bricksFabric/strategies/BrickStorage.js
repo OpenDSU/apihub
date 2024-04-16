@@ -6,7 +6,7 @@ const BRICKSFABRIC_ERROR_CODE = 'bricks fabric error';
 function BrickStorage() {
     const logger = $$.getLogger("BrickStorage", "apihub/bricksFabric");
 
-    this.init = function (brickFabricRootFolder,noOfTransactionsPerBlock) {
+    this.init = function (brickFabricRootFolder, noOfTransactionsPerBlock) {
         this.rootFolder = brickFabricRootFolder;
         this.transactionsPerBlock = noOfTransactionsPerBlock;
         this.hashlinkfile = 'lasthashlink';
@@ -16,18 +16,17 @@ function BrickStorage() {
         this.isCommitingBlock = false;
     }
 
-    this.bootUp = function(){
-      //get latest hashlink
-        const hashlinkpath = path.join(this.rootFolder,this.hashlinkfile);
-        if (fs.existsSync(hashlinkpath))
-        {
+    this.bootUp = function () {
+        //get latest hashlink
+        const hashlinkpath = path.join(this.rootFolder, this.hashlinkfile);
+        if (fs.existsSync(hashlinkpath)) {
             this.lastBlockHashLink = fs.readFileSync(hashlinkpath).toString();
         }
     }
 
     function __storeLastHashLink() {
-        const hashlinkpath = path.join(this.rootFolder,this.hashlinkfile);
-        fs.writeFileSync(hashlinkpath,this.lastBlockHashLink);
+        const hashlinkpath = path.join(this.rootFolder, this.hashlinkfile);
+        fs.writeFileSync(hashlinkpath, this.lastBlockHashLink);
     }
 
     this.completeBlock = function (server, callback) {
@@ -45,9 +44,9 @@ function BrickStorage() {
         //build block
         const blockId = $$.uidGenerator.safe_uuid();
         const block = {
-            'blockId' : blockId,
-            'previousBlockHashLink' : this.lastBlockHashLink,
-            'transactions' : []
+            'blockId': blockId,
+            'previousBlockHashLink': this.lastBlockHashLink,
+            'transactions': []
 
         };
 
@@ -57,7 +56,8 @@ function BrickStorage() {
 
         __SaveBlockToBrickStorage(JSON.stringify(block), server, callback);
     }
-    function __SaveBlockToBrickStorage(data, server, callback){
+
+    function __SaveBlockToBrickStorage(data, server, callback) {
 
         const blockHeaders = {
             'Content-Type': 'application/json',
@@ -88,39 +88,38 @@ function BrickStorage() {
 
 
             });
-        } catch (err)
-        {
+        } catch (err) {
             logger.error("bricks fabric", err);
         }
     }
-    function __pushBuffer(){
-        if (this.pendingBuffer.length > 0)
-        {
+
+    function __pushBuffer() {
+        if (this.pendingBuffer.length > 0) {
             for (let i = 0; i < this.pendingBuffer.length; i++) {
                 this.pendingTransactions.push(this.pendingBuffer[i]);
             }
             this.pendingBuffer.splice(0, this.pendingBuffer.length);
         }
     }
-    this.storeData = function(anchorData, server, callback) {
-        if (this.isCommitingBlock === true)
-        {
+
+    this.storeData = function (anchorData, server, callback) {
+        if (this.isCommitingBlock === true) {
             logger.debug("transaction cached");
             this.pendingBuffer.push(anchorData);
-            callback(undefined,"Transaction was added to the block.");
+            callback(undefined, "Transaction was added to the block.");
             return;
         }
         logger.debug("transaction pushed to pending block");
         this.pendingTransactions.push(anchorData);
-        if (this.pendingTransactions.length >= this.transactionsPerBlock)
-        {
-           // logger.debug("commit block callback");
-           this.completeBlock(server, callback);
-        }else {
+        if (this.pendingTransactions.length >= this.transactionsPerBlock) {
+            // logger.debug("commit block callback");
+            this.completeBlock(server, callback);
+        } else {
             //logger.debug("pending callback");
-            callback(undefined,"Transaction was added to the block.");
+            callback(undefined, "Transaction was added to the block.");
         }
     }
 }
+
 global["BrickStorage"] = BrickStorage;
-module.exports = { BRICKSFABRIC_ERROR_CODE};
+module.exports = {BRICKSFABRIC_ERROR_CODE};

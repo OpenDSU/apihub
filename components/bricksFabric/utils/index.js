@@ -1,4 +1,4 @@
-const { clone } = require("../../../utils");
+const {clone} = require("../../../utils");
 
 const getBricksFabricStrategy = () => {
     const config = require("../../../config");
@@ -13,7 +13,7 @@ const getBricksFabricStrategy = () => {
         // try to get the bricks strategy based on the bricksFabric component config
         const bricksFabricConfig = config.getConfig("componentsConfig", "bricksFabric");
         if (bricksFabricConfig) {
-            const { bricksFabricStrategy, bricksFabricStrategyOption } = bricksFabricConfig;
+            const {bricksFabricStrategy, bricksFabricStrategyOption} = bricksFabricConfig;
             domainConfig = {
                 name: bricksFabricStrategy,
                 option: bricksFabricStrategyOption,

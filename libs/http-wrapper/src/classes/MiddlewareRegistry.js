@@ -2,23 +2,23 @@ const querystring = require('querystring');
 const logger = $$.getLogger("http-wrapper", "apihub/libs");
 
 function matchUrl(pattern, url) {
-	const result = {
-		match: true,
-		params: {},
-		query: {}
-	};
+    const result = {
+        match: true,
+        params: {},
+        query: {}
+    };
 
-	const queryParametersStartIndex = url.indexOf('?');
-	if(queryParametersStartIndex !== -1) {
-		const urlQueryString = url.substr(queryParametersStartIndex + 1); // + 1 to ignore the '?'
-		result.query = querystring.parse(urlQueryString);
-		url = url.substr(0, queryParametersStartIndex);
-	}
+    const queryParametersStartIndex = url.indexOf('?');
+    if (queryParametersStartIndex !== -1) {
+        const urlQueryString = url.substr(queryParametersStartIndex + 1); // + 1 to ignore the '?'
+        result.query = querystring.parse(urlQueryString);
+        url = url.substr(0, queryParametersStartIndex);
+    }
 
     const patternTokens = pattern.split('/');
     const urlTokens = url.split('/');
 
-    if(urlTokens[urlTokens.length - 1] === '') {
+    if (urlTokens[urlTokens.length - 1] === '') {
         urlTokens.pop();
     }
 
@@ -26,7 +26,7 @@ function matchUrl(pattern, url) {
         result.match = false;
     }
 
-    if(patternTokens[patternTokens.length - 1] === '*') {
+    if (patternTokens[patternTokens.length - 1] === '*') {
         result.match = true;
         patternTokens.pop();
     }
@@ -63,46 +63,46 @@ function MiddlewareRegistry() {
         registeredMiddlewareFunctions.push({method, url, fn});
     }
 
-    this.getRegisteredMiddlewareFunctions = function() {
+    this.getRegisteredMiddlewareFunctions = function () {
         return registeredMiddlewareFunctions;
     }
 
     this.use = function (...params) {
-    let args = [ undefined, undefined, undefined ];
+        let args = [undefined, undefined, undefined];
 
-    switch (params.length) {
-        case 0:
-            throw Error('Use method needs at least one argument.');
+        switch (params.length) {
+            case 0:
+                throw Error('Use method needs at least one argument.');
 
-        case 1:
-            if (typeof params[0] !== 'function') {
-                throw Error('If only one argument is provided it must be a function');
-            }
+            case 1:
+                if (typeof params[0] !== 'function') {
+                    throw Error('If only one argument is provided it must be a function');
+                }
 
-            args[2] = params[0];
+                args[2] = params[0];
 
-            break;
-        case 2:
-            if (typeof params[0] !== 'string' || typeof params[1] !== 'function') {
-                throw Error('If two arguments are provided the first one must be a string (url) and the second a function');
-            }
+                break;
+            case 2:
+                if (typeof params[0] !== 'string' || typeof params[1] !== 'function') {
+                    throw Error('If two arguments are provided the first one must be a string (url) and the second a function');
+                }
 
-            args[1]=params[0];
-            args[2]=params[1];
+                args[1] = params[0];
+                args[2] = params[1];
 
-            break;
-        default:
-            if (typeof params[0] !== 'string' || typeof params[1] !== 'string' || typeof params[2] !== 'function') {
-                throw Error('If three or more arguments are provided the first one must be a string (HTTP verb), the second a string (url) and the third a function');
-            }
+                break;
+            default:
+                if (typeof params[0] !== 'string' || typeof params[1] !== 'string' || typeof params[2] !== 'function') {
+                    throw Error('If three or more arguments are provided the first one must be a string (HTTP verb), the second a string (url) and the third a function');
+                }
 
-            if (!([ 'get', 'post', 'put', 'delete', 'patch', 'head', 'connect', 'options', 'trace' ].includes(params[0].toLowerCase()))) {
-                throw new Error('If three or more arguments are provided the first one must be a HTTP verb but none could be matched');
-            }
+                if (!(['get', 'post', 'put', 'delete', 'patch', 'head', 'connect', 'options', 'trace'].includes(params[0].toLowerCase()))) {
+                    throw new Error('If three or more arguments are provided the first one must be a HTTP verb but none could be matched');
+                }
 
-            args = params;
+                args = params;
 
-            break;
+                break;
         }
 
         use.apply(this, args);
@@ -133,7 +133,7 @@ function MiddlewareRegistry() {
      */
     function execute(index, method, url, ...params) {
         if (!registeredMiddlewareFunctions[index]) {
-            if(index===0){
+            if (index === 0) {
                 logger.error("No handlers registered yet!");
             }
             return;
@@ -158,7 +158,7 @@ function MiddlewareRegistry() {
 
             if (params[0]) {
                 params[0].params = urlMatch.params;
-                params[0].query  = urlMatch.query;
+                params[0].query = urlMatch.query;
             }
         }
 

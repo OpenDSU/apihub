@@ -55,7 +55,7 @@ function ReadOnlyMiddleware(server, registerHandler = true) {
     checkReadOnlyFlag();
     setInterval(checkReadOnlyFlag, interval);
 
-    if(registerHandler){
+    if (registerHandler) {
         server.use("*", function (req, res, next) {
             if (readOnly && req.method !== "GET" && req.method !== "HEAD") {
                 res.statusCode = 405;

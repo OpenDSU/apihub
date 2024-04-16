@@ -10,6 +10,7 @@ function StaticServer(server) {
     if (componentsConfig && componentsConfig.staticServer && componentsConfig.staticServer.excludedFiles) {
         excludedFilesRegex = componentsConfig.staticServer.excludedFiles.map(str => new RegExp(str));
     }
+
     function sendFiles(req, res, next) {
         const prefix = "/directory-summary/";
         requestValidation(req, "GET", prefix, function (notOurResponsibility, targetPath) {
@@ -113,50 +114,50 @@ function StaticServer(server) {
 
     }
 
-    function tryToCreateAtRuntimeFromTemplates(req, callback){
+    function tryToCreateAtRuntimeFromTemplates(req, callback) {
 
         let adminService;
-        try{
+        try {
             adminService = require("./../admin").getAdminService();
-        }catch(err){
+        } catch (err) {
             //logger.error("Caught an error durring admin service initialization", err);
             return callback(err);
         }
 
-        adminService.checkForTemplate(req.url, (err, template)=>{
-            if(err){
+        adminService.checkForTemplate(req.url, (err, template) => {
+            if (err) {
                 //logger.error("Not able to find template for", req.url);
                 //console.trace(err);
                 return callback(err);
             }
-            if(template){
+            if (template) {
                 let fileContent = template.content;
                 const urlObject = new URL(req.url, `http://${req.headers.host}`);
                 let hostname = urlObject.hostname;
-                return adminService.getDomainSpecificVariables(hostname, (err, variables)=>{
-                    if(err || !variables){
+                return adminService.getDomainSpecificVariables(hostname, (err, variables) => {
+                    if (err || !variables) {
                         return callback(err);
                     }
                     let domainVariables = Object.keys(variables);
-                    for(let i=0; i<domainVariables.length; i++){
+                    for (let i = 0; i < domainVariables.length; i++) {
                         let variableName = domainVariables[i];
                         let variableValue = variables[variableName];
 
-                        const lookupFor = "${"+variableName+"}";
+                        const lookupFor = "${" + variableName + "}";
                         fileContent = fileContent.split(lookupFor).join(variableValue);
                     }
 
                     return callback(undefined, fileContent);
                 });
-            }else{
+            } else {
                 return callback(new Error(`No template found for ${req.url}`));
             }
         });
     }
 
-    function resolveFileAndSend(req, res, file){
-        tryToCreateAtRuntimeFromTemplates(req,(err, content)=>{
-            if(err){
+    function resolveFileAndSend(req, res, file) {
+        tryToCreateAtRuntimeFromTemplates(req, (err, content) => {
+            if (err) {
                 //console.trace(err);
                 //if any error... we fallback to normal sendFile method
                 return sendFile(res, file);
@@ -167,14 +168,14 @@ function StaticServer(server) {
             setMimeTypeOnResponse(req.url, res);
 
             res.setHeader('Cache-Control', 'no-store');
-            if(req.method === "HEAD"){
+            if (req.method === "HEAD") {
                 return res.end();
             }
             res.end(content);
         });
     }
 
-    function setMimeTypeOnResponse(file, res){
+    function setMimeTypeOnResponse(file, res) {
         let ext = path.extname(file);
 
         if (ext !== "") {
@@ -206,7 +207,7 @@ function StaticServer(server) {
         // instruct to not store response into cache
         res.setHeader('Cache-Control', 'no-store');
         res.statusCode = 200;
-        if(res.req.method === "HEAD"){
+        if (res.req.method === "HEAD") {
             return res.end();
         }
         stream.pipe(res);
@@ -234,7 +235,7 @@ function StaticServer(server) {
 
         const path = require("swarmutils").path;
         let rootFolder = server.rootFolder;
-        if(componentsConfig&&componentsConfig.staticServer&&componentsConfig.staticServer.root){
+        if (componentsConfig && componentsConfig.staticServer && componentsConfig.staticServer.root) {
             rootFolder = path.resolve(componentsConfig.staticServer.root);
         }
 
@@ -262,8 +263,8 @@ function StaticServer(server) {
             //remove existing query params
             fs.stat(targetPath, function (err, stats) {
                 if (err) {
-                    return tryToCreateAtRuntimeFromTemplates(req,(err, content)=>{
-                        if(err){
+                    return tryToCreateAtRuntimeFromTemplates(req, (err, content) => {
+                        if (err) {
                             //if any error... we have to return 404
                             logger.info(0x04, `Failed to create from templates`)
                             res.statusCode = 404;
@@ -272,7 +273,7 @@ function StaticServer(server) {
                         }
                         res.statusCode = 200;
                         res.setHeader('Cache-Control', 'no-store');
-                        if(req.method === "HEAD"){
+                        if (req.method === "HEAD") {
                             return res.end();
                         }
                         res.end(content);

@@ -45,7 +45,7 @@ function Server(sslOptions) {
 
     this.getRegisteredMiddlewareFunctions = middleware.getRegisteredMiddlewareFunctions;
 
-    this.makeLocalRequest = function (method,path, body,headers, callback) {
+    this.makeLocalRequest = function (method, path, body, headers, callback) {
         if (typeof headers === "function") {
             callback = headers;
             headers = undefined;
@@ -57,28 +57,28 @@ function Server(sslOptions) {
             body = undefined;
         }
 
-        const protocol =  require(this.protocol);
+        const protocol = require(this.protocol);
 
         const options = {
-            hostname : '127.0.0.1',
-            port : server.address().port,
+            hostname: '127.0.0.1',
+            port: server.address().port,
             path,
             method,
             headers
         };
 
-        let timer = setTimeout(()=>{
+        let timer = setTimeout(() => {
             let error = new Error("Forced timeout for local request");
             error.rootCause = "network";
             let cb = callback;
-            callback = ()=>{
+            callback = () => {
                 console.warn("Canceled request still got a result");
             };
             cb(error);
-        }, 1*60*1000)//after one minute
+        }, 1 * 60 * 1000)//after one minute
 
         const req = protocol.request(options, response => {
-            if(timer){
+            if (timer) {
                 clearTimeout(timer);
                 timer = undefined;
             }
@@ -97,7 +97,7 @@ function Server(sslOptions) {
                 try {
                     const bodyContent = $$.Buffer.concat(data).toString();
                     //console.log('resolve will be called. bodyContent received : ', bodyContent);
-                    return callback(undefined,bodyContent);
+                    return callback(undefined, bodyContent);
                 } catch (err) {
                     return callback(err);
                 }
@@ -108,13 +108,13 @@ function Server(sslOptions) {
             return callback(err);
         });
 
-        if(body) {
+        if (body) {
             req.write(body);
         }
         req.end();
     };
 
-    this.makeLocalRequestAsync = async function(method, path, body, headers) {
+    this.makeLocalRequestAsync = async function (method, path, body, headers) {
         try {
             const makeLocalRequest = $$.promisify(this.makeLocalRequest.bind(this));
             let response = await makeLocalRequest(method, path, body, headers);
@@ -139,8 +139,8 @@ function Server(sslOptions) {
     function _initServer(sslConfig) {
         let server;
         if (sslConfig) {
-             server = https.createServer(sslConfig, middleware.go);
-             server.protocol = "https";
+            server = https.createServer(sslConfig, middleware.go);
+            server.protocol = "https";
         } else {
             server = http.createServer(middleware.go);
             server.protocol = "http";
@@ -150,26 +150,26 @@ function Server(sslOptions) {
     }
 
     return new Proxy(this, {
-       get(target, prop) {
-           if(typeof target[prop] !== "undefined") {
-               return target[prop];
-           }
+        get(target, prop) {
+            if (typeof target[prop] !== "undefined") {
+                return target[prop];
+            }
 
-           if(typeof server[prop] === "function") {
-               return function(...args) {
-                   server[prop](...args);
-               }
-           } else {
-               return server[prop];
-           }
-       },
-        set(target, prop, value){
-           if(server.hasOwnProperty(prop)){
-               server[prop] = value;
-               return true;
-           }
-           target[prop]=value;
-           return true;
+            if (typeof server[prop] === "function") {
+                return function (...args) {
+                    server[prop](...args);
+                }
+            } else {
+                return server[prop];
+            }
+        },
+        set(target, prop, value) {
+            if (server.hasOwnProperty(prop)) {
+                server[prop] = value;
+                return true;
+            }
+            target[prop] = value;
+            return true;
         }
     });
 }

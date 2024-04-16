@@ -11,9 +11,9 @@ assert.callback(
         try {
             await testIntegration.launchConfigurableApiHubTestNodeAsync({
                 domains: [
-                    { name: "domain1", config: {} },
-                    { name: "domain2", config: {} },
-                    { name: "domain3", config: {} },
+                    {name: "domain1", config: {}},
+                    {name: "domain2", config: {}},
+                    {name: "domain3", config: {}},
                 ],
                 includeDefaultDomains: false,
             });

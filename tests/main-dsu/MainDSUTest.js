@@ -1,7 +1,7 @@
 require("../../../../builds/output/testsRuntime");
-const { launchApiHubTestNode } = require("../../../../psknode/tests/util/tir");
+const {launchApiHubTestNode} = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const { assert } = dc;
+const {assert} = dc;
 const path = require("path");
 const fs = require("fs");
 
@@ -20,10 +20,10 @@ async function getMainDSU(apiHubUrl, mainDSUCookie) {
     const getMainDSUUrl = `${apiHubUrl}/getSSIForMainDSU`;
     const options = mainDSUCookie
         ? {
-              headers: {
-                  cookie: `${MAIN_DSU_COOKIE_NAME}=${mainDSUCookie}`,
-              },
-          }
+            headers: {
+                cookie: `${MAIN_DSU_COOKIE_NAME}=${mainDSUCookie}`,
+            },
+        }
         : undefined;
 
     const getMainDSUUrlResponse = await http.fetch(getMainDSUUrl, options);

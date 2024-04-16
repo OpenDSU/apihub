@@ -1,6 +1,10 @@
-const { clone } = require("../../utils");
-const { getLocalBdnsEntryListExcludingSelfAsync, getHeadersWithExcludedProvidersIncludingSelf } = require("../../utils/request-utils");
+const {clone} = require("../../utils");
+const {
+    getLocalBdnsEntryListExcludingSelfAsync,
+    getHeadersWithExcludedProvidersIncludingSelf
+} = require("../../utils/request-utils");
 const logger = $$.getLogger("bricking", "apihub/bricking")
+
 function convertReadableStreamToBuffer(readStream, callback) {
     let buffers = [];
 

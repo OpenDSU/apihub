@@ -33,7 +33,7 @@ function LokiMQAdapter(server, prefix, domain, configuration) {
     }
 
     this.storeMessage = (queueName, message, callback) => {
-        if(typeof message !== "object"){
+        if (typeof message !== "object") {
             message = {message};
         }
         lokiEnclaveFacadeInstance.addInQueue(undefined, queueName, message, true, callback);

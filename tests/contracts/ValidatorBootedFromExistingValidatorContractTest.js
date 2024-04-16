@@ -1,9 +1,9 @@
 require("../../../../builds/output/testsRuntime");
 const testIntegration = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const { assert } = dc;
+const {assert} = dc;
 
-const { launchApiHubTestNodeWithDefaultContractAsync, callNodeEndpointAsync } = require("../contract-utils");
+const {launchApiHubTestNodeWithDefaultContractAsync, callNodeEndpointAsync} = require("../contract-utils");
 
 const domain = "default";
 
@@ -19,7 +19,7 @@ assert.callback(
         const secondNode = await testIntegration.launchConfigurableApiHubTestNodeAsync({
             useWorker: true,
             generateValidatorDID: true,
-            domains: [{ name: domain, config: { contracts: { constitution: contractConstitution } } }],
+            domains: [{name: domain, config: {contracts: {constitution: contractConstitution}}}],
             onPortAquired: (port, options) => {
                 const nodeUrl = `http://localhost:${port}`;
                 options.bdns = {
@@ -29,7 +29,7 @@ assert.callback(
                         brickStorages: [nodeUrl, mainNodeUrl],
                         anchoringServices: [nodeUrl, mainNodeUrl],
                         contractServices: [nodeUrl],
-                        validators: [{ DID: "did:demo:id-1", URL: nodeUrl }],
+                        validators: [{DID: "did:demo:id-1", URL: nodeUrl}],
                     },
                 };
             },

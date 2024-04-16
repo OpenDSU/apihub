@@ -53,7 +53,7 @@ function upload(req, callback) {
     }
 
     try {
-        fs.mkdirSync(completeFolderPath, { recursive: true });
+        fs.mkdirSync(completeFolderPath, {recursive: true});
     } catch (e) {
         return callback(e);
     }
@@ -62,7 +62,7 @@ function upload(req, callback) {
 
     writeStream.on('finish', () => {
         writeStream.close();
-        return callback(null, { 'path': path.join(folder, filename) });
+        return callback(null, {'path': path.join(folder, filename)});
     });
 
     writeStream.on('error', (err) => {
@@ -73,4 +73,4 @@ function upload(req, callback) {
     req.pipe(writeStream);
 }
 
-module.exports =  uploadFile;
+module.exports = uploadFile;

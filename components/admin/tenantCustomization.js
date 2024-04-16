@@ -31,8 +31,8 @@ const TENANT_NAME = process.env.TENANT_NAME || "nvs";
 const companies = [TENANT_NAME];
 const SUBDOMAIN_COMMON_PREFIX = process.env.SUBDOMAIN_COMMON_PREFIX || "";
 
-function getCompanyDNSDomain(name){
-    return SUBDOMAIN_COMMON_PREFIX+name+"."+dnsDomain;
+function getCompanyDNSDomain(name) {
+    return SUBDOMAIN_COMMON_PREFIX + name + "." + dnsDomain;
 }
 
 function getCompanySubDomain(name) {
@@ -98,7 +98,7 @@ async function registerTemplate(path, content) {
 
 (async () => {
 
-    for(let path in templates){
+    for (let path in templates) {
         let content = templates[path];
         await registerTemplate(path, content);
     }
@@ -111,13 +111,13 @@ async function registerTemplate(path, content) {
         vaultDomain: cloneVaultDomain,
     };
 
-    if(ADMIN_DNS_DOMAIN){
-        for(let prop in companyVars){
+    if (ADMIN_DNS_DOMAIN) {
+        for (let prop in companyVars) {
             await storeVariable(ADMIN_DNS_DOMAIN, prop, companyVars[prop]);
         }
     }
 
-    for(let i=0; i<companies.length; i++){
+    for (let i = 0; i < companies.length; i++) {
         let companyName = companies[i];
 
         await createDomain(getCompanySubDomain(companyName), cloneMainDomain);
@@ -125,7 +125,7 @@ async function registerTemplate(path, content) {
 
         let companyDNS = getCompanyDNSDomain(companyName);
         let companyVars = getCompanyVars(companyName);
-        for(let prop in companyVars){
+        for (let prop in companyVars) {
             await storeVariable(companyDNS, prop, companyVars[prop]);
         }
     }

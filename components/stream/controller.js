@@ -13,7 +13,7 @@ function getNodeWorkerBootScript() {
 
 async function handleCreateWallet(request, response) {
     try {
-        const { domain, userId } = request.params;
+        const {domain, userId} = request.params;
         const keySSISpace = require("opendsu").loadApi("keyssi");
         const resolver = require("opendsu").loadApi("resolver");
 
@@ -24,7 +24,7 @@ async function handleCreateWallet(request, response) {
         const seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(domain);
 
         logger.debug(`[Stream] Creating wallet ${walletSSI.getIdentifier()} for user ${userId}...`);
-        const walletDSU = await $$.promisify(resolver.createDSUForExistingSSI)(walletSSI, { dsuTypeSSI: seedSSI });
+        const walletDSU = await $$.promisify(resolver.createDSUForExistingSSI)(walletSSI, {dsuTypeSSI: seedSSI});
 
         const writableDSU = walletDSU.getWritableDSU();
 
@@ -47,7 +47,7 @@ async function handleCreateWallet(request, response) {
         logger.debug(`[Stream] Settings config for wallet ${await $$.promisify(walletSSI.getAnchorId)()}`, environmentConfig);
         await $$.promisify(writableDSU.writeFile)("/environment.json", JSON.stringify(environmentConfig));
 
-        await $$.promisify(writableDSU.writeFile)("/metadata.json", JSON.stringify({ userId }));
+        await $$.promisify(writableDSU.writeFile)("/metadata.json", JSON.stringify({userId}));
 
         response.statusCode = 200;
         return response.end(walletSSI.getIdentifier());
@@ -59,7 +59,7 @@ async function handleCreateWallet(request, response) {
 }
 
 async function handleStreamRequest(request, response) {
-    const { keySSI } = request.params;
+    const {keySSI} = request.params;
     let requestedPath = request.url.substr(request.url.indexOf(keySSI) + keySSI.length);
     if (!requestedPath) {
         requestedPath = "/";
@@ -95,7 +95,7 @@ async function handleStreamRequest(request, response) {
                 return callback(err);
             }
 
-            let { error, result } = typeof Event !== "undefined" && message instanceof Event ? message.data : message;
+            let {error, result} = typeof Event !== "undefined" && message instanceof Event ? message.data : message;
 
             if (error) {
                 return callback(error);

@@ -1,8 +1,11 @@
 # PSK API HUB
+
 PrivateSky module that enables communication between nodes (files transfer, notifications, bricks, brick ledger)
 
 ## How to use
+
 Clone repo into 'modules' folder
+
 ```bash
 git clone 
 ```
@@ -25,4 +28,5 @@ git clone
 }
 
 ```
+
 Where **DEMO** is the domain of the KeySSI, like **default**, **predefined**, **vault**, etc.

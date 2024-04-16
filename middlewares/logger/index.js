@@ -37,13 +37,13 @@ function Logger(server) {
 
         let timer;
         let quickReq = true;
-        for(let longReq of longRequests){
-            if(url.indexOf(longReq)!==-1){
+        for (let longReq of longRequests) {
+            if (url.indexOf(longReq) !== -1) {
                 quickReq = false;
             }
         }
 
-        if(quickReq){
+        if (quickReq) {
             //we don't want to log requests that have a big time to leave like (TLL) in case of http poll requests
             timer = setInterval(() => {
                 logger.info(`Request progress ${method}:${url}`);
@@ -60,12 +60,12 @@ function Logger(server) {
             }
         });
 
-        req.on("error", (err)=>{
+        req.on("error", (err) => {
             //clearing the timer
             if (timer) {
                 clearInterval(timer);
             }
-            logger.info(`Request closed by client`, `${method}:${url}`, err?err.message:"", err);
+            logger.info(`Request closed by client`, `${method}:${url}`, err ? err.message : "", err);
         });
 
         res.on('finish', () => {

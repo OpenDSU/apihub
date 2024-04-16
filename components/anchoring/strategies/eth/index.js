@@ -54,7 +54,7 @@ function ETH(server, domainConfig, anchorId, newAnchorValue, jsonData) {
         });
     }
 
-    const readJSONFromBlockchain = (action, callback)=>{
+    const readJSONFromBlockchain = (action, callback) => {
         const endpoint = createEndpoint(action);
         http.fetch(endpoint, {
             method: 'GET'

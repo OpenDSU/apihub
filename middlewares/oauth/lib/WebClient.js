@@ -77,7 +77,7 @@ function WebClient(oauthConfig) {
                 return callback(err);
             }
 
-            if ( Date.now() - refreshToken.date > oauthConfig.sessionTimeout) {
+            if (Date.now() - refreshToken.date > oauthConfig.sessionTimeout) {
                 return callback(Error(errorMessages.SESSION_EXPIRED))
             }
 
@@ -112,7 +112,7 @@ function WebClient(oauthConfig) {
         });
     }
 
-    this.getUserInfo = (accessToken, callback)=>{
+    this.getUserInfo = (accessToken, callback) => {
         const options = {
             method: 'GET',
             headers: {

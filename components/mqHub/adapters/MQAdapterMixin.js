@@ -90,7 +90,7 @@ function MQAdapterMixin(target, server, prefix, domain, configuration) {
 
             const capacityLimit = Number(settings.mq_queueLength);
 
-            if(capacity > capacityLimit){
+            if (capacity > capacityLimit) {
                 const err = new Error("Queue size exceeded!");
                 err.sendToUser = true;
                 return callback(err);
@@ -102,7 +102,7 @@ function MQAdapterMixin(target, server, prefix, domain, configuration) {
 
             //if queue is empty we should try to deliver the message to a potential subscriber that waits
             const subs = subscribers[queueName];
-            target.storeMessage(queueName, message, (err)=>{
+            target.storeMessage(queueName, message, (err) => {
                 if (err) {
                     return callback(err);
                 }

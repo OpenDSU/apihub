@@ -14,7 +14,7 @@ async function init(server) {
     versionlessDSUFolderPath = path.join(server.rootFolder, config.getConfig("externalStorage"), "versionlessdsu");
     logger.debug(`[VersionlessDSU] Ensuring VersionlessDSU folder (${versionlessDSUFolderPath}) is created`);
     try {
-        await $$.promisify(fs.mkdir)(versionlessDSUFolderPath, { recursive: true });
+        await $$.promisify(fs.mkdir)(versionlessDSUFolderPath, {recursive: true});
     } catch (error) {
         logger.error("[VersionlessDSU] Failed to create VersionlessDSU folder", error);
     }
@@ -29,7 +29,7 @@ function sendVersionlessDSUContent(parsedDSUContent, response) {
 function getFilePathFromRequest(request) {
     const {url} = request;
     let filePathStartIndex = url.indexOf(VERSIONLESS_DSU_PATH_PREFIX);
-    if(filePathStartIndex === -1) {
+    if (filePathStartIndex === -1) {
         return null;
     }
 
@@ -42,7 +42,7 @@ function getFilePathFromRequest(request) {
 
 async function handleGetVersionlessDSURequest(request, response) {
     const filePath = getFilePathFromRequest(request);
-    if(!filePath) {
+    if (!filePath) {
         logger.error("[VersionlessDSU] FilePath not specified");
         response.statusCode = 400;
         return response.end();
@@ -51,13 +51,13 @@ async function handleGetVersionlessDSURequest(request, response) {
     const fs = require("fs");
     try {
         let resolvedFilePath = path.resolve(filePath);
-        if(resolvedFilePath.indexOf(versionlessDSUFolderPath) === -1){
+        if (resolvedFilePath.indexOf(versionlessDSUFolderPath) === -1) {
             throw Error("Trying to read outside of VersionLess storage folder");
         }
 
-        try{
+        try {
             await $$.promisify(fs.access)(filePath, fs.constants.F_OK);
-        }catch(err){
+        } catch (err) {
             logger.info(`[VersionlessDSU] Unable to locate storage file ${filePath}`, err);
             response.statusCode = 404;
             response.end();
@@ -77,7 +77,7 @@ async function handleGetVersionlessDSURequest(request, response) {
 
 async function handlePutVersionlessDSURequest(request, response) {
     const filePath = getFilePathFromRequest(request);
-    if(!filePath) {
+    if (!filePath) {
         logger.error("[VersionlessDSU] FilePath not specified");
         response.statusCode = 400;
         return response.end();
@@ -91,10 +91,10 @@ async function handlePutVersionlessDSURequest(request, response) {
     }
 
     try {
-        await $$.promisify(fs.mkdir)(path.dirname(filePath), { recursive: true });
+        await $$.promisify(fs.mkdir)(path.dirname(filePath), {recursive: true});
         logger.debug(`[VersionlessDSU] Writing versionlessDSU to ${filePath}`);
         let resolvedFilePath = path.resolve(filePath);
-        if(resolvedFilePath.indexOf(versionlessDSUFolderPath) === -1){
+        if (resolvedFilePath.indexOf(versionlessDSUFolderPath) === -1) {
             throw Error("Trying to write outside of VersionLess storage folder");
         }
         await $$.promisify(fs.writeFile)(filePath, dsu);

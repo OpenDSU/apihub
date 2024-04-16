@@ -12,7 +12,7 @@ async function ensurePathExists(path) {
     const pathExists = await checkIfPathExists(path);
     if (!pathExists) {
         const fs = require("fs");
-        await $$.promisify(fs.mkdir)(path, { recursive: true });
+        await $$.promisify(fs.mkdir)(path, {recursive: true});
     }
 }
 

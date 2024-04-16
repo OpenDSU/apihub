@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 const config = require("../../config");
-const { parseCookies, stringifyCookies } = require("../../utils/cookie-utils");
+const {parseCookies, stringifyCookies} = require("../../utils/cookie-utils");
 
 const logger = $$.getLogger("controller", "apihub/mainDSU");
 
@@ -20,7 +20,7 @@ async function init(server) {
     mainDSUSeedSSIFolderPath = path.join(server.rootFolder, config.getConfig("externalStorage"), "maindsu");
     logger.debug(`[MainDSU] Ensuring MainDSU seedSSI folder (${mainDSUSeedSSIFolderPath}) is created`);
     try {
-        await $$.promisify(fs.mkdir)(mainDSUSeedSSIFolderPath, { recursive: true });
+        await $$.promisify(fs.mkdir)(mainDSUSeedSSIFolderPath, {recursive: true});
     } catch (error) {
         logger.error("[MainDSU] Failed to create MainDSU seedSSI folder", error);
     }
@@ -45,7 +45,7 @@ function getMainDSUFileNameForRequest(request) {
 }
 
 async function handleSetSSIForMainDSUCookie(request, response) {
-    const { value } = request.body;
+    const {value} = request.body;
 
     if (value == null) {
         logger.error("Required value body field not present");
@@ -80,7 +80,7 @@ async function handleDefaultMainDSURequest(request, response) {
     let mainDSUSeedSSI;
     let mainDSUAnchorId;
     try {
-        const fileContent = await $$.promisify(fs.readFile)(mainDSUSeedSSIFilePath, { encoding: "utf-8" });
+        const fileContent = await $$.promisify(fs.readFile)(mainDSUSeedSSIFilePath, {encoding: "utf-8"});
         mainDSUSeedSSI = keySSISpace.parse(fileContent);
         cachedMainDSUSeedSSIs[mainDSUFileName] = mainDSUSeedSSI;
         mainDSUAnchorId = await $$.promisify(mainDSUSeedSSI.getAnchorId)();

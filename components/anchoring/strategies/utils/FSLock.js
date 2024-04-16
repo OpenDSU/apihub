@@ -9,7 +9,7 @@ function FSLock(filePath, maxTimeMilliSeconds, forcedLockDelay) {
         fs.mkdir(getLockPath(), async err => {
             if (err) {
                 if (await lockIsExpired()) {
-                   return attemptToReacquireExpiredLock(callback);
+                    return attemptToReacquireExpiredLock(callback);
                 }
 
                 return callback(Error(`File ${filePath} is being updated by another process.`));
@@ -53,9 +53,9 @@ function FSLock(filePath, maxTimeMilliSeconds, forcedLockDelay) {
     };
 
 
-    const releaseExpiredLock = (callback)=>{
+    const releaseExpiredLock = (callback) => {
         return setTimeout(() => {
-            removeDir(getLockPath(), {recursive: true}, (err)=>{
+            removeDir(getLockPath(), {recursive: true}, (err) => {
                 if (err) {
                     return callback(err);
                 }
@@ -65,8 +65,8 @@ function FSLock(filePath, maxTimeMilliSeconds, forcedLockDelay) {
         }, forcedLockDelay);
     }
 
-    const attemptToReacquireExpiredLock = (callback)=>{
-        releaseExpiredLock(err=>{
+    const attemptToReacquireExpiredLock = (callback) => {
+        releaseExpiredLock(err => {
             if (err) {
                 return callback(err);
             }

@@ -8,8 +8,8 @@
 const config = require('./../config');
 
 function TokenBucket(startTokens = config.getConfig('tokenBucket', 'startTokens'),
-    tokenValuePerTime = config.getConfig('tokenBucket', 'tokenValuePerTime'),
-    unitOfTime = config.getConfig('tokenBucket', 'unitOfTime')) {
+                     tokenValuePerTime = config.getConfig('tokenBucket', 'tokenValuePerTime'),
+                     unitOfTime = config.getConfig('tokenBucket', 'unitOfTime')) {
 
     if (typeof startTokens !== 'number' || typeof tokenValuePerTime !== 'number' || typeof unitOfTime !== 'number') {
         throw new Error('All parameters must be of type number');
@@ -32,7 +32,8 @@ function TokenBucket(startTokens = config.getConfig('tokenBucket', 'startTokens'
 
     const limits = {};
 
-    function takeToken(userKey, cost, callback = () => { }) {
+    function takeToken(userKey, cost, callback = () => {
+    }) {
         if (typeof cost !== 'number' || isNaN(cost) || cost <= 0 || cost === Infinity) {
             callback(TokenBucket.ERROR_BAD_ARGUMENT);
             return;

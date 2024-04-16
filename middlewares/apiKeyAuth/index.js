@@ -21,7 +21,7 @@ function APIKeyAuth(server) {
             delete req.skipSSO;
         }
 
-        if(req.skipClientCredentialsOauth){
+        if (req.skipClientCredentialsOauth) {
             delete req.skipClientCredentialsOauth;
         }
 
@@ -33,11 +33,11 @@ function APIKeyAuth(server) {
 
         const {apiKey} = utils.parseCookies(req.headers.cookie);
 
-        if(!apiKey){
+        if (!apiKey) {
             return next();
         }
 
-        if(await secretServiceInstance.validateAPIKey(apiKey)){
+        if (await secretServiceInstance.validateAPIKey(apiKey)) {
             req.skipSSO = true;
             req.skipClientCredentialsOauth = true;
             return next();

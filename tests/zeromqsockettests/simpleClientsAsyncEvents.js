@@ -19,23 +19,23 @@ createSubscriber("miqu");
 createSubscriber("tra");
 createSubscriber("bu");
 
-function createSubscriber(channelName){
+function createSubscriber(channelName) {
     let subscriber = zmq.createSocket("sub");
     waitingToConnect[channelName] = subscriber;
 
     subscriber.monitor();
-    subscriber.on("connect", ()=>{
-       waitingToConnect[channelName] = undefined;
-       delete waitingToConnect[channelName];
+    subscriber.on("connect", () => {
+        waitingToConnect[channelName] = undefined;
+        delete waitingToConnect[channelName];
 
-       if(Object.keys(waitingToConnect).length === 0){
-           startSending();
-       }
+        if (Object.keys(waitingToConnect).length === 0) {
+            startSending();
+        }
     });
 
     subscriber.connect(subsAddress);
 
-    subscriber.on("message", (channel, message)=>{
+    subscriber.on("message", (channel, message) => {
         console.log("Subscriber Received on channel", channel.toString(), message, message.toString());
     });
 
@@ -46,14 +46,14 @@ function createSubscriber(channelName){
     return subscriber;
 }
 
-function startSending(){
+function startSending() {
     console.log("Preparing to send");
 
-    for(let i=0; i<channels.length; i++){
-        let message = `Message number [${i+1}]`;
+    for (let i = 0; i < channels.length; i++) {
+        let message = `Message number [${i + 1}]`;
         console.log(`Sending message < ${message} > on channel <<${channels[i]}>>`);
         the_publisher.send([channels[i], i]);
-        random_publisher.send([channels[channels.length-1-i], "ReverseMessage"]);
+        random_publisher.send([channels[channels.length - 1 - i], "ReverseMessage"]);
     }
 
 }

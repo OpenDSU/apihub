@@ -1,9 +1,9 @@
 require("../../../../builds/output/testsRuntime");
 const testIntegration = require("../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const { assert } = dc;
+const {assert} = dc;
 
-const { launchApiHubTestNodeWithDefaultContractAsync } = require("../contract-utils");
+const {launchApiHubTestNodeWithDefaultContractAsync} = require("../contract-utils");
 
 const openDSU = require("opendsu");
 const keySSIApi = openDSU.loadApi("keyssi");
@@ -38,13 +38,13 @@ assert.callback(
 
         const secondNode = await testIntegration.launchConfigurableApiHubTestNodeAsync({
             useWorker: true,
-            domains: [{ name: domain, config: { contracts: { constitution: contractConstitution } } }],
+            domains: [{name: domain, config: {contracts: {constitution: contractConstitution}}}],
         });
         const secondNodeUrl = secondNode.url;
 
         const thirdNode = await testIntegration.launchConfigurableApiHubTestNodeAsync({
             useWorker: true,
-            domains: [{ name: domain, config: { contracts: { constitution: contractConstitution } } }],
+            domains: [{name: domain, config: {contracts: {constitution: contractConstitution}}}],
             onPortAquired: (port, options) => {
                 const nodeUrl = `http://localhost:${port}`;
                 options.bdns = {
@@ -54,7 +54,7 @@ assert.callback(
                         brickStorages: [nodeUrl],
                         anchoringServices: [nodeUrl, mainNodeUrl],
                         contractServices: [nodeUrl],
-                        validators: [{ DID: "did:demo:id-2", URL: nodeUrl }],
+                        validators: [{DID: "did:demo:id-2", URL: nodeUrl}],
                     },
                 };
             },
