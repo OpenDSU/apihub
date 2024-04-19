@@ -77,7 +77,7 @@ assert.callback('check if secrets endpoint encryption and key rotation work', as
     assert.equal(JSON.parse(decryptedSecret.toString())[USER_ID], secret);
     // attempt to decrypt the data using the old key (error should be thrown)
     try {
-        decryptedSecret = crypto.decrypt(encryptedSecret, $$.Buffer.from(base64EncryptionKey, "base64"));
+         crypto.decrypt(encryptedSecret, $$.Buffer.from(base64EncryptionKey, "base64"));
     } catch (e) {
         error = e;
     }
