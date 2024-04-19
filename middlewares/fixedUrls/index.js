@@ -111,7 +111,7 @@ module.exports = function (server) {
                             // and we hope to have enough invalidation of the task to don't have garbage
                             newRecord.counter = 2;
                             newRecord.__fallbackToInsert = true;
-                            return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, record.pk, record, callback);
+                            return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, callback);
                         }
                         callback(undefined);
                     });
