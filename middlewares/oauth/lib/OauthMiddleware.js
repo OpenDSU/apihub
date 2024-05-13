@@ -26,6 +26,23 @@ function OAuthMiddleware(server) {
     const path = require("path");
     const ENCRYPTION_KEYS_LOCATION = oauthConfig.encryptionKeysLocation || path.join(server.rootFolder, "external-volume", "encryption-keys");
     let urlsToSkip = util.getUrlsToSkip();
+    let skippedUrlsForSessionTimeout = ["/mq/"]
+
+    server.whitelistUrlForSessionTimeout = (url) => {
+        if(url.startsWith("/")){
+            skippedUrlsForSessionTimeout.push(url);
+        } else {
+            throw new Error(`Whitelisting invalid URL for session timeout: ${url}. It should start with /`);
+        }
+    };
+
+    server.whitelistUrl = (url) => {
+        if(url.startsWith("/")){
+            urlsToSkip.push(url);
+        } else {
+            throw new Error(`Whitelisting invalid URL: ${url}. It should start with /`);
+        }
+    };
 
     const WebClient = require("./WebClient");
     const webClient = new WebClient(oauthConfig);
@@ -360,7 +377,8 @@ function OAuthMiddleware(server) {
 
                 util.printDebugLog("SSODetectedId", SSODetectedId);
                 req.headers["user-id"] = SSODetectedId;
-                if (url.includes("/mq/")) {
+                const canSkipUrlForSessionTimeout = skippedUrlsForSessionTimeout.some((urlToSkip) => url.includes(urlToSkip));
+                if (canSkipUrlForSessionTimeout) {
                     return next();
                 }
                 util.updateAccessTokenExpiration(accessTokenCookie, (err, encryptedAccessToken) => {
