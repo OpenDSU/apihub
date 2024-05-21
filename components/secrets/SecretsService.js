@@ -157,7 +157,7 @@ function SecretsService(serverRootFolder) {
         const filePath = getSecretFilePath(secretsContainerName);
         fs.readFile(filePath, async (err, secrets) => {
             if (err || !secrets) {
-                logger.error(`Failed to read file ${filePath}`);
+                logger.log(`Failed to read file ${filePath}`);
                 return callback(createError(404, `Failed to read file ${filePath}`));
             }
 
