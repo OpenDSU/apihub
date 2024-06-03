@@ -40,7 +40,13 @@ function SecretsService(serverRootFolder) {
         if (apiKeys.length === 0) {
             return false;
         }
-        let index = apiKeys.findIndex(el => el === apiKey);
+
+        let index = apiKeys.findIndex(el => {
+            if (typeof el === "string") {
+                return el === apiKey;
+            }
+            return el.secret === apiKey;
+        });
         return index !== -1;
     }
 
