@@ -169,6 +169,21 @@ function secrets(server) {
             return;
         }
         let {keyId, isAdmin} = req.params;
+        // check if an API key already exists for the given keyId
+        if (!secretsService.containerIsEmpty(CONTAINERS.API_KEY_CONTAINER_NAME)) {
+            let existingAPIKey;
+            try {
+                existingAPIKey = secretsService.getSecretSync(CONTAINERS.API_KEY_CONTAINER_NAME, keyId);
+            } catch (e) {
+
+            }
+            if (existingAPIKey) {
+                res.statusCode = 409;
+                res.end("API key already exists for the given keyId.");
+                return;
+            }
+        }
+        // generate a new API key
         const apiKey = await secretsService.generateAPIKeyAsync(keyId, isAdmin === "true")
         res.statusCode = 200;
         res.end(apiKey);

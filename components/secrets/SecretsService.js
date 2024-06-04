@@ -40,7 +40,13 @@ function SecretsService(serverRootFolder) {
         if (apiKeys.length === 0) {
             return false;
         }
-        let index = apiKeys.findIndex(el => el === apiKey);
+
+        let index = apiKeys.findIndex(el => {
+            if (typeof el === "string") {
+                return el === apiKey;
+            }
+            return el.secret === apiKey;
+        });
         return index !== -1;
     }
 
@@ -157,7 +163,7 @@ function SecretsService(serverRootFolder) {
         const filePath = getSecretFilePath(secretsContainerName);
         fs.readFile(filePath, async (err, secrets) => {
             if (err || !secrets) {
-                logger.debug(`Failed to read file ${filePath}`);
+                logger.log(`Failed to read file ${filePath}`);
                 return callback(createError(404, `Failed to read file ${filePath}`));
             }
 
@@ -249,7 +255,7 @@ function SecretsService(serverRootFolder) {
 
     this.validateAPIKey = async (apiKey) => {
         console.debug("Validating internal call");
-        if (apiKey === process.env.SSO_SECRETS_ENCRYPTION_KEY) {
+        if(apiKey === process.env.SSO_SECRETS_ENCRYPTION_KEY){
             return true;
         }
         await loadContainerAsync(CONTAINERS.API_KEY_CONTAINER_NAME);
