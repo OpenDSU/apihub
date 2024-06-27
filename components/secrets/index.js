@@ -161,6 +161,18 @@ function secrets(server) {
         return secretsService.isAdminAPIKey(authorizationHeader);
     }
 
+    server.head("/apiKey/:keyId", (req, res) => {
+        let {keyId} = req.params;
+        let exists;
+        try {
+            exists = secretsService.getSecretSync(CONTAINERS.API_KEY_CONTAINER_NAME, keyId);
+        } catch (e) {
+            exists = false;
+        }
+        res.statusCode = exists ? 200 : 404;
+        res.end();
+    });
+
     server.post("/apiKey/*", httpUtils.bodyParser);
     server.post("/apiKey/:keyId/:isAdmin", async (req, res) => {
         if (!senderIsAdmin(req)) {
