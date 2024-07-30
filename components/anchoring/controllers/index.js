@@ -67,6 +67,7 @@ function getWritingHandler(response) {
 }
 
 async function updateAnchor(action, request, response) {
+    console.info("updateAnchor", request.params.anchorId);
     let strategy;
     try {
         strategy = await getStrategy(request);

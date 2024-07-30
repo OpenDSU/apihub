@@ -58,6 +58,7 @@ function putBrick(request, response) {
                 logger.info(0x02, `Fail to manage current brick!`, error.message);
                 return response.send(error.code === "EACCES" ? 409 : 500);
             }
+            console.info("putBrick", brickHash);
             return response.send(201, brickHash);
         });
     });
