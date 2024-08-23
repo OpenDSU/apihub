@@ -404,6 +404,37 @@ function secrets(server) {
         }
     });
 
+    server.get('/userHasAccess/:appName/:scope/:userId', async (req, res) => {
+        const appName = decodeURIComponent(req.params.appName);
+        const scope = decodeURIComponent(req.params.scope);
+        const userId = decodeURIComponent(req.params.userId);
+        try {
+            const secretName = crypto.sha256JOSE(appName + userId, "base64url");
+            let secret;
+            let apiKey;
+            try {
+                secret = secretsService.getSecretSync(CONTAINERS.USER_API_KEY_CONTAINER_NAME, secretName);
+                secret = JSON.parse(secret);
+                apiKey = JSON.parse(Object.values(secret)[0]);
+            } catch (e) {
+                res.statusCode = 200;
+                res.end('false');
+                return;
+            }
+            if (!apiKey.scope || apiKey.scope !== scope) {
+                res.statusCode = 200;
+                res.end('false');
+                return;
+            }
+
+            res.statusCode = 200;
+            res.end('true');
+        } catch (error) {
+            res.statusCode = 500;
+            res.end('Failed to check user access.');
+        }
+    })
+
     server.put('/putSSOSecret/*', httpUtils.bodyParser);
     server.get("/getSSOSecret/:appName", getSSOSecret);
     server.put('/putSSOSecret/:appName', putSSOSecret);
