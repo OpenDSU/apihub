@@ -54,7 +54,7 @@ async function handleCreateWallet(request, response) {
     } catch (error) {
         logger.error("[Stream] Error", error);
         response.statusCode = 500;
-        return response.end(error);
+        return response.end("Failed to create wallet");
     }
 }
 
@@ -121,7 +121,7 @@ async function handleStreamRequest(request, response) {
     } catch (error) {
         logger.error("[Stream] error", error);
         response.statusCode = 500;
-        return response.end(error);
+        return response.end("Failed to handle stream");
     }
 }
 

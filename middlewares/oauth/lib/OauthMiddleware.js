@@ -424,8 +424,9 @@ function OAuthMiddleware(server) {
                 body: params
             })
         } catch (e) {
+            console.error(e);
             res.statusCode = 500;
-            res.end(e.message);
+            res.end("Failed");
             return;
         }
         if (response.status !== 200) {
@@ -452,8 +453,9 @@ function OAuthMiddleware(server) {
         try {
             data = await response.json();
         } catch (e) {
+            console.error(e);
             res.statusCode = 500;
-            res.end(e.message);
+            res.end("Failed");
             return;
         }
         const {payload} = util.parseAccessToken(data.access_token);

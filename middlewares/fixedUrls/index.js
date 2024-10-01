@@ -272,8 +272,9 @@ module.exports = function (server) {
                 let tasks = await $$.promisify(lightDBEnclaveClient.getAllRecords)($$.SYSTEM_IDENTIFIER, HISTORY_TABLE);
                 status.total = tasks ? tasks.length : 0;
             }catch(err){
+                console.error(err);
                 res.statusCode = 500;
-                res.end(`Failed to generate status info ${err.message}`);
+                res.end(`Failed to generate status info`);
             }
             res.statusCode = 200;
             res.end(JSON.stringify(status));
@@ -478,8 +479,9 @@ module.exports = function (server) {
             let fixedUrl = body.pop();
             taskRegistry.register(fixedUrl, function (err) {
                 if (err) {
+                    console.error(err);
                     res.statusCode = 500;
-                    return res.end(`Failed to register url because: ${err.message}`);
+                    return res.end(`Failed to register url`);
                 }
                 recursiveRegistry();
             });
@@ -497,9 +499,9 @@ module.exports = function (server) {
         }
         taskRegistry.schedule(req.body.toString(), function (err) {
             if (err) {
-                logger.log(err);
+                logger.error(err);
                 res.statusCode = 500;
-                return res.end(`Failed to schedule task ${err.message}`);
+                return res.end(`Failed to schedule task`);
             }
             res.statusCode = 200;
             res.end();
@@ -515,9 +517,9 @@ module.exports = function (server) {
         }
         taskRegistry.cancel(req.body.toString(), function (err) {
             if (err) {
-                logger.log(err);
+                logger.error(err);
                 res.statusCode = 500;
-                return res.end(`Failed to cancel task ${err.message}`);
+                return res.end(`Failed to cancel task`);
             }
             res.statusCode = 200;
             res.end();

@@ -175,8 +175,9 @@ module.exports = function (server) {
                 try {
                     await fsPromises.writeFile(secretsFilePath, updatedData, 'utf8');
                 } catch (e) {
+                    console.error(e);
                     res.statusCode = 500;
-                    return res.end(`Error writing file: ${e.message}`);
+                    return res.end(`Fail`);
                 }
             }
             let apiKey;
@@ -184,8 +185,9 @@ module.exports = function (server) {
                 apiKey = await secretsService.generateAPIKeyAsync(formResult.username, false);
                 await secretsService.putSecretAsync(appName, formResult.username, apiKey);
             } catch (e) {
+                console.error(e);
                 res.statusCode = 500;
-                return res.end(`Error writing secret: ${e.message}`);
+                return res.end(`Error writing secret`);
             }
             res.setHeader('Set-Cookie', [`SimpleAuthorisation=${formResult.username}:${apiKey}; HttpOnly`, `ssoId=${ssoId}; HttpOnly`, `apiKey=${apiKey}; HttpOnly`]);
             res.writeHead(302, {'Location': '/redirect'});

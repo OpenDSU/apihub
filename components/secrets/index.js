@@ -109,8 +109,9 @@ function secrets(server) {
         try {
             await secretsService.putSecretAsync(name, did, secret);
         } catch (e) {
+            console.error(e);
             res.statusCode = e.code;
-            res.end(e.message);
+            res.end("Failed to put did secret");
             return;
         }
         res.statusCode = 200;
@@ -129,8 +130,9 @@ function secrets(server) {
             secret = secretsService.getSecretSync(name, did);
             res.statusCode = 200;
         } catch (err) {
+            console.error(err);
             res.statusCode = err.code;
-            res.end(err.message);
+            res.end("Failed to get DID secret");
             return;
         }
         res.end(secret);
@@ -142,8 +144,9 @@ function secrets(server) {
             await secretsService.deleteSecretAsync(name, did)
             res.statusCode = 200;
         } catch (err) {
+            console.error(err);
             res.statusCode = err.code;
-            res.end(err.message);
+            res.end("Failed to delete DID secret");
             return;
         }
 
@@ -251,8 +254,9 @@ function secrets(server) {
             res.statusCode = 403;
             res.end("Forbidden");
         } catch (error) {
+            console.error(error);
             res.statusCode = 500;
-            res.end(error.message);
+            res.end("Failed");
         }
     });
 
@@ -279,8 +283,9 @@ function secrets(server) {
             res.statusCode = 200;
             res.end('System administrator added successfully.');
         } catch (error) {
+            console.error(error);
             res.statusCode = 500;
-            res.end(error.message);
+            res.end("Failed");
         }
     });
 
@@ -305,9 +310,9 @@ function secrets(server) {
             res.statusCode = 200;
             res.end('System administrator added successfully.');
         } catch (error) {
-            console.log(error);
+            console.error(error);
             res.statusCode = 500;
-            res.end(error.message);
+            res.end("Failed");
         }
     });
 
@@ -334,8 +339,9 @@ function secrets(server) {
             res.statusCode = 200;
             res.end('API key associated successfully.');
         } catch (error) {
+            console.error(error);
             res.statusCode = 500;
-            res.end(error.message);
+            res.end("Failed to associate API key");
         }
     });
 
@@ -370,8 +376,9 @@ function secrets(server) {
             res.statusCode = 200;
             res.end('API key deleted successfully.');
         } catch (error) {
+            console.error(error);
             res.statusCode = 500;
-            res.end(error.message);
+            res.end("Failed to delete API key");
         }
     });
 
@@ -399,8 +406,9 @@ function secrets(server) {
             res.statusCode = 200;
             res.end(secret[name]);
         } catch (error) {
+            console.error(error);
             res.statusCode = 500;
-            res.end(error.message);
+            res.end("Failed to read API key");
         }
     });
 
@@ -430,6 +438,7 @@ function secrets(server) {
             res.statusCode = 200;
             res.end('true');
         } catch (error) {
+            console.error(error);
             res.statusCode = 500;
             res.end('Failed to check user access.');
         }
