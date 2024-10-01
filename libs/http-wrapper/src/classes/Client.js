@@ -73,7 +73,7 @@ function bodyContentLength(request) {
         return;
     }
 
-    if (request.body.constructor.name in ['String', '$$.Buffer', 'ArrayBuffer']) {
+    if (typeof request.body !== "undefined" && request.body.constructor.name in ['String', '$$.Buffer', 'ArrayBuffer']) {
         request.options.headers['Content-Length'] = $$.Buffer.byteLength(request.body);
     }
 }
