@@ -51,6 +51,11 @@ function StaticServer(server) {
                     res.end();
                 }
 
+                function checkIfReservedProp(prop){
+                    let reservedProps = ["__proto__", "constructor", "prototype"];
+                    return reservedProps.indexOf(prop) !== -1;
+                }
+
                 let summary = {};
                 let directories = {};
 
@@ -62,6 +67,13 @@ function StaticServer(server) {
                         summaryId = "/";
                     }
                     //summaryId = path.basename(summaryId);
+                    if(checkIfReservedProp(summaryId)){
+                        logger.info(0x04, `Prototype pollution detected while constructing directory summary`);
+                        res.statusCode = 403;
+                        res.end();
+                        return;
+                    }
+
                     summary[summaryId] = {};
 
                     fs.readdir(currentPath, function (err, files) {
@@ -75,6 +87,12 @@ function StaticServer(server) {
                         } else {
                             for (let i = 0; i < files.length; i++) {
                                 let file = files[i];
+                                if(checkIfReservedProp(file)){
+                                    logger.info(0x04, `Prototype pollution detected while constructing directory summary`);
+                                    res.statusCode = 403;
+                                    res.end();
+                                    return;
+                                }
                                 const fileName = path.join(currentPath, file);
                                 if (fs.statSync(fileName).isDirectory()) {
                                     extractContent(fileName);
