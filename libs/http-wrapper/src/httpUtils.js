@@ -48,33 +48,4 @@ function bodyParser(req, res, next) {
     });
 }
 
-function serveStaticFile(baseFolder, ignorePath) {
-    return function (req, res) {
-        const fs = require('fs');
-        const path = require("swarmutils").path;
-
-        const url = req.url.substring(ignorePath.length);
-        const filePath = path.join(baseFolder, url);
-        fs.stat(filePath, (err) => {
-            if (err) {
-                res.statusCode = 404;
-                res.end();
-                return;
-            }
-
-            if (url.endsWith('.html')) {
-                res.contentType = 'text/html';
-            } else if (url.endsWith('.css')) {
-                res.contentType = 'text/css';
-            } else if (url.endsWith('.js')) {
-                res.contentType = 'text/javascript';
-            }
-
-            const fileStream = fs.createReadStream(filePath);
-            fileStream.pipe(res);
-
-        });
-    };
-}
-
-module.exports = {setDataHandler, setDataHandlerMiddleware, sendErrorResponse, bodyParser, serveStaticFile};
+module.exports = {setDataHandler, setDataHandlerMiddleware, sendErrorResponse, bodyParser};
