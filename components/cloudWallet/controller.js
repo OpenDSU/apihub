@@ -107,6 +107,12 @@ function forwardRequestToWorker(dsuWorker, req, res) {
         requestedPath = `/${requestedPath}`;
     }
 
+    if(typeof dsuWorker.port !== "undefined" || typeof dsuWorker.port !== "number") {
+        res.statusCode = 400;
+        res.end();
+        return res.end();
+    }
+
     const options = {
         hostname: "127.0.0.1",
         port: dsuWorker.port,
