@@ -14,6 +14,12 @@ function getNodeWorkerBootScript() {
 async function handleCreateWallet(request, response) {
     try {
         const {domain, userId} = request.params;
+        const isValidDomain = require("swarmutils").isValidDomain;
+        if(!isValidDomain(domain)) {
+            logger.error("[Stream] Domain validation failed", domain);
+            response.statusCode = 400;
+            return response.end("Fail");
+        }
         const keySSISpace = require("opendsu").loadApi("keyssi");
         const resolver = require("opendsu").loadApi("resolver");
 
@@ -23,7 +29,6 @@ async function handleCreateWallet(request, response) {
         const walletSSI = keySSISpace.createTemplateWalletSSI(domain, credential);
         const seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(domain);
 
-        logger.debug(`[Stream] Creating wallet ${walletSSI.getIdentifier()} for user ${userId}...`);
         const walletDSU = await $$.promisify(resolver.createDSUForExistingSSI)(walletSSI, {dsuTypeSSI: seedSSI});
 
         const writableDSU = walletDSU.getWritableDSU();
@@ -44,7 +49,6 @@ async function handleCreateWallet(request, response) {
             sharedEnclaveKeySSI,
         };
 
-        logger.debug(`[Stream] Settings config for wallet ${await $$.promisify(walletSSI.getAnchorId)()}`, environmentConfig);
         await $$.promisify(writableDSU.writeFile)("/environment.json", JSON.stringify(environmentConfig));
 
         await $$.promisify(writableDSU.writeFile)("/metadata.json", JSON.stringify({userId}));
