@@ -497,6 +497,12 @@ module.exports = function (server) {
                 activate(req, res, next);
             }, 100);
         }
+
+        if(!Buffer.isBuffer(req.body)){
+            res.statusCode = 403;
+            return res.end();
+        }
+
         taskRegistry.schedule(req.body.toString(), function (err) {
             if (err) {
                 logger.error(err);
@@ -515,6 +521,12 @@ module.exports = function (server) {
                 deactivate(req, res, next);
             }, 100);
         }
+
+        if(!Buffer.isBuffer(req.body)){
+            res.statusCode = 403;
+            return res.end();
+        }
+
         taskRegistry.cancel(req.body.toString(), function (err) {
             if (err) {
                 logger.error(err);
