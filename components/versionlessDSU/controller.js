@@ -21,6 +21,8 @@ async function init(server) {
 }
 
 function sendVersionlessDSUContent(parsedDSUContent, response) {
+    //generic content type header for snyk identified vulnerability
+    response.setHeader('Content-Type', 'application/octet-stream');
     response.statusCode = 200;
     response.write(parsedDSUContent);
     response.end();
