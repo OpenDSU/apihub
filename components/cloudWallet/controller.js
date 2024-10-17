@@ -98,31 +98,43 @@ function addDsuWorker(seed, walletAnchorId, cookie) {
 
 function forwardRequestToWorker(dsuWorker, req, res) {
     const method = req.method;
-    const {keySSI} = req.params;
+    const { keySSI } = req.params;
     let requestedPath = req.url.substr(req.url.indexOf(keySSI) + keySSI.length);
+
     if (!requestedPath) {
         requestedPath = "/";
     }
+
     if (!requestedPath.startsWith("/")) {
         requestedPath = `/${requestedPath}`;
     }
 
-    if(typeof dsuWorker.port !== "undefined" || typeof dsuWorker.port !== "number") {
+    // Validate the port is a number and falls within an allowed range (for example, 1024 to 65535)
+    const port = parseInt(dsuWorker.port, 10);
+    if (isNaN(port) || port < 1024 || port > 65535) {
         res.statusCode = 400;
-        res.end();
-        return res.end();
+        res.end("Invalid worker port");
+        return;
+    }
+
+    // Validate and sanitize the requested path
+    if (!/^\/[a-zA-Z0-9\-\/]*$/.test(requestedPath)) {
+        res.statusCode = 400;
+        res.end("Invalid request path");
+        return;
     }
 
     const options = {
-        hostname: "127.0.0.1",
-        port: dsuWorker.port,
+        hostname: "127.0.0.1", // Explicitly restricts to localhost
+        port: port,
         path: requestedPath,
-        method,
+        method: method,
         headers: {
             authorization: dsuWorker.authorizationKey,
         },
     };
 
+    // Forward only certain headers to prevent SSRF and leaks
     if (req.headers.cookie) {
         options.headers.cookie = req.headers.cookie;
     }
@@ -132,7 +144,7 @@ function forwardRequestToWorker(dsuWorker, req, res) {
     }
 
     const workerRequest = http.request(options, (response) => {
-        const {statusCode, headers} = response;
+        const { statusCode, headers } = response;
         res.statusCode = statusCode;
         const contentType = headers ? headers["content-type"] : null;
         res.setHeader("Content-Type", contentType || "text/html");
@@ -152,22 +164,23 @@ function forwardRequestToWorker(dsuWorker, req, res) {
                 res.statusCode = statusCode;
                 res.end(bodyContent);
             } catch (err) {
-                logger.error("worker response error", err);
+                logger.error("Worker response error", err);
                 res.statusCode = 500;
                 res.end();
             }
         });
     });
+
     workerRequest.on("error", (err) => {
-        logger.error("worker request error", err);
+        logger.error("Worker request error", err);
         res.statusCode = 500;
         res.end();
     });
 
+    // Handle POST or PUT request body forwarding
     if (method === "POST" || method === "PUT") {
         let data = [];
         req.on("data", (chunk) => {
-            logger.debug("data.push(chunk);", chunk);
             data.push(chunk);
         });
 
@@ -177,7 +190,7 @@ function forwardRequestToWorker(dsuWorker, req, res) {
                 workerRequest.write(bodyContent);
                 workerRequest.end();
             } catch (err) {
-                logger.error("worker response error", err);
+                logger.error("Worker request body error", err);
                 res.statusCode = 500;
                 res.end();
             }
