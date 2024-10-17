@@ -96,9 +96,35 @@ async function handleStreamRequest(request, response) {
     }
 
     let range = request.headers.range;
-    if (!range) {
+    if (!range || !/^bytes=\d*-\d*$/.test(range)) {
         response.statusCode = 400;
-        return response.end("Requires Range header");
+        return response.end("Requires valid Range header");
+    }
+
+    // Default chunk size to use if `end` is not provided
+    const CHUNK_SIZE = 1024 * 1024; // 1 MB
+    let start, end;
+
+    // Extract the range values
+    range = range.split("=")[1]; // Remove 'bytes=' prefix
+    if (range.indexOf("-") !== -1) {
+        let parts = range.split("-");
+        start = parseInt(parts[0], 10);
+        end = parts[1] ? parseInt(parts[1], 10) : start + CHUNK_SIZE;
+    } else {
+        start = parseInt(range, 10);
+        end = start + CHUNK_SIZE;
+    }
+
+    // Validate the range values
+    if (isNaN(start) || start < 0 || (end && isNaN(end))) {
+        response.statusCode = 400;
+        return response.end("Invalid range values");
+    }
+
+    if (end < start) {
+        response.statusCode = 400;
+        return response.end("Invalid range: end must be greater than start");
     }
 
     let dsuWorker = dsuWorkers[keySSI];
@@ -151,7 +177,6 @@ async function handleStreamRequest(request, response) {
         return response.end("Failed to handle stream");
     }
 }
-
 
 module.exports = {
     handleCreateWallet,
