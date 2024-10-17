@@ -13,24 +13,30 @@ function getNodeWorkerBootScript() {
 
 async function handleCreateWallet(request, response) {
     try {
-        const {domain, userId} = request.params;
+        const { domain, userId } = request.params;
         const isValidDomain = require("swarmutils").isValidDomain;
-        if(!isValidDomain(domain)) {
+        if (!isValidDomain(domain)) {
             logger.error("[Stream] Domain validation failed", domain);
             response.statusCode = 400;
-            return response.end("Fail");
+            return response.end("Invalid domain");
         }
+
+        // Basic alphanumeric validation for userId
+        if (!userId || !/^[a-zA-Z0-9]+$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(userId)) {
+            logger.error("[Stream] userId validation failed", userId);
+            response.statusCode = 400;
+            return response.end("Invalid user ID");
+        }
+
         const keySSISpace = require("opendsu").loadApi("keyssi");
         const resolver = require("opendsu").loadApi("resolver");
-
         const crypto = require("pskcrypto");
         const credential = crypto.randomBytes(64).toString("hex");
 
         const walletSSI = keySSISpace.createTemplateWalletSSI(domain, credential);
         const seedSSI = await $$.promisify(keySSISpace.createSeedSSI)(domain);
 
-        const walletDSU = await $$.promisify(resolver.createDSUForExistingSSI)(walletSSI, {dsuTypeSSI: seedSSI});
-
+        const walletDSU = await $$.promisify(resolver.createDSUForExistingSSI)(walletSSI, { dsuTypeSSI: seedSSI });
         const writableDSU = walletDSU.getWritableDSU();
 
         const enclaveKeySSIObject = await $$.promisify(resolver.createSeedDSU)(domain);
@@ -50,10 +56,10 @@ async function handleCreateWallet(request, response) {
         };
 
         await $$.promisify(writableDSU.writeFile)("/environment.json", JSON.stringify(environmentConfig));
-
-        await $$.promisify(writableDSU.writeFile)("/metadata.json", JSON.stringify({userId}));
+        await $$.promisify(writableDSU.writeFile)("/metadata.json", JSON.stringify({ userId }));
 
         response.statusCode = 200;
+        response.setHeader("Content-type", "text/plain");
         return response.end(walletSSI.getIdentifier());
     } catch (error) {
         logger.error("[Stream] Error", error);
