@@ -135,6 +135,7 @@ module.exports = function (server) {
             });
         },
         remove: function (task, callback) {
+            let start = performance.now();
             let toBeRemoved = taskRegistry.createModel(task);
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, toBeRemoved.pk, function (err, record) {
                 if (err || !record) {
@@ -146,10 +147,18 @@ module.exports = function (server) {
                     return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, toBeRemoved.pk, record, callback);
                 }
 
-                lightDBEnclaveClient.deleteRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, toBeRemoved.pk, callback);
+                lightDBEnclaveClient.deleteRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, toBeRemoved.pk, err => {
+                    if (err) {
+                        return callback(err);
+                    }
+                    const end = performance.now();
+                    logger.debug(0x666, `Task ${toBeRemoved.url} removed in ${(end - start)/1000} seconds`);
+                    callback(undefined);
+                });
             });
         },
         getOneTask: function (callback) {
+            let start = performance.now();
             lightDBEnclaveClient.filter($$.SYSTEM_IDENTIFIER, TASKS_TABLE, "__timestamp > 0", "asc", 1, function (err, task) {
                 if (err) {
                     return callback(err);
@@ -164,6 +173,8 @@ module.exports = function (server) {
                     return callback(undefined);
                 }
                 taskRegistry.markInProgress(task.url);
+                const end = performance.now();
+                logger.debug(0x666, `Task ${task.url} retrieved in ${(end - start)/1000} seconds`);
                 callback(undefined, task);
             });
         },
@@ -171,11 +182,14 @@ module.exports = function (server) {
             return !!taskRegistry.inProgress[task];
         },
         isScheduled: function (task, callback) {
+            let start = performance.now();
             let tobeChecked = taskRegistry.createModel(task);
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, tobeChecked.pk, function (err, task) {
                 if (err || !task) {
                     return callback(undefined, undefined);
                 }
+                const end = performance.now();
+                logger.debug(0x666, `Task ${tobeChecked.url} checked in ${(end - start)/1000} seconds`);
                 callback(undefined, task);
             });
         },
@@ -193,6 +207,7 @@ module.exports = function (server) {
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, target.pk, callback);
         },
         schedule: function (criteria, callback) {
+            let start = performance.now();
             if(server.readOnlyModeActive){
                 return callback(new Error("FixedURL scheduling is not possible when server is in readOnly mode"));
             }
@@ -203,7 +218,8 @@ module.exports = function (server) {
                     }
                     return callback(err);
                 }
-
+                let end = performance.now();
+                logger.debug(0x666, `Task ${criteria} scheduled in ${(end - start)/1000} seconds`);
                 function createTask() {
                     if (records.length === 0) {
                         return callback(undefined);
