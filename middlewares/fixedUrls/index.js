@@ -101,6 +101,7 @@ module.exports = function (server) {
         },
         add: function (task, callback) {
             let newRecord = taskRegistry.createModel(task);
+            const startTime = performance.now();
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, function (err, record) {
                 if (err || !record) {
                     return lightDBEnclaveClient.insertRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, (insertError)=>{
@@ -111,8 +112,17 @@ module.exports = function (server) {
                             // and we hope to have enough invalidation of the task to don't have garbage
                             newRecord.counter = 2;
                             newRecord.__fallbackToInsert = true;
-                            return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, callback);
+                            return lightDBEnclaveClient.updateRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, err => {
+                                if(err){
+                                    return callback(err);
+                                }
+                                const endTime = performance.now();
+                                logger.debug(0x666, `Task ${newRecord.url} updated in ${(endTime - startTime)/1000} seconds`);
+                                callback(undefined);
+                            });
                         }
+                        const endTime = performance.now();
+                        logger.debug(0x666, `Task ${newRecord.url} inserted in ${(endTime - startTime)/1000} seconds`);
                         callback(undefined);
                     });
                 }
