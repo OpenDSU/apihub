@@ -326,8 +326,11 @@ module.exports = function (server) {
             url = converter.toString().replace(urlBase, "");
 
             //executing the request
-
+            let start = performance.now();
+            console.debug(0x666, "Start making local request", url, start);
             server.makeLocalRequest("GET", url, "", {}, function (error, result) {
+                const end = performance.now();
+                console.debug(0x666, "Finished making local request", url, end, (end - start) / 1000);
                 if (error) {
                     logger.error("caught an error during fetching fixedUrl", error.message, error.code, error);
                     if (error.httpCode && error.httpCode > 300) {
