@@ -61,13 +61,26 @@ function StaticServer(server) {
 
                 function extractContent(currentPath) {
                     directories[currentPath] = -1;
+
+                    // Ensure that currentPath is inside the targetPath
+                    const resolvedCurrentPath = path.resolve(currentPath);
+                    const resolvedTargetPath = path.resolve(targetPath);
+
+                    // Prevent path traversal by checking that resolvedCurrentPath is within resolvedTargetPath
+                    if (!resolvedCurrentPath.startsWith(resolvedTargetPath)) {
+                        logger.info(0x04, `Path traversal attempt detected`);
+                        res.statusCode = 403;
+                        res.end();
+                        return;
+                    }
+
                     let summaryId = currentPath.replace(targetPath, "");
                     summaryId = summaryId.split(path.sep).join("/");
                     if (summaryId === "") {
                         summaryId = "/";
                     }
-                    //summaryId = path.basename(summaryId);
-                    if(checkIfReservedProp(summaryId)){
+
+                    if (checkIfReservedProp(summaryId)) {
                         logger.info(0x04, `Prototype pollution detected while constructing directory summary`);
                         res.statusCode = 403;
                         res.end();
@@ -76,36 +89,47 @@ function StaticServer(server) {
 
                     summary[summaryId] = {};
 
-                    fs.readdir(currentPath, function (err, files) {
+                    fs.readdir(resolvedCurrentPath, function (err, files) {
                         if (err) {
                             return markAsFinish(currentPath);
                         }
                         directories[currentPath] = files.length;
-                        //directory empty test
+
                         if (files.length === 0) {
                             return markAsFinish(currentPath);
                         } else {
                             for (let i = 0; i < files.length; i++) {
                                 let file = files[i];
-                                if(checkIfReservedProp(file)){
+                                if (checkIfReservedProp(file)) {
                                     logger.info(0x04, `Prototype pollution detected while constructing directory summary`);
                                     res.statusCode = 403;
                                     res.end();
                                     return;
                                 }
-                                const fileName = path.join(currentPath, file);
-                                if (fs.statSync(fileName).isDirectory()) {
-                                    extractContent(fileName);
+
+                                const fileName = path.join(resolvedCurrentPath, file);
+                                const resolvedFileName = path.resolve(fileName);
+
+                                // Ensure that resolvedFileName is inside the targetPath
+                                if (!resolvedFileName.startsWith(resolvedTargetPath)) {
+                                    logger.info(0x04, `Path traversal attempt detected`);
+                                    res.statusCode = 403;
+                                    res.end();
+                                    return;
+                                }
+
+                                if (fs.statSync(resolvedFileName).isDirectory()) {
+                                    extractContent(resolvedFileName);
                                 } else {
-                                    let fileContent = fs.readFileSync(fileName);
+                                    let fileContent = fs.readFileSync(resolvedFileName);
                                     let fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1);
                                     let mimeType = utils.getMimeTypeFromExtension(fileExtension);
+
                                     if (mimeType.binary) {
                                         summary[summaryId][file] = Array.from(fileContent);
                                     } else {
                                         summary[summaryId][file] = fileContent.toString();
                                     }
-
                                 }
                                 directories[currentPath]--;
                             }
