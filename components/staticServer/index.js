@@ -11,6 +11,20 @@ function StaticServer(server) {
         excludedFilesRegex = componentsConfig.staticServer.excludedFiles.map(str => new RegExp(str));
     }
 
+    function sanitizeFilePath(unsafePath) {
+        // Step 1: Replace null bytes (common trick in path traversal)
+        let safePath = unsafePath.replace(/\0/g, '');
+
+        // Step 2: Normalize the path to remove things like "../" and "./"
+        safePath = path.normalize(safePath);
+
+        // Step 3: Ensure that the path doesn't attempt to go outside the base directory
+        // We remove any leading slashes or "./" so that it's a relative path
+        safePath = safePath.replace(/^(\.\.(\/|\\|$))+/, '');
+
+        return safePath;
+    }
+
     function sendFiles(req, res, next) {
         const prefix = "/directory-summary/";
         requestValidation(req, "GET", prefix, function (notOurResponsibility, targetPath) {
@@ -63,8 +77,8 @@ function StaticServer(server) {
                     directories[currentPath] = -1;
 
                     // Ensure that currentPath is inside the targetPath
-                    let resolvedCurrentPath = path.normalize(path.resolve(currentPath));
-                    let resolvedTargetPath = path.normalize(path.resolve(targetPath));
+                    let resolvedCurrentPath = sanitizeFilePath(path.resolve(currentPath));
+                    let resolvedTargetPath = sanitizeFilePath(path.resolve(targetPath));
 
                     // Prevent path traversal by checking that resolvedCurrentPath is within resolvedTargetPath
                     if (!resolvedCurrentPath.startsWith(resolvedTargetPath) || resolvedCurrentPath.includes("..") || !path.isAbsolute(resolvedCurrentPath)) {
@@ -107,8 +121,8 @@ function StaticServer(server) {
                                     return;
                                 }
 
-                                const fileName = path.join(resolvedCurrentPath, file);
-                                const resolvedFileName = path.resolve(fileName);
+                                const fileName = sanitizeFilePath(path.join(resolvedCurrentPath, file));
+                                const resolvedFileName = sanitizeFilePath(path.resolve(fileName));
 
                                 // Ensure that resolvedFileName is inside the targetPath
                                 if (!resolvedFileName.startsWith(resolvedTargetPath) || resolvedFileName.includes("..") || !path.isAbsolute(resolvedFileName)) {
