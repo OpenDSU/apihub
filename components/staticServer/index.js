@@ -113,7 +113,7 @@ function StaticServer(server) {
                             return markAsFinish(currentPath);
                         } else {
                             for (let i = 0; i < files.length; i++) {
-                                let file = files[i];
+                                let file = sanitizeFilePath(files[i]);
                                 if (checkIfReservedProp(file)) {
                                     logger.info(0x04, `Prototype pollution detected while constructing directory summary`);
                                     res.statusCode = 403;
