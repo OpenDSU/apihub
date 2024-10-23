@@ -67,7 +67,7 @@ function StaticServer(server) {
                     let resolvedTargetPath = path.normalize(path.resolve(targetPath));
 
                     // Prevent path traversal by checking that resolvedCurrentPath is within resolvedTargetPath
-                    if (!resolvedCurrentPath.startsWith(resolvedTargetPath) || resolvedCurrentPath.includes("..")) {
+                    if (!resolvedCurrentPath.startsWith(resolvedTargetPath) || resolvedCurrentPath.includes("..") || !path.isAbsolute(resolvedCurrentPath)) {
                         logger.info(0x04, `Path traversal attempt detected`);
                         res.statusCode = 403;
                         res.end();
@@ -111,7 +111,7 @@ function StaticServer(server) {
                                 const resolvedFileName = path.resolve(fileName);
 
                                 // Ensure that resolvedFileName is inside the targetPath
-                                if (!resolvedFileName.startsWith(resolvedTargetPath) || resolvedFileName.includes("..")) {
+                                if (!resolvedFileName.startsWith(resolvedTargetPath) || resolvedFileName.includes("..") || !path.isAbsolute(resolvedFileName)) {
                                     logger.info(0x04, `Path traversal attempt detected`);
                                     res.statusCode = 403;
                                     res.end();
