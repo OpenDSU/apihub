@@ -63,8 +63,8 @@ function StaticServer(server) {
                     directories[currentPath] = -1;
 
                     // Ensure that currentPath is inside the targetPath
-                    const resolvedCurrentPath = path.resolve(currentPath);
-                    const resolvedTargetPath = path.resolve(targetPath);
+                    let resolvedCurrentPath = path.normalize(path.resolve(currentPath));
+                    let resolvedTargetPath = path.normalize(path.resolve(targetPath));
 
                     // Prevent path traversal by checking that resolvedCurrentPath is within resolvedTargetPath
                     if (!resolvedCurrentPath.startsWith(resolvedTargetPath) || resolvedCurrentPath.includes("..")) {
