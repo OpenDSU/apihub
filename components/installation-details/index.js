@@ -33,7 +33,9 @@ function InstallationDetails(server) {
         summary.resourceUsage = getProcessResourceUsage();
         getLog(targetPath, (err, log) => {
             if (err) {
-                return sendSummary(res, {err});
+                res.statusCode = 500;
+                res.end("Failed to read log");
+                return;
             }
             summary[path.basename(targetPath)] = log;
 
