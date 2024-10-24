@@ -159,13 +159,14 @@ module.exports = function (server) {
         },
         getOneTask: function (callback) {
             let start = Date.now();
-            lightDBEnclaveClient.getOneRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, function (err, task) {
+            lightDBEnclaveClient.filter($$.SYSTEM_IDENTIFIER, TASKS_TABLE, "__timestamp > 0", "asc", 1, function (err, task) {
                 if (err) {
                     return callback(err);
                 }
-                if (!task) {
+                if (task.length === 0) {
                     return callback(undefined);
                 }
+                task = task[0];
                 if (taskRegistry.inProgress[task.url]) {
                     logger.debug(`${task.url} is in progress.`);
                     //we already have this task in progress, we need to wait
