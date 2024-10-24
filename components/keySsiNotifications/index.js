@@ -22,7 +22,8 @@ function KeySSINotifications(server) {
                 if (err) {
                     if (err.statusCode) {
                         if (err.statusCode !== 409) {
-                            return response.send(err.statusCode);
+                            response.statusCode = err.statusCode;
+                            return response.end();
                         }
                     } else {
                         return response.send(500);
@@ -55,7 +56,8 @@ function KeySSINotifications(server) {
             if (err) {
                 if (err.statusCode) {
                     if (err.statusCode !== 409) {
-                        return response.send(err.statusCode);
+                        response.statusCode = err.statusCode;
+                        return response.end();
                     }
                 } else {
                     return response.send(500);
