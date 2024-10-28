@@ -101,7 +101,6 @@ module.exports = function (server) {
         },
         add: function (task, callback) {
             let newRecord = taskRegistry.createModel(task);
-            const startTime = Date.now();
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, function (err, record) {
                 if (err || !record) {
                     return lightDBEnclaveClient.insertRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, newRecord.pk, newRecord, (insertError)=>{
@@ -116,13 +115,9 @@ module.exports = function (server) {
                                 if(err){
                                     return callback(err);
                                 }
-                                const endTime = Date.now();
-                                logger.debug(0x666, `Task ${newRecord.url} updated in ${(endTime - startTime)/1000} seconds`);
                                 callback(undefined);
                             });
                         }
-                        const endTime = Date.now();
-                        logger.debug(0x666, `Task ${newRecord.url} inserted in ${(endTime - startTime)/1000} seconds`);
                         callback(undefined);
                     });
                 }
@@ -135,7 +130,6 @@ module.exports = function (server) {
             });
         },
         remove: function (task, callback) {
-            let start = Date.now();
             let toBeRemoved = taskRegistry.createModel(task);
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, toBeRemoved.pk, function (err, record) {
                 if (err || !record) {
@@ -152,13 +146,11 @@ module.exports = function (server) {
                         return callback(err);
                     }
                     const end = Date.now();
-                    logger.debug(0x666, `Task ${toBeRemoved.url} removed in ${(end - start)/1000} seconds`);
                     callback(undefined);
                 });
             });
         },
         getOneTask: function (callback) {
-            let start = Date.now();
             lightDBEnclaveClient.getOneRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, function (err, task) {
                 if (err) {
                     return callback(err);
@@ -173,7 +165,6 @@ module.exports = function (server) {
                 }
                 taskRegistry.markInProgress(task.url);
                 const end = Date.now();
-                logger.debug(0x666, `Task ${task.url} retrieved in ${(end - start)/1000} seconds`);
                 callback(undefined, task);
             });
         },
@@ -181,14 +172,11 @@ module.exports = function (server) {
             return !!taskRegistry.inProgress[task];
         },
         isScheduled: function (task, callback) {
-            let start = Date.now();
             let tobeChecked = taskRegistry.createModel(task);
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, TASKS_TABLE, tobeChecked.pk, function (err, task) {
                 if (err || !task) {
                     return callback(undefined, undefined);
                 }
-                const end = Date.now();
-                logger.debug(0x666, `Task ${tobeChecked.url} checked in ${(end - start)/1000} seconds`);
                 callback(undefined, task);
             });
         },
@@ -206,7 +194,6 @@ module.exports = function (server) {
             lightDBEnclaveClient.getRecord($$.SYSTEM_IDENTIFIER, HISTORY_TABLE, target.pk, callback);
         },
         schedule: function (criteria, callback) {
-            let start = Date.now();
             if(server.readOnlyModeActive){
                 return callback(new Error("FixedURL scheduling is not possible when server is in readOnly mode"));
             }
@@ -217,8 +204,6 @@ module.exports = function (server) {
                     }
                     return callback(err);
                 }
-                let end = Date.now();
-                logger.debug(0x666, `Task ${criteria} scheduled in ${(end - start)/1000} seconds`);
                 function createTask() {
                     if (records.length === 0) {
                         return callback(undefined);
@@ -325,7 +310,6 @@ module.exports = function (server) {
             url = converter.toString().replace(urlBase, "");
 
             //executing the request
-            let start = Date.now();
             server.makeLocalRequest("GET", url, "", {}, function (error, result) {
                 const end = Date.now();
                 if (error) {
