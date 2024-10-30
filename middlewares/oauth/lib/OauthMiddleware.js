@@ -399,6 +399,8 @@ function OAuthMiddleware(server) {
     const GET_USER_ID = "/clientAuthenticationProxy/getUserId";
     server.post(GET_USER_ID, httpUtils.bodyParser);
     server.post(GET_USER_ID, async (req, res) => {
+        const { URL } = require('url');
+
         try {
             req.body = JSON.parse(req.body);
         } catch (e) {
@@ -406,17 +408,26 @@ function OAuthMiddleware(server) {
             res.end("Invalid request body");
             return;
         }
-        const {clientId, clientSecret, scope, tokenEndpoint} = req.body;
+        const { clientId, clientSecret, scope, tokenEndpoint } = req.body;
+        const whitelist = oauthConfig.whitelist;
 
-        let whitelist = oauthConfig.whitelist;
-
+        let sanitizedUrl;
         try {
             const parsedUrl = new URL(tokenEndpoint);
-            if (!whitelist.some(allowedUrl => parsedUrl.hostname === new URL(allowedUrl).hostname)) {
+            if (parsedUrl.protocol !== 'https:') {
+                res.statusCode = 400;
+                res.end("Invalid protocol: only HTTPS is allowed");
+                return;
+            }
+
+            sanitizedUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.port ? `:${parsedUrl.port}` : ''}`;
+
+            if (!whitelist.some(allowedUrl => new URL(allowedUrl).hostname === parsedUrl.hostname)) {
                 res.statusCode = 401;
                 res.end("Forbidden: tokenEndpoint not allowed");
                 return;
             }
+
         } catch (error) {
             res.statusCode = 400;
             res.end("Invalid URL");
@@ -431,13 +442,13 @@ function OAuthMiddleware(server) {
 
         let response;
         try {
-            response = await fetch(tokenEndpoint, {
+            response = await fetch(sanitizedUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
                 body: params
-            })
+            });
         } catch (e) {
             console.error(e);
             res.statusCode = 500;
@@ -453,7 +464,6 @@ function OAuthMiddleware(server) {
                     errMessage = data.error;
                     logger.error(data.error);
                 }
-
                 if (data.error_description) {
                     logger.error(data.error_description);
                     errMessage = data.error_description;
