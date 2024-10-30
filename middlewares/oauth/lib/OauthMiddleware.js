@@ -408,7 +408,8 @@ function OAuthMiddleware(server) {
         }
         const {clientId, clientSecret, scope, tokenEndpoint} = req.body;
 
-        if(oauthConfig.whitelist && !oauthConfig.whitelist.contains(tokenEndpoint)) {
+        let whitelist = oauthConfig.whitelist;
+        if(!whitelist.contains(tokenEndpoint)) {
             res.statusCode = 401;
             res.end("Forbidden");
             return;
