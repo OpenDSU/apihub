@@ -116,7 +116,10 @@ const defaultConfig = {
         "/enclave",
         "/secrets",
         "/logs"
-    ]
+    ],
+    "oauthConfig":{
+        "whitelist":[]
+    }
 };
 
 module.exports = Object.freeze(defaultConfig);
