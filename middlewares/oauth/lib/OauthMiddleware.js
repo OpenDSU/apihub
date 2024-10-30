@@ -409,9 +409,17 @@ function OAuthMiddleware(server) {
         const {clientId, clientSecret, scope, tokenEndpoint} = req.body;
 
         let whitelist = oauthConfig.whitelist;
-        if(!whitelist.contains(tokenEndpoint)) {
-            res.statusCode = 401;
-            res.end("Forbidden");
+
+        try {
+            const parsedUrl = new URL(tokenEndpoint);
+            if (!whitelist.some(allowedUrl => parsedUrl.hostname === new URL(allowedUrl).hostname)) {
+                res.statusCode = 401;
+                res.end("Forbidden: tokenEndpoint not allowed");
+                return;
+            }
+        } catch (error) {
+            res.statusCode = 400;
+            res.end("Invalid URL");
             return;
         }
 
