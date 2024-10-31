@@ -268,7 +268,7 @@ function StaticServer(server) {
             }
         }
 
-        // e.g. cacheDuration = [{urlPattern:"", duration: 3600, method: "startsWith"}]
+        // e.g. cacheDuration = [{urlPattern:"/assets/", duration: 3600, method: "startsWith"}]
         // urlPattern should be a string which should be matched by the selected method when trying to serve a specific url
         // duration should be a number and will be used to set the Cache Control value
         // method can be String.startsWith (default), String.endsWith,  RegExp.test
