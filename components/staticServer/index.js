@@ -285,7 +285,7 @@ function StaticServer(server) {
                     break;
                 case "test":
                     fnc = function(urlPattern){
-                        return urlPattern.test(res.req.url);
+                        return new RegExp(urlPattern).test(res.req.url);
                     }
                     break;
                 default:
