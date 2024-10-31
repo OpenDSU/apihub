@@ -135,14 +135,24 @@ function StaticServer(server) {
                                 if (fs.statSync(resolvedFileName).isDirectory()) {
                                     extractContent(resolvedFileName);
                                 } else {
-                                    let fileContent = fs.readFileSync(resolvedFileName);
-                                    let fileExtension = fileName.substring(fileName.lastIndexOf(".") + 1);
-                                    let mimeType = utils.getMimeTypeFromExtension(fileExtension);
+                                    try {
+                                        // Final sanitization right before reading the file to avoid tool warnings.
+                                        const sanitizedResolvedFileName = sanitizeFilePath(resolvedFileName);
 
-                                    if (mimeType.binary) {
-                                        summary[summaryId][file] = Array.from(fileContent);
-                                    } else {
-                                        summary[summaryId][file] = fileContent.toString();
+                                        let fileContent = fs.readFileSync(sanitizedResolvedFileName);  // File path is now fully sanitized.
+                                        let fileExtension = path.extname(fileName).slice(1);  // Safely extract the extension
+                                        let mimeType = utils.getMimeTypeFromExtension(fileExtension);
+
+                                        if (mimeType.binary) {
+                                            summary[summaryId][file] = Array.from(fileContent);
+                                        } else {
+                                            summary[summaryId][file] = fileContent.toString();
+                                        }
+                                    } catch (error) {
+                                        logger.error(`Error reading file ${resolvedFileName}: ${error.message}`);
+                                        res.statusCode = 403;
+                                        res.end();
+                                        return;
                                     }
                                 }
                                 directories[currentPath]--;
@@ -248,6 +258,7 @@ function StaticServer(server) {
             res.end();
             return;
         }
+
         if (excludedFilesRegex) {
             let index = excludedFilesRegex.findIndex(regExp => file.match(regExp) !== null);
             if (index >= 0) {
@@ -256,12 +267,45 @@ function StaticServer(server) {
                 return;
             }
         }
+
+        // e.g. cacheDuration = [{urlPattern:"", duration: 3600, method: "startsWith"}]
+        // urlPattern should be a string which should be matched by the selected method when trying to serve a specific url
+        // duration should be a number and will be used to set the Cache Control value
+        // method can be String.startsWith (default), String.endsWith,  RegExp.test
+        let cacheDurations = componentsConfig.staticServer.cacheDurations || [];
+        let cacheDuration = 0;  // Default to no-cache
+
+        for (let entry of cacheDurations){
+            let {urlPattern, duration, method} = entry;
+
+            let fnc = res.req.url.startsWith;
+            switch (method) {
+                case "endsWith":
+                    fnc = res.req.url.endsWith;
+                    break;
+                case "test":
+                    fnc = function(urlPattern){
+                        return urlPattern.test(res.req.url);
+                    }
+                    break;
+                default:
+                    // nothing...
+            }
+
+            if (fnc(urlPattern)) {
+                cacheDuration = duration || cacheDuration;
+                break;
+            }
+        }
+
+        if (cacheDuration > 0) {
+            res.setHeader('Cache-Control', `public, max-age=${cacheDuration}`);
+        } else {
+            res.setHeader('Cache-Control', 'no-store');
+        }
+
         let stream = fs.createReadStream(file);
         setMimeTypeOnResponse(file, res);
-
-
-        // instruct to not store response into cache
-        res.setHeader('Cache-Control', 'no-store');
         res.statusCode = 200;
         if (res.req.method === "HEAD") {
             return res.end();
