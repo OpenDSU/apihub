@@ -278,10 +278,10 @@ function StaticServer(server) {
         for (let entry of cacheDurations){
             let {urlPattern, duration, method} = entry;
 
-            let fnc = res.req.url.startsWith;
+            let fnc = res.req.url.startsWith.bind(res.req.url);
             switch (method) {
                 case "endsWith":
-                    fnc = res.req.url.endsWith;
+                    fnc = res.req.url.endsWith.bind(res.req.url);
                     break;
                 case "test":
                     fnc = function(urlPattern){
