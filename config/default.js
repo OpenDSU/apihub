@@ -37,7 +37,8 @@ const defaultConfig = {
             "storageDirPath": './external-volume/debug-logger/storage',
         },
         "staticServer": {
-            "module": "./components/staticServer"
+            "module": "./components/staticServer",
+            "cacheDurations": []
         },
         "contracts": {
             "module": "./components/contracts",
