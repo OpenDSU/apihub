@@ -3,6 +3,7 @@ const crypto = openDSU.loadAPI("crypto");
 const http = openDSU.loadAPI("http");
 const fs = require("fs");
 const errorMessages = require("./errorMessages");
+const path = require("path");
 const logger = $$.getLogger("OAuthMiddleware", "util.js");
 
 let publicKey;
@@ -447,28 +448,35 @@ function decryptRefreshTokenCookie(encryptedRefreshToken, callback) {
     });
 }
 
+function getPublicKeyFromJWKSEndpoint(jwksEndpoint, accessToken, callback) {
+    http.doGet(jwksEndpoint, (err, rawData) => {
+        if (err) {
+            return callback(err);
+        }
+
+        let parsedData;
+        try {
+            parsedData = JSON.parse(rawData);
+        } catch (e) {
+            return callback(e);
+        }
+
+        const parsedAccessToken = parseAccessToken(accessToken);
+        publicKey = parsedData.keys.find(key => key.use === "sig" && key.kid === parsedAccessToken.header.kid);
+        if (!publicKey) {
+            return callback(Error(`Could not get public key for the provided token's signature verification.`))
+        }
+
+        callback(undefined, publicKey);
+    })
+}
+
 function getPublicKey(jwksEndpoint, rawAccessToken, callback) {
     if (publicKey) {
         return callback(undefined, publicKey);
     }
 
-    http.doGet(jwksEndpoint, (err, rawData) => {
-        if (err) {
-            return callback(err);
-        }
-        try {
-            const parsedData = JSON.parse(rawData);
-            const accessToken = parseAccessToken(rawAccessToken);
-            publicKey = parsedData.keys.find(key => key.use === "sig" && key.kid === accessToken.header.kid);
-            if (!publicKey) {
-                return callback(Error(`Could not get private key for the provided token's signature verification.`))
-            }
-        } catch (e) {
-            return callback(e);
-        }
-
-        callback(undefined, publicKey);
-    })
+    getPublicKeyFromJWKSEndpoint(jwksEndpoint, rawAccessToken, callback);
 }
 
 function validateAccessToken(jwksEndpoint, accessToken, callback) {
@@ -477,7 +485,21 @@ function validateAccessToken(jwksEndpoint, accessToken, callback) {
             return callback(err);
         }
 
-        crypto.jsonWebTokenAPI.verify(accessToken, publicKey, callback);
+        crypto.jsonWebTokenAPI.verify(accessToken, publicKey, (err, verified) => {
+            if (err || !verified) {
+                getPublicKeyFromJWKSEndpoint(jwksEndpoint, accessToken, (err, publicKey) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    crypto.jsonWebTokenAPI.verify(accessToken, publicKey, callback);
+                });
+
+                return;
+            }
+
+            callback();
+        });
     })
 }
 
