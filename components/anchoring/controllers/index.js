@@ -17,6 +17,7 @@ const getStrategy = async (request) => {
         }
 
         domainConfig = await utils.getAnchoringDomainConfig(receivedDomain);
+        domainConfig.name = receivedDomain;
         if (!domainConfig) {
             throw Error(`[Anchoring] Domain '${receivedDomain}' not found`);
         }
@@ -24,6 +25,7 @@ const getStrategy = async (request) => {
 
     if (request.params.domain) {
         domainConfig = await utils.getAnchoringDomainConfig(request.params.domain);
+        domainConfig.name = request.params.domain;
     }
 
     if (!domainConfig) {
