@@ -2,8 +2,9 @@ async function requestFSBrickStorageMiddleware(request, response, next) {
     const {domain: domainName} = request.params;
     const logger = $$.getLogger("requestFSBrickStorageMiddleware", "apihub/bricking");
 
-    const domainConfig = await require("./utils").getBricksDomainConfig(domainName);
-    if (!domainConfig || !domainConfig.path) {
+    const brickingConfig = await require("./utils").getBricksDomainConfig(domainName);
+    const domainConfig = require("../../config").getDomainConfig(domainName);
+    if (!brickingConfig || !brickingConfig.path) {
         const message = `[Bricking] Domain '${domainName}' not found!`;
         logger.error(message);
         return response.send(404, message);
@@ -16,16 +17,18 @@ async function requestFSBrickStorageMiddleware(request, response, next) {
     const FsBrickPathsManager = require("./replication/FSBrickPathsManager");
     request.fsBrickStorage = createFSBrickStorage(
         domainName,
-        domainConfig.path,
+        brickingConfig.path,
         request.server.rootFolder,
-        new FsBrickPathsManager(2)
+        new FsBrickPathsManager(2),
+        domainConfig
     );
 
     request.oldFsBrickStorage = createFSBrickStorage(
         domainName,
-        domainConfig.path,
+        brickingConfig.path,
         request.server.rootFolder,
-        new FsBrickPathsManager(5)
+        new FsBrickPathsManager(5),
+        domainConfig
     );
 
     next();

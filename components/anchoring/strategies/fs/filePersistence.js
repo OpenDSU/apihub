@@ -1,6 +1,6 @@
-function FilePersistenceStrategy(rootFolder, configuredPath) {
+function FilePersistenceStrategy(rootFolder, configuredPath, domainName) {
     const self = this;
-    const fileOperations = new FileOperations();
+    const fileOperations = new FileOperations(domainName);
     const FSLock = require("../utils/FSLock");
     const AnchorPathResolver = require("../utils/AnchorPathResolver");
     const anchorPathResolver = new AnchorPathResolver(rootFolder, configuredPath);
@@ -114,13 +114,15 @@ function FilePersistenceStrategy(rootFolder, configuredPath) {
 }
 
 
-function FileOperations() {
+function FileOperations(domainName) {
     const self = this;
     const fs = require('fs');
     const path = require('path');
     let anchoringFolder;
     const endOfLine = require("os").EOL;
     const logger = $$.getLogger("FileOperations", "apihub/anchoring");
+    const backupUtils = require("../../../../utils/backupUtils");
+    const domainConfig = require("../../../../config").getDomainConfig(domainName);
     self.InitializeFolderStructure = function (rootFolder, configuredPath) {
         let storageFolder = path.join(rootFolder, configuredPath);
         anchoringFolder = path.resolve(storageFolder);
@@ -203,15 +205,20 @@ function FileOperations() {
         const fileContent = anchorValueSSI + endOfLine;
         const filePath = path.join(anchoringFolder, anchorId);
         fs.writeFile(filePath, fileContent, callback);
+        if (domainConfig.enableBackup) {
+            backupUtils.notifyBackup(filePath);
+        }
     }
 
     self.appendAnchor = function (anchorId, anchorValueSSI, callback) {
         const fileContent = anchorValueSSI + endOfLine;
         const filePath = path.join(anchoringFolder, anchorId);
         fs.appendFile(filePath, fileContent, callback);
+        if (domainConfig.enableBackup) {
+            backupUtils.notifyBackup(filePath);
+        }
     }
 }
-
 
 module.exports = {
     FilePersistenceStrategy

@@ -1,9 +1,10 @@
 class FSBrickStorage {
-    constructor(domainName, domainFolder, serverRoot, fsBrickPathsManager) {
+    constructor(domainName, domainFolder, serverRoot, fsBrickPathsManager, domainConfig) {
         this.domain = domainName;
         const FSBrickPathsManager = require("./FSBrickPathsManager");
         this.fsBrickPathsManager = fsBrickPathsManager || new FSBrickPathsManager(2);
         this.fsBrickPathsManager.storeDomainPath(this.domain, domainFolder, serverRoot);
+        this.domainConfig = domainConfig;
     }
 
     getBrick(hash, callback) {
@@ -53,6 +54,9 @@ class FSBrickStorage {
 
         const brickPath = this.fsBrickPathsManager.resolveBrickPath(this.domain, hash);
         await $$.promisify(fs.writeFile)(brickPath, data);
+        if(this.domainConfig && this.domainConfig.enableBackup) {
+            require("../../../utils/backupUtils").notifyBackup(brickPath);
+        }
         return hash;
     }
 
