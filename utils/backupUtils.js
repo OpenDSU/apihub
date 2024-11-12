@@ -13,6 +13,23 @@ const notifyBackup = (filePath) => {
     });
 };
 
+const restoreFileFromBackup = (backupServiceUrl, filePath, callback) => {
+    const http = require("opendsu").loadAPI("http");
+    const fileUrl = `${backupServiceUrl}/getFile/${encodeURIComponent(filePath)}`;
+    http.fetch(fileUrl).then(async (response) => {
+        if (response.statusCode !== 200) {
+            callback(new Error(`Failed to fetch file from backup service: ${fileUrl}`));
+            return;
+        }
+        const fileContent = await response.text();
+        fs.writeFileSync(filePath, fileContent, callback);
+    }).catch((err) => {
+        console.error(`Failed to fetch file from backup service: ${fileUrl}`, err);
+        callback(err);
+    });
+}
+
 module.exports = {
-    notifyBackup
+    notifyBackup,
+    restoreFileFromBackup
 };

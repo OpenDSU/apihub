@@ -1,3 +1,5 @@
+const backupUtils = require("../../../utils/backupUtils");
+
 class FSBrickStorage {
     constructor(domainName, domainFolder, serverRoot, fsBrickPathsManager, domainConfig) {
         this.domain = domainName;
@@ -19,7 +21,16 @@ class FSBrickStorage {
         const fs = require("fs");
         const brickPath = this.fsBrickPathsManager.resolveBrickPath(this.domain, hash);
         await $$.promisify(fs.access)(brickPath);
-        return await $$.promisify(fs.readFile)(brickPath);
+        try {
+            return await $$.promisify(fs.readFile)(brickPath);
+        } catch (error) {
+            if (this.domainConfig && this.domainConfig.enableBackup) {
+                const backupServerUrl = this.domainConfig.backupServerUrl;
+                await $$.promisify(backupUtils.restoreFileFromBackup)(backupServerUrl, brickPath);
+                return await $$.promisify(fs.readFile)(brickPath);
+            }
+            throw error;
+        }
     }
 
     async brickExists(hash) {
@@ -29,6 +40,14 @@ class FSBrickStorage {
             await $$.promisify(fs.access)(brickPath);
             return true;
         } catch (error) {
+            if (this.domainConfig && this.domainConfig.enableBackup) {
+                const backupServerUrl = this.domainConfig.backupServerUrl;
+                try {
+                    await $$.promisify(backupUtils.restoreFileFromBackup)(backupServerUrl, brickPath);
+                    return true;
+                } catch (e) {
+                }
+            }
         }
         return false
     }
@@ -54,7 +73,7 @@ class FSBrickStorage {
 
         const brickPath = this.fsBrickPathsManager.resolveBrickPath(this.domain, hash);
         await $$.promisify(fs.writeFile)(brickPath, data);
-        if(this.domainConfig && this.domainConfig.enableBackup) {
+        if (this.domainConfig && this.domainConfig.enableBackup) {
             require("../../../utils/backupUtils").notifyBackup(brickPath);
         }
         return hash;

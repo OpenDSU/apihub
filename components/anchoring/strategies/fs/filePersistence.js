@@ -193,6 +193,15 @@ function FileOperations(domainName) {
         const filePath = path.join(anchoringFolder, anchorId);
         fs.readFile(filePath, (err, fileHashes) => {
             if (err) {
+                if(domainConfig.enableBackup){
+                    backupUtils.restoreFileFromBackup(domainConfig.backupServerUrl, filePath, (err) => {
+                        if (err) {
+                            return callback(err);
+                        }
+
+                        self.getAllVersions(anchorId, callback);
+                    })
+                }
                 return callback(new Error(`Failed to read file <${filePath}>`));
             }
             const fileContent = fileHashes.toString().trimEnd();
