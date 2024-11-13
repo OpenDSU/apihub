@@ -1,3 +1,5 @@
+const backupUtils = require("../../../../utils/backupUtils");
+
 function FilePersistenceStrategy(rootFolder, configuredPath, domainName) {
     const self = this;
     const fileOperations = new FileOperations(domainName);
@@ -153,6 +155,17 @@ function FileOperations(domainName) {
         const filePath = path.join(anchoringFolder, anchorId);
         fs.stat(filePath, (err) => {
             if (err) {
+                if(domainConfig.enableBackup) {
+                    backupUtils.restoreFileFromBackup(domainConfig.backupServerUrl, filePath, (err) => {
+                        if (err) {
+                            return callback(undefined, false);
+                        }
+
+                        callback(undefined, true);
+                    })
+                    return;
+                }
+
                 if (err.code === "ENOENT") {
                     return callback(undefined, false);
                 }

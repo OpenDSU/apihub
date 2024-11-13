@@ -74,7 +74,7 @@ class FSBrickStorage {
         const brickPath = this.fsBrickPathsManager.resolveBrickPath(this.domain, hash);
         await $$.promisify(fs.writeFile)(brickPath, data);
         if (this.domainConfig && this.domainConfig.enableBackup) {
-            require("../../../utils/backupUtils").notifyBackup(brickPath);
+            backupUtils.notifyBackup(brickPath);
         }
         return hash;
     }
