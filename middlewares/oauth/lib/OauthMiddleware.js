@@ -421,7 +421,13 @@ function OAuthMiddleware(server) {
             }
 
             sanitizedUrl = `${parsedUrl.protocol}//${parsedUrl.hostname}${parsedUrl.port ? `:${parsedUrl.port}` : ''}`;
-            sanitizedUrl += parsedUrl.pathname;
+            sanitizedUrl += parsedUrl.pathname
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+
             if (!whitelist.some(allowedUrl => new URL(allowedUrl).hostname === parsedUrl.hostname)) {
                 res.statusCode = 401;
                 res.end("Forbidden: tokenEndpoint not allowed");
