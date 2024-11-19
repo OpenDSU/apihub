@@ -9,7 +9,7 @@ process.on('SIGTERM', (signal) => {
     logger.info('Received signal:', signal, ". Activating the gracefulTerminationWatcher.");
 });
 
-const httpWrapper = require('./libs/http-wrapper');
+const httpWrapper = require('./http-wrapper');
 const Server = httpWrapper.Server;
 
 const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
@@ -44,7 +44,7 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
         restartIntervalCheck = CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL;
     }
     let port = listeningPort || 8080;
-    const conf = require('./config').getConfig();
+    const conf = require('./http-wrapper/config').getConfig();
     const server = new Server(sslConfig);
     server.config = conf;
     server.rootFolder = rootFolder;
@@ -447,18 +447,18 @@ module.exports.start = function (options, callback) {
 }
 
 module.exports.getHttpWrapper = function () {
-    return require('./libs/http-wrapper');
+    return require('./http-wrapper');
 };
 
 module.exports.getServerConfig = function () {
     logger.debug(`apihub.getServerConfig() method is deprecated, please use server.config to retrieve necessary info.`);
-    const config = require('./config');
+    const config = require('./http-wrapper/config');
     return config.getConfig();
 };
 
 module.exports.getDomainConfig = function (domain, ...configKeys) {
     logger.debug(`apihub.getServerConfig() method is deprecated, please use server.config.getDomainConfig(...) to retrieve necessary info.`);
-    const config = require('./config');
+    const config = require('./http-wrapper/config');
     return config.getDomainConfig(domain, ...configKeys);
 };
 
@@ -470,4 +470,4 @@ module.exports.getSecretsServiceInstanceAsync = require("./components/secrets/Se
 
 module.exports.anchoringStrategies = require("./components/anchoring/strategies");
 
-module.exports.TokenBucket = require("./libs/TokenBucket");
+module.exports.TokenBucket = require("./http-wrapper/src/TokenBucket");
