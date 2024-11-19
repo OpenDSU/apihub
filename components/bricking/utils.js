@@ -1,8 +1,8 @@
-const {clone} = require("../../utils");
+const {clone} = require("../../http-wrapper/utils");
 const {
     getLocalBdnsEntryListExcludingSelfAsync,
     getHeadersWithExcludedProvidersIncludingSelf
-} = require("../../utils/request-utils");
+} = require("../../http-wrapper/utils/request-utils");
 const logger = $$.getLogger("bricking", "apihub/bricking")
 
 function convertReadableStreamToBuffer(readStream, callback) {
@@ -17,7 +17,7 @@ function convertReadableStreamToBuffer(readStream, callback) {
 
 async function getBricksDomainConfig(domain) {
     logger.debug("Looking for domain", domain);
-    const config = require("../../config");
+    const config = require("../../http-wrapper/config");
     let domainConfiguration = await config.getSafeDomainConfig(domain);
 
     if (!domainConfiguration) {

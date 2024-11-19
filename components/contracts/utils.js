@@ -61,7 +61,7 @@ const validateCommandInput = (request, response, next) => {
         return response.send(400, "Invalid domain specified");
     }
 
-    const config = require("../../config");
+    const config = require("../../http-wrapper/config");
     const configuredDomains = config.getConfiguredDomains();
     if (!configuredDomains.includes(domain)) {
         return response.send(404, `Unsupported domain '${domain}' specified`);

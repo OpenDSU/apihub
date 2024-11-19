@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs");
-const config = require("../../config");
+const config = require("../../http-wrapper/config");
 const openDSU = require("opendsu");
 const crypto = openDSU.loadAPI("crypto");
 const logger = $$.getLogger("controller", "apihub/versionlessDSU");

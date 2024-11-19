@@ -1,6 +1,6 @@
 const util = require("./util");
 const urlModule = require("url");
-const {httpUtils} = require("../../../libs/http-wrapper");
+const {httpUtils} = require("../../../http-wrapper");
 const {printDebugLog} = require("./util");
 
 function OAuthMiddleware(server) {
@@ -21,7 +21,7 @@ function OAuthMiddleware(server) {
 
     logger.debug(`Registering OAuthMiddleware`);
     const staticContentIdentifiers = ["text/html", "application/xhtml+xml", "application/xml"];
-    const config = require("../../../config");
+    const config = require("../../../http-wrapper/config");
     const oauthConfig = config.getConfig("oauthConfig");
     const path = require("path");
     const ENCRYPTION_KEYS_LOCATION = oauthConfig.encryptionKeysLocation || path.join(server.rootFolder, "external-volume", "encryption-keys");

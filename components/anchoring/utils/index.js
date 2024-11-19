@@ -1,7 +1,7 @@
-const {clone} = require("../../../utils");
+const {clone} = require("../../../http-wrapper/utils");
 
 const getAnchoringDomainConfig = async (domain) => {
-    const config = require("../../../config");
+    const config = require("../../../http-wrapper/config");
     let domainConfiguration = await config.getSafeDomainConfig(domain);
 
     if (!domainConfiguration) {

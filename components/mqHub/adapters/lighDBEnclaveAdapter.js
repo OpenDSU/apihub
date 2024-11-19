@@ -1,6 +1,6 @@
 function LightDBEnclaveAdapter(server, prefix, domain, configuration) {
     const logger = $$.getLogger("LokiMQAdapter", "apihub/mqHub");
-    const config = require("../../../config");
+    const config = require("../../../http-wrapper/config");
     let domainConfig = config.getDomainConfig(domain);
 
     const settings = {

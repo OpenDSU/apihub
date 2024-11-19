@@ -1,7 +1,7 @@
-const {clone} = require("../../../utils");
+const {clone} = require("../../../http-wrapper/utils");
 
 const getBricksFabricStrategy = () => {
-    const config = require("../../../config");
+    const config = require("../../../http-wrapper/config");
     const domainConfiguration = config.getDomainConfig("default");
     if (!domainConfiguration) {
         return;
@@ -28,7 +28,7 @@ const getBricksFabricStrategy = () => {
 
 const getRootFolder = () => {
     // temporary location where we store the last hashlink
-    const config = require("../../../config");
+    const config = require("../../../http-wrapper/config");
     return config.getConfig("componentsConfig", "bricksFabric").path;
 };
 

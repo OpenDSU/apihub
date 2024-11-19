@@ -1,14 +1,14 @@
 const openDSU = require("opendsu");
 const crypto = openDSU.loadApi("crypto");
 
-const {sendUnauthorizedResponse} = require("../../utils/middlewares");
+const {sendUnauthorizedResponse} = require("../../http-wrapper/utils/middlewares");
 
 function Authorisation(server) {
     const logger = $$.getLogger("Authorisation", "apihub/authorisation");
 
     logger.debug(`Registering Authorisation middleware`);
 
-    const config = require("../../config");
+    const config = require("../../http-wrapper/config");
     const skipJWTAuthorisation = config.getConfig("skipJWTAuthorisation");
 
     const urlsToSkip = skipJWTAuthorisation && Array.isArray(skipJWTAuthorisation) ? skipJWTAuthorisation : [];

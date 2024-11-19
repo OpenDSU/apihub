@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs");
-const config = require("../../config");
-const {parseCookies, stringifyCookies} = require("../../utils/cookie-utils");
+const config = require("../../http-wrapper/config");
+const {parseCookies, stringifyCookies} = require("../../http-wrapper/utils/cookie-utils");
 
 const logger = $$.getLogger("controller", "apihub/mainDSU");
 

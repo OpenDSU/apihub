@@ -2,7 +2,7 @@ require("../../../../builds/output/testsRuntime");
 const testIntegration = require("../../../../psknode/tests/util/tir");
 
 const dc = require("double-check");
-const config = require("../../config");
+const config = require("../../http-wrapper/config");
 const assert = dc.assert;
 
 assert.callback(

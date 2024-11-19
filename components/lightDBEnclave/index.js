@@ -1,5 +1,5 @@
 const logger = $$.getLogger("lightDB", "apihub");
-const httpWrapper = require("../../libs/http-wrapper/src/httpUtils");
+const httpWrapper = require("../../http-wrapper/src/httpUtils");
 const prefix = "lightDB";
 
 function LightDBEnclave(server) {

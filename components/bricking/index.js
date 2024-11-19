@@ -4,7 +4,7 @@ function Bricks(server) {
         next();
     }
 
-    const {headersMiddleware, responseModifierMiddleware} = require('../../utils/middlewares');
+    const {headersMiddleware, responseModifierMiddleware} = require('../../http-wrapper/utils/middlewares');
 
     const {requestFSBrickStorageMiddleware} = require('./middlewares');
 

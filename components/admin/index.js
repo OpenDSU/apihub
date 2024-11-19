@@ -176,7 +176,7 @@ function AdminComponentHandler(server) {
 
     server.use("/admin/:mainDomain/*", enforceMainDomainMiddleware);
 
-    server.use("/admin/*", require("./../../utils/middlewares/index").requestBodyJSONMiddleware);
+    server.use("/admin/*", require("../../http-wrapper/utils/middlewares/index").requestBodyJSONMiddleware);
 
     server.post("/admin/:mainDomain/addDomain", addDomain);
     server.post("/admin/:mainDomain/disableDomain", disableDomain);

@@ -36,7 +36,7 @@ function BricksFabric(server) {
     }, timeout);
 
     const {URL_PREFIX} = require('./constants.js');
-    const {responseModifierMiddleware, requestBodyJSONMiddleware} = require('../../utils/middlewares');
+    const {responseModifierMiddleware, requestBodyJSONMiddleware} = require('../../http-wrapper/utils/middlewares');
     const storeTransaction = require('./controllers')(flow, server);
 
     server.use(`${URL_PREFIX}/*`, responseModifierMiddleware);

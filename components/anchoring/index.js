@@ -13,7 +13,7 @@ function Anchoring(server) {
         totalNumberOfAnchors
     } = require("./controllers");
 
-    const {responseModifierMiddleware, requestBodyJSONMiddleware} = require("../../utils/middlewares");
+    const {responseModifierMiddleware, requestBodyJSONMiddleware} = require("../../http-wrapper/utils/middlewares");
     const {getEthereumSyncServiceSingleton} = require("./strategies/oba/ethereumSyncService");
 
     const ethSyncService = getEthereumSyncServiceSingleton(server);

@@ -1,11 +1,11 @@
-const TokenBucket = require("../../libs/TokenBucket");
+const TokenBucket = require("../../http-wrapper/src/TokenBucket");
 
 function Throttler(server) {
     const logger = $$.getLogger("Throttler", "apihub");
     const START_TOKENS = 6000000;
     const tokenBucket = new TokenBucket(START_TOKENS, 1, 10);
     let remainingTokens = START_TOKENS;
-    const conf = require('../../config').getConfig();
+    const conf = require('../../http-wrapper/config').getConfig();
 
     function throttlerHandler(req, res, next) {
         const ip = res.socket.remoteAddress;

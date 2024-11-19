@@ -1,7 +1,7 @@
-const config = require("../../config");
+const config = require("../../http-wrapper/config");
 
 function Config(server) {
-    const {requestBodyJSONMiddleware, responseModifierMiddleware} = require("../../utils/middlewares");
+    const {requestBodyJSONMiddleware, responseModifierMiddleware} = require("../../http-wrapper/utils/middlewares");
 
     function getDomainConfig(request, response) {
         const {domain} = request.params;

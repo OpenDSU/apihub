@@ -5,7 +5,7 @@ const path = require("path");
 const dc = require("double-check");
 const assert = dc.assert;
 
-const ConfigMigrator = require("../../config/config-migrator");
+const ConfigMigrator = require("../../http-wrapper/config/config-migrator");
 
 const initialConfig = {
     port: 8080,

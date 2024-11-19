@@ -14,10 +14,10 @@ function BDNS(server) {
         ]
     };
     const URL_PREFIX = "/bdns";
-    const {headersMiddleware} = require('../../utils/middlewares');
+    const {headersMiddleware} = require('../../http-wrapper/utils/middlewares');
 
     let bdnsCache;
-    const config = require("../../config");
+    const config = require("../../http-wrapper/config");
     const bdnsConfig = config.getConfig("componentsConfig", "bdns");
 
     async function getBDNSHostsFromURL(url) {

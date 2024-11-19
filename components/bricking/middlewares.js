@@ -3,7 +3,7 @@ async function requestFSBrickStorageMiddleware(request, response, next) {
     const logger = $$.getLogger("requestFSBrickStorageMiddleware", "apihub/bricking");
 
     const brickingConfig = await require("./utils").getBricksDomainConfig(domainName);
-    const domainConfig = require("../../config").getDomainConfig(domainName);
+    const domainConfig = require("../../http-wrapper/config").getDomainConfig(domainName);
     if (!brickingConfig || !brickingConfig.path) {
         const message = `[Bricking] Domain '${domainName}' not found!`;
         logger.error(message);

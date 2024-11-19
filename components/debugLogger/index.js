@@ -1,5 +1,5 @@
 function DebugLogger(server) {
-    const {responseModifierMiddleware, requestBodyJSONMiddleware} = require('../../utils/middlewares');
+    const {responseModifierMiddleware, requestBodyJSONMiddleware} = require('../../http-wrapper/utils/middlewares');
     const {createHandlerAppendToLog, createHandlerReadFromLog} = require('./controllers');
 
     const appendToLog = createHandlerAppendToLog();

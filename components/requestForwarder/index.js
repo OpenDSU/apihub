@@ -1,7 +1,7 @@
 const registeredUrl = "/forwardRequestForAuthenticatedClient";
 const logger = $$.getLogger("requestForwarder", "apihub/requestForwarder");
 module.exports = function (server) {
-    server.post(registeredUrl, require("./../../utils/middlewares/index").requestBodyJSONMiddleware);
+    server.post(registeredUrl, require("../../http-wrapper/utils/middlewares/index").requestBodyJSONMiddleware);
 
     server.post(registeredUrl, function (req, res) {
         let url = req.body.url;

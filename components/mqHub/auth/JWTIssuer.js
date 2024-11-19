@@ -12,7 +12,7 @@ const defaultSettings = {
 function JWTIssuer(workingDir) {
     const logger = $$.getLogger("JWTIssuer", "apihub/mqHub");
     let seeder;
-    const config = require("./../../../config");
+    const config = require("../../../http-wrapper/config");
 
     function getDomainSpecificConfig(domainName) {
         let domainSpecificConfig = JSON.parse(JSON.stringify(defaultSettings));

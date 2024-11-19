@@ -1,6 +1,6 @@
 function MainDSU(server) {
     const {init, handleSetSSIForMainDSUCookie, handleDefaultMainDSURequest} = require("./controller");
-    const {requestBodyJSONMiddleware} = require("../../utils/middlewares");
+    const {requestBodyJSONMiddleware} = require("../../http-wrapper/utils/middlewares");
 
     init(server);
 

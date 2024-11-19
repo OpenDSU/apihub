@@ -5,7 +5,7 @@ function Iframe(server) {
         handleSetSSAppTokenRequest,
         handleCloudWalletRequest,
     } = require("./controller");
-    const {requestBodyJSONMiddleware} = require("../../utils/middlewares");
+    const {requestBodyJSONMiddleware} = require("../../http-wrapper/utils/middlewares");
 
     init(server);
 

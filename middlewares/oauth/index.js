@@ -1,4 +1,4 @@
-const config = require("../../config");
+const config = require("../../http-wrapper/config");
 
 const serverAuthentication = config.getConfig("serverAuthentication")
 if (serverAuthentication) {

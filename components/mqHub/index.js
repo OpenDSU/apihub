@@ -24,7 +24,7 @@ async function MQHub(server, signalAsyncLoading, doneLoading) {
 
     signalAsyncLoading();
 
-    const config = require("./../../config/index");
+    const config = require("../../http-wrapper/config/index");
 
     const JWTIssuer = require("./auth/JWTIssuer");
     const issuer = new JWTIssuer(server.rootFolder);

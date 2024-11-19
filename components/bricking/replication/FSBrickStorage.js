@@ -1,4 +1,4 @@
-const backupUtils = require("../../../utils/backupUtils");
+const backupUtils = require("../../../http-wrapper/utils/backupUtils");
 
 class FSBrickStorage {
     constructor(domainName, domainFolder, serverRoot, fsBrickPathsManager, domainConfig) {

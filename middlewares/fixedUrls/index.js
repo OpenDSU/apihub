@@ -474,7 +474,7 @@ module.exports = function (server) {
         });
     }
 
-    server.put("/registerFixedURLs", require("./../../utils/middlewares").bodyReaderMiddleware);
+    server.put("/registerFixedURLs", require("../../http-wrapper/utils/middlewares").bodyReaderMiddleware);
     server.put("/registerFixedURLs", function register(req, res, next) {
         if (!lightDBEnclaveClient) {
             return setTimeout(() => {
@@ -512,7 +512,7 @@ module.exports = function (server) {
         recursiveRegistry();
     });
 
-    server.put("/activateFixedURL", require("./../../utils/middlewares").bodyReaderMiddleware);
+    server.put("/activateFixedURL", require("../../http-wrapper/utils/middlewares").bodyReaderMiddleware);
     server.put("/activateFixedURL", function activate(req, res, next) {
         if (!lightDBEnclaveClient) {
             return setTimeout(() => {
@@ -536,7 +536,7 @@ module.exports = function (server) {
         });
     });
 
-    server.put("/deactivateFixedURL", require("./../../utils/middlewares").bodyReaderMiddleware);
+    server.put("/deactivateFixedURL", require("../../http-wrapper/utils/middlewares").bodyReaderMiddleware);
     server.put("/deactivateFixedURL", function deactivate(req, res, next) {
         if (!lightDBEnclaveClient) {
             return setTimeout(() => {

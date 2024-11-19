@@ -1,6 +1,6 @@
 function LocalMQAdapter(server, prefix, domain, configuration) {
     const logger = $$.getLogger("LocalMQAdapter", "apihub/mqHub");
-    const config = require("../../../config");
+    const config = require("../../../http-wrapper/config");
     const swarmUtils = require('swarmutils');
     let path = swarmUtils.path;
     const FILENAME_DELIMITER = "_special_mqs_delimiter_";

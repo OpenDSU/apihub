@@ -1,7 +1,7 @@
 function APIKeyAuth(server) {
     const SecretsService = require("../../components/secrets/SecretsService");
     let secretServiceInstance;
-    const utils = require("../../utils/cookie-utils.js")
+    const utils = require("../../http-wrapper/utils/cookie-utils.js")
 
     const authorizationHeaderContainsAValidAPIKey = async (req) => {
         const apiKey = req.headers["x-api-key"];

@@ -1,8 +1,8 @@
 function StaticServer(server) {
     const fs = require("fs");
     const path = require('swarmutils').path;
-    const utils = require("../../utils");
-    const config = require("../../config");
+    const utils = require("../../http-wrapper/utils");
+    const config = require("../../http-wrapper/config");
     let componentsConfig = config.getConfig("componentsConfig");
     const logger = $$.getLogger("StaticServer", "apihub/staticServer");
     const excludedFiles = ["apihub.json"];

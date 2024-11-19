@@ -1,10 +1,10 @@
 function KeySSINotifications(server) {
     const logger = $$.getLogger("KeySSINotifications", "apihub/keySsiNotifications");
     let notificationManager;
-    const utils = require('../../utils');
+    const utils = require('../../http-wrapper/utils');
     const readBody = utils.streams.readStringFromStream;
-    const config = require('../../config');
-    const {responseModifierMiddleware} = require('./../../utils/middlewares');
+    const config = require('../../http-wrapper/config');
+    const {responseModifierMiddleware} = require('../../http-wrapper/utils/middlewares');
     const {URL_PREFIX} = require('./constants');
     const path = require("path");
     const workingDirPath = path.join(server.rootFolder, config.getConfig('componentsConfig', 'notifications', 'workingDirPath'));
@@ -87,7 +87,7 @@ function KeySSINotifications(server) {
         response.send(503);
     }
 
-    require('./../../libs/Notifications').getManagerInstance(workingDirPath, (err, instance) => {
+    require('../../http-wrapper/src/Notifications').getManagerInstance(workingDirPath, (err, instance) => {
         if (err) {
             return logger.error(err);
         }

@@ -2,9 +2,9 @@ function MQAdapterMixin(target, server, prefix, domain, configuration) {
     const logger = $$.getLogger("MQAdapterMixin", "apihub/mqHub");
 
     const subscribers = {};
-    const config = require("../../../config");
+    const config = require("../../../http-wrapper/config");
     let domainConfig = config.getDomainConfig(domain);
-    const utils = require('./../../../utils');
+    const utils = require('../../../http-wrapper/utils');
     const readBody = utils.streams.readStringFromStream;
 
     const settings = {

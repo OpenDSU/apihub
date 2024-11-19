@@ -6,7 +6,7 @@ function secrets(server) {
     const whitelistedContainers = [CONTAINERS.DSU_FABRIC, CONTAINERS.DEMIURGE];
     const whitelistedSecrets = ["credential"];
     const logger = $$.getLogger("secrets", "apihub/secrets");
-    const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
+    const httpUtils = require("../../http-wrapper/src/httpUtils");
     const SecretsService = require("./SecretsService");
     let secretsService;
     setTimeout(async () => {

@@ -3,7 +3,7 @@ function ResponseHeaders(server) {
 
     logger.debug(`Registering Response Headers middleware`);
 
-    const config = require("../../config");
+    const config = require("../../http-wrapper/config");
     const responseHeaders = config.getConfig("responseHeaders");
 
     server.use(function (req, res, next) {

@@ -1,5 +1,5 @@
 function ClientCredentialsOauth(server) {
-    const config = require("../../config");
+    const config = require("../../http-wrapper/config");
     const jwksEndpoint = config.getConfig("oauthJWKSEndpoint");
     const util = require("../oauth/lib/util");
 

@@ -4,7 +4,7 @@ const path = require('path');
 const openDSU = require("opendsu");
 const crypto = openDSU.loadAPI("crypto");
 const querystring = require('querystring');
-const cookieUtils = require("../../utils/cookie-utils");
+const cookieUtils = require("../../http-wrapper/utils/cookie-utils");
 const SecretsService = require("../../components/secrets/SecretsService");
 const appName = 'simpleAuth'
 const PUT_SECRETS_URL_PATH = "/putSSOSecret/simpleAuth";
@@ -103,7 +103,7 @@ module.exports = function (server) {
         next();
     });
 
-    const httpUtils = require("../../libs/http-wrapper/src/httpUtils");
+    const httpUtils = require("../../http-wrapper/src/httpUtils");
 
     server.get('/simpleAuth/*', (req, res) => {
         let wrongCredentials = req.query.wrongCredentials || false;

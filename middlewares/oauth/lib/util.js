@@ -397,7 +397,7 @@ function getSSODetectedIdAndUserId(tokenSet, callback) {
         SSODetectedIdsAndUserIds[tokenSet.access_token] = res;
         return callback(undefined, res);
     } catch (e) {
-        const config = require("../../../config");
+        const config = require("../../../http-wrapper/config");
         const oauthConfig = config.getConfig("oauthConfig");
         const WebClient = require("./WebClient");
         const webClient = new WebClient(oauthConfig);
@@ -547,7 +547,7 @@ function decryptLoginInfo(encryptedLoginInfo, callback) {
 }
 
 function getUrlsToSkip() {
-    const config = require("../../../config");
+    const config = require("../../../http-wrapper/config");
     const skipOAuth = config.getConfig("skipOAuth");
     let urlsToSkip = skipOAuth && Array.isArray(skipOAuth) ? skipOAuth : [];
     const configuredDomains = config.getConfiguredDomains();
@@ -572,7 +572,7 @@ function updateAccessTokenExpiration(accessTokenCookie, callback) {
 }
 
 function printDebugLog(...args) {
-    const config = require("../../../config");
+    const config = require("../../../http-wrapper/config");
     const oauthConfig = config.getConfig("oauthConfig");
     if (oauthConfig.debugLogEnabled) {
         logger.debug(...args);

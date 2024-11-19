@@ -1,6 +1,6 @@
-const {sendUnauthorizedResponse} = require("../../../utils/middlewares");
+const {sendUnauthorizedResponse} = require("../../../http-wrapper/utils/middlewares");
 const util = require("./util");
-const config = require("../../../config");
+const config = require("../../../http-wrapper/config");
 
 function AccessTokenValidator(server) {
     const logger = $$.getLogger("AccessTokenValidator", "apihub/oauth");

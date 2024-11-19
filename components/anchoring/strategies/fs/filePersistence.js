@@ -1,4 +1,4 @@
-const backupUtils = require("../../../../utils/backupUtils");
+const backupUtils = require("../../../../http-wrapper/utils/backupUtils");
 
 function FilePersistenceStrategy(rootFolder, configuredPath, domainName) {
     const self = this;
@@ -123,8 +123,8 @@ function FileOperations(domainName) {
     let anchoringFolder;
     const endOfLine = require("os").EOL;
     const logger = $$.getLogger("FileOperations", "apihub/anchoring");
-    const backupUtils = require("../../../../utils/backupUtils");
-    const domainConfig = require("../../../../config").getDomainConfig(domainName);
+    const backupUtils = require("../../../../http-wrapper/utils/backupUtils");
+    const domainConfig = require("../../../../http-wrapper/config").getDomainConfig(domainName);
     self.InitializeFolderStructure = function (rootFolder, configuredPath) {
         let storageFolder = path.join(rootFolder, configuredPath);
         anchoringFolder = path.resolve(storageFolder);
