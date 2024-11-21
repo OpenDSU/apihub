@@ -244,6 +244,7 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
             const ResponseHeaderMiddleware = require('./middlewares/responseHeader');
             const genericErrorMiddleware = require('./middlewares/genericErrorMiddleware');
             const requestEnhancements = require('./middlewares/requestEnhancements');
+            const CacheControl = require('./middlewares/cacheControl');
 
             server.use(function gracefulTerminationWatcher(req, res, next) {
                 const allowedUrls = [/*"/installation-details", "/ready-probe"*/];
@@ -290,6 +291,11 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
 
             if (conf.enableOAuth && process.env.ENABLE_SSO !== "false") {
                 new OAuth(server);
+            }
+
+            if(conf.cacheDurations && Array.isArray(conf.cacheDurations) && conf.cacheDurations.length > 0) {
+                logger.info("cacheControl middleware is active.");
+                CacheControl(server);
             }
 
             if (conf.responseHeaders) {
