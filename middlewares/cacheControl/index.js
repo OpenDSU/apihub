@@ -4,7 +4,15 @@ config = config.getConfig();
 module.exports = function(server){
     server.use("*", function (req, res, next){
         let setHeader = res.setHeader;
+        let write = res.write;
+        let writeHead = res.writeHead;
+
+        let headerSet = false;
         function setCacheHeader(res){
+            if(headerSet){
+                return;
+            }
+
             // e.g. cacheDuration = [{urlPattern:"/assets/", duration: 3600, method: "startsWith"}]
             // urlPattern should be a string which should be matched by the selected method when trying to serve a specific url
             // duration should be a number and will be used to set the Cache Control value
@@ -38,10 +46,12 @@ module.exports = function(server){
                     cacheDuration = duration || cacheDuration;
                     setHeader.call(res, 'Cache-Control', `public, max-age=${cacheDuration}`);
                     setHeader.call(res, 'X-Cache-Control-By', `CacheControlMiddleware`);
+                    headerSet = true;
                     break;
                 }
             }
         }
+
         res.setHeader = function(headerName, ...args){
             if(headerName.toLowerCase() === "cache-control"){
                 setCacheHeader(res);
@@ -49,6 +59,25 @@ module.exports = function(server){
             }
             setHeader.call(res, headerName, ...args);
         }
+
+        res.write = function(...args){
+            try{
+                setCacheHeader(res);
+            }catch(err){
+                // header could have been already written to client... that's why we ignore the error
+            }
+            write.apply(res, args);
+        };
+
+        res.writeHead = function(...args){
+            try{
+                setCacheHeader(res);
+            }catch(err){
+                // header could have been already written to client... that's why we ignore the error
+            }
+            writeHead.apply(res, args);
+        }
+
         next();
     });
 }
