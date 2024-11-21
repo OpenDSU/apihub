@@ -25,6 +25,11 @@ module.exports = function(server){
                             return new RegExp(urlPattern).test(res.req.url);
                         }
                         break;
+                    case "equals":
+                        fnc = function(urlPattern){
+                            return  res.req.url === urlPattern;
+                        }
+                        break;
                     default:
                     // nothing...
                 }
