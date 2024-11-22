@@ -3,6 +3,10 @@ config = config.getConfig();
 
 module.exports = function(server){
     server.use("*", function (req, res, next){
+        if(req.method !== "GET" || req.method !== "HEAD"){
+            return next();
+        }
+
         let setHeader = res.setHeader;
         let write = res.write;
         let writeHead = res.writeHead;
