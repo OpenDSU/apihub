@@ -125,7 +125,8 @@ function StaticServer(server) {
                                 let resolvedFileName = sanitizeFilePath(path.resolve(fileName));
 
                                 try{
-                                    resolvedFileName = require('swarmutils').validatePath(resolvedFileName);
+                                    let swarmUtils = require('swarmutils');
+                                    resolvedFileName = swarmUtils.validatePath(resolvedFileName);
                                 }catch(err){
                                     logger.info(0x04, `Path traversal attempt detected`);
                                     res.statusCode = 403;
