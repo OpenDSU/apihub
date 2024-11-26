@@ -146,8 +146,16 @@ function StaticServer(server) {
                                 } else {
                                     try {
                                         // Final sanitization right before reading the file to avoid tool warnings.
-                                        let swarmUtils = require("swarmutils");
-                                        const sanitizedResolvedFileName = swarmUtils.validatePath(resolvedFileName);
+                                        let sanitizedResolvedFileName;
+                                        try{
+                                            let swarmUtils = require("swarmutils");
+                                            sanitizedResolvedFileName = swarmUtils.validatePath(resolvedFileName);
+                                        }catch (err){
+                                            logger.error(`Path traversal detected`);
+                                            res.statusCode = 403;
+                                            res.end();
+                                            return;
+                                        }
 
                                         let fileContent = fs.readFileSync(sanitizedResolvedFileName);  // File path is now fully sanitized.
                                         let fileExtension = path.extname(fileName).slice(1);  // Safely extract the extension
