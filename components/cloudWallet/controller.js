@@ -117,13 +117,6 @@ function forwardRequestToWorker(dsuWorker, req, res) {
         return;
     }
 
-    // Validate and sanitize the requested path
-    if (!/^\/[a-zA-Z0-9\-\/]*$/.test(requestedPath)) {
-        res.statusCode = 400;
-        res.end("Invalid request path");
-        return;
-    }
-
     const options = {
         hostname: "127.0.0.1", // Explicitly restricts to localhost
         port: port,
