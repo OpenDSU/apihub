@@ -2,6 +2,7 @@ const http = require("http");
 const crypto = require("crypto");
 const worker_threads = "worker_threads";
 const {Worker} = require(worker_threads);
+const swarmutils = require("swarmutils");
 const config = require("../../http-wrapper/config");
 const {parseCookies, stringifyCookies} = require("../../http-wrapper/utils/cookie-utils");
 const path = require("swarmutils").path;
@@ -114,6 +115,14 @@ function forwardRequestToWorker(dsuWorker, req, res) {
     if (isNaN(port) || port < 1024 || port > 65535) {
         res.statusCode = 400;
         res.end("Invalid worker port");
+        return;
+    }
+
+    try{
+        requestedPath = swarmutils.validatePath(requestedPath);
+    }catch(err){
+        res.statusCode = 403;
+        res.end("Invalid request path");
         return;
     }
 
