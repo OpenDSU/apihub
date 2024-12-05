@@ -3,7 +3,7 @@ config = config.getConfig();
 
 module.exports = function(server){
     server.use("*", function (req, res, next){
-        if(req.method !== "GET" || req.method !== "HEAD"){
+        if(req.method !== "GET" && req.method !== "HEAD"){
             return next();
         }
 
