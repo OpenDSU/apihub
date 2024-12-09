@@ -192,6 +192,9 @@ module.exports = function (server) {
             res.setHeader('Set-Cookie', [`SimpleAuthorisation=${formResult.username}:${apiKey}; HttpOnly`, `ssoId=${ssoId}; HttpOnly`, `apiKey=${apiKey}; HttpOnly`]);
             res.writeHead(302, {'Location': '/redirect'});
             return res.end();
+        }else{
+            res.writeHead(302, {'Location': '/simpleAuth?wrongCredentials=true'});
+            return res.end();
         }
     };
 
