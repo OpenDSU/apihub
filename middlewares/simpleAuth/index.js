@@ -55,6 +55,10 @@ module.exports = function (server) {
         secretsService = await SecretsService.getSecretsServiceInstanceAsync(server.rootFolder);
     });
 
+    const logger = $$.getLogger("simpleAuth", "apihub/simpleAuth");
+    logger.info("SimpleAuth is active");
+    logger.info("To customize SimpleAuth pages create apihub-root/customSimpleAuth folder.");
+
     server.use(function (req, res, next) {
         if (!fs.existsSync(secretsFilePath)) {
             return next();
@@ -109,7 +113,7 @@ module.exports = function (server) {
         let wrongCredentials = req.query.wrongCredentials || false;
         res.writeHead(200, {'Content-Type': 'text/html'});
         const errHtml = `<div id="err-container">${wrongCredentials ? "Invalid username or password" : ""}</div>`
-        const returnHtml = `
+        let returnHtml = `
         <html lang="en">
         <head>
             <meta charset="UTF-8">
@@ -152,6 +156,17 @@ module.exports = function (server) {
         </body>
         </html>
 `
+        let customizedHtmlExists = false;
+        try{
+            let path = require("path");
+            const file = wrongCredentials ? "error.html":"index.html";
+            customizedHtmlExists = fs.readFileSync(path.join(server.rootFolder, 'customSimpleAuth', file));
+        }catch(err){
+            //we ignore the error on purpose
+        }
+        if(customizedHtmlExists){
+            return res.end(customizedHtmlExists);
+        }
         return res.end(returnHtml);
     })
 
