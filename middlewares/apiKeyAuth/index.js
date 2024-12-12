@@ -44,7 +44,7 @@ function APIKeyAuth(server) {
         }
 
         res.statusCode = 403;
-        res.end("Forbidden");
+        res.end("Forbidden Api Key Auth");
     });
 
 }

@@ -26,7 +26,7 @@ function secrets(server) {
         let appName = request.params.appName;
         if (!containerIsWhitelisted(appName) && !secretIsWhitelisted(userId)) {
             response.statusCode = 403;
-            response.end("Forbidden");
+            response.end("Forbidden getSSOSecret");
             return;
         }
         let secret;
@@ -123,7 +123,7 @@ function secrets(server) {
         let {did, name} = req.params;
         if (!containerIsWhitelisted(did) && !secretIsWhitelisted(name)) {
             res.statusCode = 403;
-            res.end("Forbidden");
+            res.end("Forbidden getDIDSecret");
             return;
         }
         let secret;
@@ -182,7 +182,7 @@ function secrets(server) {
     server.post("/apiKey/:keyId/:isAdmin", async (req, res) => {
         if (!senderIsAdmin(req)) {
             res.statusCode = 403;
-            res.end("Forbidden");
+            res.end("Forbidden isAdmin");
             return;
         }
         let {keyId, isAdmin} = req.params;
@@ -210,7 +210,7 @@ function secrets(server) {
     server.delete("/apiKey/:keyId", async (req, res) => {
         if (!senderIsAdmin(req)) {
             res.statusCode = 403;
-            res.end("Forbidden");
+            res.end("Forbidden deleteAPIKey");
             return;
         }
         let {keyId} = req.params;
@@ -255,7 +255,7 @@ function secrets(server) {
             }
 
             res.statusCode = 403;
-            res.end("Forbidden");
+            res.end("Forbidden becomeSysAdmin");
         } catch (error) {
             console.error(error);
             res.statusCode = 500;
@@ -278,7 +278,7 @@ function secrets(server) {
 
             if (!sysadminAPIKey) {
                 res.statusCode = 403;
-                res.end("Forbidden");
+                res.end("Forbidden makeSysAdmin");
                 return;
             }
 
@@ -305,7 +305,7 @@ function secrets(server) {
 
             if (!sysadminAPIKey) {
                 res.statusCode = 403;
-                res.end("Forbidden");
+                res.end("Forbidden deleteAdmin");
                 return;
             }
 
