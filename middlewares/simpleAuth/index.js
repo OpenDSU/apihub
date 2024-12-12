@@ -9,7 +9,7 @@ const SecretsService = require("../../components/secrets/SecretsService");
 const appName = 'simpleAuth'
 const PUT_SECRETS_URL_PATH = "/putSSOSecret/simpleAuth";
 const GET_SECRETS_URL_PATH = "/getSSOSecret/simpleAuth";
-
+const API_KEY_CONTAINER_NAME = "apiKeys";
 // Utility function to read .htpassword.secrets file
 function readSecretsFile(filePath) {
     try {
@@ -200,8 +200,11 @@ module.exports = function (server) {
             }
             let apiKey;
             try {
-                apiKey = await secretsService.generateAPIKeyAsync(formResult.username, false);
-                await secretsService.putSecretAsync(appName, formResult.username, apiKey);
+                apiKey = secretsService.getSecretSync(API_KEY_CONTAINER_NAME, formResult.username);
+                if(!apiKey) {
+                    apiKey = await secretsService.generateAPIKeyAsync(formResult.username, false);
+                    await secretsService.putSecretAsync(appName, formResult.username, apiKey);
+                }
             } catch (e) {
                 console.error(e);
                 res.statusCode = 500;
