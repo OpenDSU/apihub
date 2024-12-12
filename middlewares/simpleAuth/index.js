@@ -88,6 +88,9 @@ module.exports = function (server) {
         let {SimpleAuthorisation} = cookieUtils.parseCookies(req.headers.cookie);
 
         if (!SimpleAuthorisation) {
+            if (req.skipSSO) {
+                return next();
+            }
             res.setHeader('Set-Cookie', `originalUrl=${req.url}; HttpOnly`);
             return res.writeHead(302, {'Location': '/simpleAuth'}).end();
         }
