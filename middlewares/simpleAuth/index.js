@@ -233,4 +233,15 @@ module.exports = function (server) {
         res.writeHead(302, {'Location': '/'});
         return res.end();
     });
+
+    server.whitelistUrlForSessionTimeout = (url) => {
+    };
+
+    server.whitelistUrl = (url) => {
+        if(url.startsWith("/")){
+            urlsToSkip.push(url);
+        } else {
+            throw new Error(`Whitelisting invalid URL: ${url}. It should start with /`);
+        }
+    };
 }
