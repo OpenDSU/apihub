@@ -5,7 +5,7 @@ const {assert} = dc;
 const path = require("path");
 const fs = require("fs");
 
-const logger = $$.getLogger("CloudWalletTest", "apihub/cloud-wallet");
+const logger = $$.getLogger("MainDSUTest", "apihub/MainDSUTest");
 
 const MAIN_DSU_COOKIE_NAME = "MAIN-DSU-VALUE";
 
@@ -84,7 +84,7 @@ assert.callback(
                 const env = require(environmentJsPath);
                 logger.info("Loaded env: ", JSON.stringify(env));
             } catch (error) {
-                logger.error("FAILEFD TO LOAD", error);
+                logger.error("FAILED TO LOAD", error);
             }
 
             const apiHubUrl = `http://localhost:${port}`;
