@@ -30,7 +30,6 @@ const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
     require('./components/mqHub');
     require('./components/secrets');
     require('./components/mainDSU');
-    require('./components/cloudWallet');
     require('./components/versionlessDSU');
     require('./components/stream');
     require('./components/requestForwarder');
@@ -396,7 +395,6 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
                 }
             }
 
-            addRequiredComponent("cloudWallet");
             addRequiredComponent("mainDSU");
             addRequiredComponent("lightDBEnclave");
 
