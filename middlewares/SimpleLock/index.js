@@ -106,8 +106,8 @@ module.exports = function (server) {
                 return callback(undefined, false);
             }
 
-            fs.mkdir(getLockFolderPath(id), {recursive: true}, (err) => {
-                if (err) {
+            fs.mkdir(getLockFolderPath(id), {recursive: true}, (err, fpath) => {
+                if (err || typeof fpath === "undefined") {
                     logger.error("Failed to write lock", err);
                     return callback(err);
                 }
