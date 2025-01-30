@@ -10,6 +10,7 @@ process.on('SIGTERM', (signal) => {
 });
 
 const httpWrapper = require('./http-wrapper');
+const {createServerlessAPIProxy} = require("./components/serverlessAPIProxy");
 const Server = httpWrapper.Server;
 
 const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
@@ -292,7 +293,7 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
                 new OAuth(server);
             }
 
-            if(conf.cacheDurations && Array.isArray(conf.cacheDurations) && conf.cacheDurations.length > 0) {
+            if (conf.cacheDurations && Array.isArray(conf.cacheDurations) && conf.cacheDurations.length > 0) {
                 logger.info("cacheControl middleware is active.");
                 CacheControl(server);
             }
@@ -432,6 +433,45 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
                 return callback();
             }
         });
+
+        const createServerlessAPI = async (req, res) => {
+            let config;
+            try {
+                config = JSON.parse(req.body);
+            } catch (e) {
+                res.statusCode = 400;
+                res.end("Invalid body");
+                return;
+            }
+            const {createServerlessAPI} = require("./serverlessAPI");
+            const serverlessAPI = createServerlessAPI(config);
+            if (serverlessAPI) {
+                res.statusCode = 200;
+                res.end(serverlessAPI.getUrl());
+            } else {
+                res.statusCode = 500;
+                res.end();
+            }
+        }
+
+        server.put('/createServerlessAPI', httpWrapper.httpUtils.bodyParser);
+        server.put('/createServerlessAPI', createServerlessAPI);
+
+        const createServerlessAPIProxy = async (req, res) => {
+            const serverlessApiUrl = req.body.serverlessApiUrl;
+            const {createServerlessAPIProxy} = require("./components/serverlessAPIProxy");
+            const serverlessAPIProxy = createServerlessAPIProxy(server, serverlessApiUrl);
+            if (serverlessAPIProxy) {
+                res.statusCode = 200;
+                res.end();
+            } else {
+                res.statusCode = 500;
+                res.end();
+            }
+        }
+
+        server.put('/createServerlessAPIProxy', httpWrapper.httpUtils.bodyParser);
+        server.put('/createServerlessAPIProxy', createServerlessAPIProxy);
     }
 
     return server;
