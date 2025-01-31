@@ -11,6 +11,7 @@ process.on('SIGTERM', (signal) => {
 
 const httpWrapper = require('./http-wrapper');
 const {createServerlessAPIProxy} = require("./components/serverlessAPIProxy");
+const {createServerlessAPI} = require("./serverlessAPI");
 const Server = httpWrapper.Server;
 
 const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
@@ -45,7 +46,7 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
     }
     let port = listeningPort || 8080;
     const conf = require('./http-wrapper/config').getConfig();
-    const server = new Server(sslConfig);
+    let server = new Server(sslConfig);
     server.config = conf;
     server.rootFolder = rootFolder;
     server.timeout = conf.timeout || (60 * 1000) + 1000;
@@ -433,45 +434,18 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
                 return callback();
             }
         });
+    }
 
-        const createServerlessAPI = async (req, res) => {
-            let config;
-            try {
-                config = JSON.parse(req.body);
-            } catch (e) {
-                res.statusCode = 400;
-                res.end("Invalid body");
-                return;
-            }
-            const {createServerlessAPI} = require("./serverlessAPI");
-            const serverlessAPI = createServerlessAPI(config);
-            if (serverlessAPI) {
-                res.statusCode = 200;
-                res.end(serverlessAPI.getUrl());
-            } else {
-                res.statusCode = 500;
-                res.end();
-            }
-        }
+    server.createServerlessAPI = (config) => {
+        const {createServerlessAPI} = require("./serverlessAPI");
+        const serverlessAPI = createServerlessAPI(config);
+        return serverlessAPI;
+    }
 
-        server.put('/createServerlessAPI', httpWrapper.httpUtils.bodyParser);
-        server.put('/createServerlessAPI', createServerlessAPI);
-
-        const createServerlessAPIProxy = async (req, res) => {
-            const serverlessApiUrl = req.body.serverlessApiUrl;
-            const {createServerlessAPIProxy} = require("./components/serverlessAPIProxy");
-            const serverlessAPIProxy = createServerlessAPIProxy(server, serverlessApiUrl);
-            if (serverlessAPIProxy) {
-                res.statusCode = 200;
-                res.end();
-            } else {
-                res.statusCode = 500;
-                res.end();
-            }
-        }
-
-        server.put('/createServerlessAPIProxy', httpWrapper.httpUtils.bodyParser);
-        server.put('/createServerlessAPIProxy', createServerlessAPIProxy);
+    server.createServerlessAPIProxy = async (serverlessApiUrl) => {
+        const {createServerlessAPIProxy} = require("./components/serverlessAPIProxy");
+        const serverlessAPIProxy = createServerlessAPIProxy(server, serverlessApiUrl);
+        return serverlessAPIProxy;
     }
 
     return server;
