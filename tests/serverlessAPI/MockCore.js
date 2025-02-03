@@ -14,13 +14,13 @@ function MockCore(){
     }
 
     this.helloWorld = function(callback){
-        console.log("Hello world!");
-        callback();
+        console.log("Hello World!");
+        callback(undefined, "Hello World!");
     }
 
     this.hello = function(callback){
         console.log("Hello!");
-        callback();
+        callback(undefined, "Hello!");
     }
 }
 

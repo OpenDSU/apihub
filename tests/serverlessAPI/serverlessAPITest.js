@@ -16,7 +16,10 @@ assert.callback("Test serverless API", async (testFinished) => {
         const ServerlessAPIClient = require("../../serverlessAPIClient");
         const interfaceDefinition = [ "helloWorld", "hello" ];
         const client = require("opendsu").loadAPI("serverless").createServerlessAPIClient(`${serverUrl}/executeCommand`, interfaceDefinition);
-        console.log(client.helloWorld());
-        console.log(client.hello());
+        let res = await client.helloWorld();
+        assert.true(res === "Hello World!");
+        res = await client.hello();
+        assert.true(res === "Hello!");
+        testFinished();
     })
 }, 50000);
