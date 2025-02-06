@@ -13,7 +13,6 @@ assert.callback("Test serverless API", async (testFinished) => {
         const serverlessAPI = server.createServerlessAPI({urlPrefix, corePath});
         const serverUrl = serverlessAPI.getUrl();
         const serverlessAPIProxy = server.createServerlessAPIProxy(serverUrl);
-        const ServerlessAPIClient = require("../../serverlessAPIClient");
         const interfaceDefinition = [ "helloWorld", "hello" ];
         const client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", serverUrl, interfaceDefinition);
         let res = await client.helloWorld();
