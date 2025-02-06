@@ -25,7 +25,7 @@ function MockCore() {
 }
 
 module.exports = {
-    getCoreInstance: () => {
+    getCoreInstance: async () => {
         return new MockCore()
     }
 };
