@@ -20,5 +20,6 @@ assert.callback("Test serverless API", async (testFinished) => {
         res = await client.hello();
         assert.true(res === "Hello!");
         testFinished();
+        console.log("======>>>>>>>>>>")
     })
 }, 50000);

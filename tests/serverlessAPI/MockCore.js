@@ -3,24 +3,22 @@ function MockCore() {
         return true;
     }
 
-    this.start = function (callback) {
+    this.start = async function () {
         console.log("Starting core...");
-        callback();
     }
 
-    this.stop = function (callback) {
+    this.stop = async function () {
         console.log("Stopping core...");
-        callback();
     }
 
-    this.helloWorld = function (callback) {
+    this.helloWorld = async function () {
         console.log("Hello World!");
-        callback(undefined, "Hello World!");
+        return "Hello World!"
     }
 
-    this.hello = function (callback) {
+    this.hello = async function () {
         console.log("Hello!");
-        callback(undefined, "Hello!");
+        return "Hello!"
     }
 }
 
