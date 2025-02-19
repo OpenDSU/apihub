@@ -96,6 +96,10 @@ function Lock(rootFolder) {
     }
 
     this.putLock = function (id, secret, period, callback) {
+        if(typeof period === "function"){
+            callback = period;
+            period = 1000 * 30;
+        }
         checkIfLockExists(id, (err, locked) => {
             if (err) {
                 return callback(err);
