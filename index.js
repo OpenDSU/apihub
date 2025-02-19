@@ -489,3 +489,8 @@ module.exports.getSecretsServiceInstanceAsync = require("./components/secrets/Se
 module.exports.anchoringStrategies = require("./components/anchoring/strategies");
 
 module.exports.TokenBucket = require("./http-wrapper/src/TokenBucket");
+
+module.exports.getLockInstance = function (rootFolder) {
+    const Lock = require("./middlewares/SimpleLock/Lock");
+    return new Lock(rootFolder);
+}
