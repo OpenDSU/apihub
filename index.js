@@ -46,7 +46,15 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
     }
     let port = listeningPort || 8080;
     const conf = require('./http-wrapper/config').getConfig();
+    console.log("=================================================================================================")
+    // get max socket limit
+    console.log(JSON.stringify(require("http").globalAgent));
+    console.log(JSON.stringify(require("https").globalAgent));
+    console.log("=================================================================================================")
     let server = new Server(sslConfig);
+    console.log("####################################################################################################")
+    console.log("MAX CONNECTIONS: ", server.maxConnections);
+    console.log("####################################################################################################")
     server.config = conf;
     server.rootFolder = rootFolder;
     server.timeout = conf.timeout || (60 * 1000) + 1000;
