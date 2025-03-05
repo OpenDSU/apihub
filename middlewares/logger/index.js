@@ -27,10 +27,6 @@ function Logger(server) {
         }
     }
 
-    let connectionsInterval = setInterval(async () => {
-        logger.info(`Connections: ${await $$.promisify(server.getConnections)()}`);
-    }, 1000);
-
     server.use(function (req, res, next) {
         const {
             method,
