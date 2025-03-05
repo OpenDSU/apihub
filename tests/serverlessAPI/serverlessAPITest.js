@@ -9,16 +9,35 @@ assert.callback("Test serverless API", async (testFinished) => {
         const result = await tir.launchApiHubTestNodeAsync({rootFolder: folder});
         const server = result.node;
         const urlPrefix = "/test";
-        const corePath = path.join(__dirname, "MockCore.js");
-        const serverlessAPI = server.createServerlessAPI({urlPrefix, corePath});
+        const coreConfig = {};
+        const corePath1 = path.join(__dirname, "MockCore1.js");
+        const corePath2 = path.join(__dirname, "MockCore2.js");
+        const namespace1 = "MockCore1";
+        const namespace2 = "MockCore2";
+        const coreConfigs = {};
+        coreConfigs[namespace1] = {
+            corePath: corePath1,
+            coreConfig
+        };
+        coreConfigs[namespace2] = {
+            corePath: corePath2,
+            coreConfig
+        };
+        const serverlessAPI = server.createServerlessAPI({urlPrefix, coreConfigs});
         const serverUrl = serverlessAPI.getUrl();
         const serverlessAPIProxy = server.createServerlessAPIProxy(serverUrl);
-        const interfaceDefinition = [ "helloWorld", "hello" ];
-        const client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", serverUrl, interfaceDefinition);
+        const interfaceDefinition = ["helloWorld", "hello"];
+        let client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", serverUrl, namespace1, interfaceDefinition);
         let res = await client.helloWorld();
-        assert.true(res === "Hello World!");
+        assert.true(res === "Hello World Core1!");
         res = await client.hello();
-        assert.true(res === "Hello!");
+        assert.true(res === "Hello Core1!");
+        client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", serverUrl, namespace2, interfaceDefinition);
+        res = await client.helloWorld();
+        assert.true(res === "Hello World Core2!");
+        res = await client.hello();
+        assert.true(res === "Hello Core2!");
+        server.close();
         testFinished();
         console.log("======>>>>>>>>>>")
     })
