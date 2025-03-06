@@ -10,10 +10,10 @@ assert.callback("Test serverless API", async (testFinished) => {
         const server = result.node;
         const urlPrefix = "/test";
         const coreConfig = {};
-        const corePath1 = path.join(__dirname, "MockCore1.js");
-        const corePath2 = path.join(__dirname, "MockCore2.js");
-        const namespace1 = "MockCore1";
-        const namespace2 = "MockCore2";
+        const corePath1 = path.join(__dirname, "DefaultMockPlugin.js");
+        const corePath2 = path.join(__dirname, "RuntimeMockPlugin.js");
+        const namespace1 = "DefaultMockPlugin";
+        const namespace2 = "RuntimeMockPlugin";
         const coreConfigs = {};
         coreConfigs[namespace1] = {
             corePath: corePath1,
@@ -25,7 +25,9 @@ assert.callback("Test serverless API", async (testFinished) => {
         };
         const serverlessAPI = server.createServerlessAPI({urlPrefix, coreConfigs});
         const serverUrl = serverlessAPI.getUrl();
-        const serverlessAPIProxy = server.createServerlessAPIProxy(serverUrl);
+        const loaderPath = path.join(__dirname, "Loader.js");
+        const configFilePath = path.join(__dirname, "defaultPluginsConfig.json");
+        const serverlessAPIProxy = await server.createServerlessAPIProxy(serverUrl, loaderPath, configFilePath);
         const interfaceDefinition = ["helloWorld", "hello"];
         let client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", serverUrl, namespace1, interfaceDefinition);
         let res = await client.helloWorld();

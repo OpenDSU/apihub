@@ -1,4 +1,4 @@
-function MockCore1() {
+function DefaultMockPlugin() {
     this.allow = function (asUser) {
         return true;
     }
@@ -23,7 +23,7 @@ function MockCore1() {
 }
 
 module.exports = {
-    getCoreInstance: async () => {
-        return new MockCore1()
+    getPluginInstance: async () => {
+        return new DefaultMockPlugin()
     }
 };

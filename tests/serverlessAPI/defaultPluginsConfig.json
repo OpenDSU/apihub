@@ -1,0 +1,6 @@
+{
+    "defaultMockPlugin": {
+        "path": "/home/skutner/WebstormProjects/work/assistos-workspace-27-02/opendsu-sdk/modules/apihub/tests/serverlessAPI/DefaultMockPlugin.js",
+        "config": {}
+    }
+}

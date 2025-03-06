@@ -1,4 +1,4 @@
-function MockCore2() {
+function RuntimeMockPlugin() {
     this.allow = function (asUser) {
         return true;
     }
@@ -23,7 +23,7 @@ function MockCore2() {
 }
 
 module.exports = {
-    getCoreInstance: async () => {
-        return new MockCore2()
+    getPluginInstance: async () => {
+        return new RuntimeMockPlugin()
     }
 };
