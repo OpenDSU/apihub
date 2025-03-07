@@ -23,7 +23,7 @@ function DefaultMockPlugin() {
 }
 
 module.exports = {
-    getPluginInstance: async () => {
+    getInstance: async () => {
         return new DefaultMockPlugin()
     }
 };

@@ -23,7 +23,7 @@ assert.callback("Test serverless API", async (testFinished) => {
             corePath: corePath2,
             coreConfig
         };
-        const serverlessAPI = server.createServerlessAPI({urlPrefix, coreConfigs});
+        const serverlessAPI = await $$.promisify(server.createServerlessAPI)({urlPrefix, coreConfigs});
         const serverUrl = serverlessAPI.getUrl();
         const loaderPath = path.join(__dirname, "Loader.js");
         const configFilePath = path.join(__dirname, "defaultPluginsConfig.json");

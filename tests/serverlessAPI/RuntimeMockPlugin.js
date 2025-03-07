@@ -23,7 +23,7 @@ function RuntimeMockPlugin() {
 }
 
 module.exports = {
-    getPluginInstance: async () => {
+    getInstance: async () => {
         return new RuntimeMockPlugin()
     }
 };
