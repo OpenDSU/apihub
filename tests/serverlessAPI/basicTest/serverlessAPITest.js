@@ -23,7 +23,7 @@ assert.callback("Test serverless API", async (testFinished) => {
             corePath: corePath2,
             coreConfig
         };
-        const serverlessAPI = await $$.promisify(server.createServerlessAPI)({urlPrefix, coreConfigs});
+        const serverlessAPI = await server.createServerlessAPI({urlPrefix, coreConfigs});
 
         const serverUrl = serverlessAPI.getUrl();
         const serverlessAPIProxy = await server.createServerlessAPIProxy(serverUrl);

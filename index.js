@@ -444,62 +444,62 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
         });
     }
 
-    server.createServerlessAPI = (config, callback) => {
-        const { fork } = require('child_process');
+    server.createServerlessAPI = async (config) => {
+        const {fork} = require('child_process');
         const path = require('path');
+
         // Spawn child process
         const serverlessAPIPath = path.resolve(path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, `.${__dirname}`, 'serverlessAPI', 'index.js'))
         const serverProcess = fork(serverlessAPIPath);
 
-        // Handle messages from child process
-        serverProcess.on('message', (message) => {
-            if (message.type === 'ready') {
-                // Server is ready, create a proxy object with the same interface
-                const serverProxy = {
-                    url: message.url,
-                    port: message.port,
+        // Return a promise that resolves with the server proxy
+        return new Promise((resolve, reject) => {
+            // Handle messages from child process
+            serverProcess.on('message', (message) => {
+                if (message.type === 'ready') {
+                    // Server is ready, create a proxy object with the same interface
+                    const serverProxy = {
+                        url: message.url,
+                        port: message.port,
 
-                    // Method to terminate the server
-                    close: (cb) => {
-                        serverProcess.send({ type: 'shutdown' });
-                        serverProcess.on('exit', () => {
-                            if (cb) cb();
-                        });
-                    },
+                        // Method to terminate the server
+                        close: () => {
+                            return new Promise((resolveClose) => {
+                                serverProcess.send({type: 'shutdown'});
+                                serverProcess.on('exit', () => {
+                                    resolveClose();
+                                });
+                            });
+                        },
 
-                    // Expose the serverless API URL
-                    getUrl: () => message.url
-                };
+                        // Expose the serverless API URL
+                        getUrl: () => message.url,
 
-                if (callback) {
-                    callback(null, serverProxy);
+                        // Keep reference to the process
+                        process: serverProcess,
+
+                        // Method to terminate the server immediately if needed
+                        kill: () => {
+                            serverProcess.kill('SIGTERM');
+                        }
+                    };
+
+                    resolve(serverProxy);
+                } else if (message.type === 'error') {
+                    reject(new Error(message.error));
                 }
-            } else if (message.type === 'error') {
-                if (callback) {
-                    callback(new Error(message.error));
-                }
-            }
+            });
+
+            // Handle child process errors
+            serverProcess.on('error', (err) => {
+                console.error('Failed to start child process:', err);
+                reject(err);
+            });
+
+            // Start the server by sending the configuration
+            serverProcess.send({type: 'start', config});
         });
-
-        // Handle child process errors
-        serverProcess.on('error', (err) => {
-            console.error('Failed to start child process:', err);
-            if (callback) {
-                callback(err);
-            }
-        });
-
-        // Start the server by sending the configuration
-        serverProcess.send({ type: 'start', config });
-
-        return {
-            process: serverProcess,
-            // Method to terminate the server immediately if needed
-            kill: () => {
-                serverProcess.kill('SIGTERM');
-            }
-        };
-    }
+    };
 
     server.createServerlessAPIProxy = async (serverlessApiUrl) => {
         const {createServerlessAPIProxy} = require("./components/serverlessAPIProxy");
