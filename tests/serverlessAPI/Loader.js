@@ -1,10 +1,10 @@
 function Loader(serverUrl, configFilePath) {
     const fsPromises = require("fs").promises;
 
-    const registerPlugin = async (pluginPath, namespace, config) => {
+    const registerPlugin = async (pluginName, pluginPath) => {
         await fetch(serverUrl + "/registerPlugin", {
             method: "PUT",
-            body: JSON.stringify({pluginPath, namespace, config})
+            body: JSON.stringify({pluginPath, pluginName})
         });
     }
 
@@ -12,7 +12,7 @@ function Loader(serverUrl, configFilePath) {
         let config = await fsPromises.readFile(configFilePath, "utf-8");
         config = JSON.parse(config);
         for (let plugin in config) {
-            await registerPlugin(config[plugin].path, plugin, config[plugin].config);
+            await registerPlugin(plugin, config[plugin].path);
         }
     }
 }
