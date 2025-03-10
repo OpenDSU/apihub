@@ -1,5 +1,5 @@
-require("../../../../builds/output/testsRuntime");
-const tir = require("../../../../psknode/tests/util/tir");
+require("../../../../../builds/output/testsRuntime");
+const tir = require("../../../../../psknode/tests/util/tir");
 const dc = require("double-check");
 const {assert} = dc;
 const path = require("path");
@@ -26,9 +26,6 @@ assert.callback("Test serverless API", async (testFinished) => {
         const serverlessAPI = await $$.promisify(server.createServerlessAPI)({urlPrefix, coreConfigs});
 
         const serverUrl = serverlessAPI.getUrl();
-        const loaderPath = path.join(__dirname, "Loader.js");
-        const configFilePath = path.join(__dirname, "defaultPluginsConfig.json");
-
         const serverlessAPIProxy = await server.createServerlessAPIProxy(serverUrl);
         let client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", serverUrl, namespace1);
         await client.registerPlugin(namespace1, corePath1);
