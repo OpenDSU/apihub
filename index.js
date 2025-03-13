@@ -501,12 +501,6 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
         });
     };
 
-    server.createServerlessAPIProxy = async (serverlessApiUrl) => {
-        const {createServerlessAPIProxy} = require("./components/serverlessAPIProxy");
-        const serverlessAPIProxy = createServerlessAPIProxy(server, serverlessApiUrl);
-        return serverlessAPIProxy;
-    }
-
     return server;
 }
 

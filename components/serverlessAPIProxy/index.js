@@ -1,15 +1,13 @@
 const httpWrapper = require("../../http-wrapper/src/httpUtils");
-const createServerlessAPIProxy = async (server, serverlessApiUrl) => {
-    // extract the serverless api address from the url
-    const serverlessApiAddress = serverlessApiUrl.split("/").slice(0, 3).join("/");
-    // extract the url prefix from the url (the part after the serverless api address starting with /)
-    const urlPrefix = serverlessApiUrl.split("/").slice(3).join("/");
+const createServerlessAPIProxy = async (server) => {
+    const urlPrefix = '/proxy'
+    const registeredServerlessProcessesUrls = {};
 
-    function forwardRequest(data, callback) {
+    function forwardRequest(serverlessApiAddress, data, callback) {
         let protocol = serverlessApiAddress.indexOf("https://") === 0 ? "https" : "http";
         protocol = require(protocol);
 
-        let request = protocol.request(`${serverlessApiAddress}${urlPrefix}/executeCommand`, {method: "PUT"}, (resp) => {
+        let request = protocol.request(serverlessApiAddress, {method: "PUT"}, (resp) => {
             resp.body = [];
 
             // A chunk of data has been received.
@@ -19,7 +17,13 @@ const createServerlessAPIProxy = async (server, serverlessApiUrl) => {
 
             // The whole response has been received. Print out the result.
             resp.on("end", () => {
-                callback(undefined, Buffer.concat(resp).toString());
+                let body;
+                try{
+                    body = JSON.parse(Buffer.concat(resp.body).toString());
+                } catch (e){
+                    return callback(e);
+                }
+                callback(undefined, body);
             });
         });
 
@@ -29,50 +33,60 @@ const createServerlessAPIProxy = async (server, serverlessApiUrl) => {
         request.end();
     }
 
-    server.put(`/${urlPrefix}/executeCommand`, httpWrapper.bodyParser);
+    server.put(`${urlPrefix}/executeCommand/:serverlessId`, httpWrapper.bodyParser);
 
-    server.put(`/${urlPrefix}/executeCommand`, function (req, res) {
-        try{
-            req.body = JSON.parse(req.body);
-        } catch (e) {
-            res.statusCode = 500;
-            res.write("Unable to decode JSON request body");
+    server.put(`${urlPrefix}/executeCommand/:serverlessId`, function (req, res) {
+        const serverlessId = req.params.serverlessId;
+        if (!registeredServerlessProcessesUrls[serverlessId]) {
+            res.statusCode = 404;
+            res.write("Serverless process not found");
             return res.end();
         }
 
-        forwardRequest(req.body, (err, response) => {
+        const serverlessApiUrl = registeredServerlessProcessesUrls[serverlessId];
+        forwardRequest(`${serverlessApiUrl}/executeCommand`, req.body, (err, response) => {
             if (err) {
                 res.statusCode = 500;
-                logger.error(`Error while executing command ${JSON.parse(req.body).name}`, err);
+                console.error(`Error while executing command ${JSON.parse(req.body).name}`, err);
                 res.write(err.message);
                 return res.end();
             }
 
             res.statusCode = response.statusCode;
-            res.write(response.body);
+            res.write(response.result);
             res.end();
         });
     });
 
-    server.put(`/${urlPrefix}/registerPlugin`, httpWrapper.bodyParser);
-    server.put(`/${urlPrefix}/registerPlugin`, function (req, res) {
-        forwardRequest(req.body, (err, response) => {
+    server.put(`${urlPrefix}/registerPlugin/:serverlessId`, httpWrapper.bodyParser);
+    server.put(`${urlPrefix}/registerPlugin/:serverlessId`, function (req, res) {
+        const serverlessId = req.params.serverlessId;
+        if (!registeredServerlessProcessesUrls[serverlessId]) {
+            res.statusCode = 404;
+            res.write("Serverless process not found");
+            return res.end();
+        }
+
+        const serverlessApiUrl = registeredServerlessProcessesUrls[serverlessId];
+        forwardRequest(`${serverlessApiUrl}/registerPlugin`, req.body, (err, response) => {
             if (err) {
                 res.statusCode = 500;
-                logger.error(`Error while registering plugin ${req.body.namespace}`, err);
+                console.error(`Error while registering plugin ${req.body.namespace}`, err);
                 res.write(err.message);
                 return res.end();
             }
 
             res.statusCode = response.statusCode;
-            res.write(response.body);
+            res.write(response.result);
             res.end();
         });
     });
+
+    server.registerServerlessProcessUrl = (serverlessId, serverlessApiUrl) => {
+        registeredServerlessProcessesUrls[serverlessId] = serverlessApiUrl;
+    }
 
     return server;
 }
 
-module.exports = {
-    createServerlessAPIProxy
-}
+module.exports = createServerlessAPIProxy;

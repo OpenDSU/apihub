@@ -8,7 +8,7 @@ assert.callback("Test serverless API", async (testFinished) => {
     dc.createTestFolder('serverlessAPI', async (err, folder) => {
         const result = await tir.launchApiHubTestNodeAsync({rootFolder: folder});
         const server = result.node;
-        const urlPrefix = "/test";
+        const serverlessId = "test";
         const coreConfig = {};
         const corePath1 = path.join(__dirname, "DefaultMockPlugin.js");
         const corePath2 = path.join(__dirname, "RuntimeMockPlugin.js");
@@ -23,17 +23,19 @@ assert.callback("Test serverless API", async (testFinished) => {
             corePath: corePath2,
             coreConfig
         };
-        const serverlessAPI = await server.createServerlessAPI({urlPrefix, coreConfigs});
-
+        const serverlessAPI = await server.createServerlessAPI({urlPrefix: serverlessId, coreConfigs});
+        
         const serverUrl = serverlessAPI.getUrl();
-        const serverlessAPIProxy = await server.createServerlessAPIProxy(serverUrl);
-        let client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", serverUrl, namespace1);
+        server.registerServerlessProcessUrl(serverlessId, serverUrl);
+        // const serverlessAPIProxy = await server.createServerlessAPIProxy(serverUrl);
+        const methods = server.getRegisteredMiddlewareFunctions();
+        let client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", `${result.url}/proxy`, serverlessId, namespace1);
         await client.registerPlugin(namespace1, corePath1);
         let res = await client.helloWorld();
         assert.true(res === "Hello World Core1!");
         res = await client.hello();
         assert.true(res === "Hello Core1!");
-        client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", serverUrl, namespace2);
+        client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", `${result.url}/proxy`, serverlessId, namespace2);
         await client.registerPlugin(namespace2, corePath2);
         res = await client.helloWorld();
         assert.true(res === "Hello World Core2!");
