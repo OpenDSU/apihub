@@ -25,5 +25,10 @@ function DefaultMockPlugin() {
 module.exports = {
     getInstance: async () => {
         return new DefaultMockPlugin()
+    },
+    getAllow: function() {
+        return async function (globalUserId, email, command, ...args) {
+            return true;
+        }
     }
 };

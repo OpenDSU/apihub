@@ -25,5 +25,10 @@ function RuntimeMockPlugin() {
 module.exports = {
     getInstance: async () => {
         return new RuntimeMockPlugin()
+    },
+    getAllow: function() {
+        return async function (globalUserId, email, command, ...args) {
+            return true;
+        }
     }
 };
