@@ -53,7 +53,7 @@ const createServerlessAPIProxy = async (server) => {
             }
 
             res.statusCode = response.statusCode;
-            res.write(response.result);
+            res.write(JSON.stringify(response));
             res.end();
         });
     });
