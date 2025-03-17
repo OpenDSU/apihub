@@ -22,13 +22,42 @@ function RuntimeMockPlugin() {
     }
 }
 
-module.exports = {
-    getInstance: async () => {
-        return new RuntimeMockPlugin()
-    },
-    getAllow: function() {
-        return async function (globalUserId, email, command, ...args) {
-            return true;
+function getInstance() {
+    return {
+        helloWorld: function () {
+            return "Hello World Core2!";
+        },
+        hello: function () {
+            return "Hello Core2!";
         }
     }
+}
+
+/**
+ * Get the name of the plugin
+ * @returns {string} - The name of the plugin
+ */
+function getName() {
+    return "RuntimeMockPlugin";
+}
+
+/**
+ * Get the plugin dependencies
+ * @returns {Array<string>} - Array of plugin names this plugin depends on
+ */
+function getDependencies() {
+    return ["DefaultMockPlugin"]; // Depends on DefaultMockPlugin
+}
+
+function getAllow() {
+    return function () {
+        return true;
+    }
+}
+
+module.exports = {
+    getInstance,
+    getAllow,
+    getName,
+    getDependencies
 };

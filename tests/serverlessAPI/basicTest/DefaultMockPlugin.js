@@ -22,13 +22,42 @@ function DefaultMockPlugin() {
     }
 }
 
-module.exports = {
-    getInstance: async () => {
-        return new DefaultMockPlugin()
-    },
-    getAllow: function() {
-        return async function (globalUserId, email, command, ...args) {
-            return true;
+function getInstance() {
+    return {
+        helloWorld: function () {
+            return "Hello World Core1!";
+        },
+        hello: function () {
+            return "Hello Core1!";
         }
     }
+}
+
+/**
+ * Get the name of the plugin
+ * @returns {string} - The name of the plugin
+ */
+function getName() {
+    return "DefaultMockPlugin";
+}
+
+/**
+ * Get the plugin dependencies
+ * @returns {Array<string>} - Array of plugin names this plugin depends on
+ */
+function getDependencies() {
+    return []; // No dependencies
+}
+
+function getAllow() {
+    return function () {
+        return true;
+    }
+}
+
+module.exports = {
+    getInstance,
+    getAllow,
+    getName,
+    getDependencies
 };
