@@ -190,8 +190,27 @@ function AsyncPlugin() {
     };
 }
 
+function getName() {
+    return "AsyncPlugin";
+}
+
+function getDependencies() {
+    return []; // No dependencies for this plugin
+}
+
+function getInstance() {
+    return new AsyncPlugin();
+}
+
+function getAllow() {
+    return function(forWhom, name) {
+        return true; // For testing, allow all operations
+    };
+}
+
 module.exports = {
-    getInstance: async () => {
-        return new AsyncPlugin();
-    }
+    getName,
+    getDependencies,
+    getInstance,
+    getAllow
 };

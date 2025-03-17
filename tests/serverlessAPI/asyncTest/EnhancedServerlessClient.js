@@ -5,7 +5,7 @@ const EventEmitter = require('events');
  * EnhancedServerlessClient - Client that transparently handles both synchronous
  * and asynchronous operations with a consistent interface
  */
-function createEnhancedServerlessClient(userId, endpoint, pluginName, webhookUrl) {
+function createEnhancedServerlessClient(userId, endpoint, serverlessId, pluginName, webhookUrl) {
     if (!endpoint) {
         throw new Error('Endpoint URL is required');
     }
@@ -18,7 +18,7 @@ function createEnhancedServerlessClient(userId, endpoint, pluginName, webhookUrl
 
     // Store the base endpoint and create the command endpoint
     const baseEndpoint = endpoint;
-    const commandEndpoint = `${endpoint}/executeCommand`;
+    const commandEndpoint = `${endpoint}/executeCommand/${serverlessId}`;
 
     // Map to track pending async operations
     const pendingOperations = new Map();
@@ -45,13 +45,6 @@ function createEnhancedServerlessClient(userId, endpoint, pluginName, webhookUrl
 
             // Parse the response
             const res = await response.json();
-
-            // Handle errors
-            if (!res || res.err) {
-                const errorMessage = res.err ? res.err : "Unknown error";
-                throw new Error(`Command ${commandName} execution failed: ${JSON.stringify(errorMessage)}`);
-            }
-
             const result = res.result;
 
             // If the result is a string that looks like a call ID, it's an async operation
@@ -100,32 +93,6 @@ function createEnhancedServerlessClient(userId, endpoint, pluginName, webhookUrl
         }
     };
 
-    // Create a special registerPlugin method
-    const registerPlugin = async (pluginName, pluginPath) => {
-        try {
-            const response = await fetch(`${baseEndpoint}/registerPlugin`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    pluginName,
-                    pluginPath
-                })
-            });
-
-            if (response.status >= 400) {
-                const res = await response.json();
-                if (!res || res.err) {
-                    const errorMessage = res.err ? res.err : "Unknown error";
-                    throw new Error(`Plugin registration failed: ${JSON.stringify(errorMessage)}`);
-                }
-            }
-        } catch (error) {
-            throw error;
-        }
-    };
-
     // Method to cancel polling for a specific call ID
     const cancelOperation = (callId) => {
         return notificationManager.cancelPolling(callId);
@@ -165,7 +132,6 @@ function createEnhancedServerlessClient(userId, endpoint, pluginName, webhookUrl
 
     // Create a base object with special methods
     const baseClient = {
-        registerPlugin,
         cancelOperation,
         cleanup,
         getPendingOperations,
