@@ -37,7 +37,7 @@ assert.callback("Test serverless API", async (testFinished) => {
         server.registerServerlessProcessUrl(serverlessId, serverUrl);
         
         // Test DefaultMockPlugin (should be loaded first due to dependencies)
-        let client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", `${result.url}/proxy`, serverlessId, "DefaultMockPlugin");
+        let client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");
         let res = await client.helloWorld();
         assert.true(res === "Hello World Core1!", `Expected "Hello World Core1!", got "${res}"`);
         
@@ -45,7 +45,7 @@ assert.callback("Test serverless API", async (testFinished) => {
         assert.true(res === "Hello Core1!", `Expected "Hello Core1!", got "${res}"`);
         
         // Test RuntimeMockPlugin (depends on DefaultMockPlugin)
-        client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", `${result.url}/proxy`, serverlessId, "RuntimeMockPlugin");
+        client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", result.url, serverlessId, "RuntimeMockPlugin");
         res = await client.helloWorld();
         assert.true(res === "Hello World Core2!", `Expected "Hello World Core2!", got "${res}"`);
         
