@@ -34,14 +34,6 @@ function getInstance() {
 }
 
 /**
- * Get the name of the plugin
- * @returns {string} - The name of the plugin
- */
-function getName() {
-    return "RuntimeMockPlugin";
-}
-
-/**
  * Get the plugin dependencies
  * @returns {Array<string>} - Array of plugin names this plugin depends on
  */
@@ -58,6 +50,5 @@ function getAllow() {
 module.exports = {
     getInstance,
     getAllow,
-    getName,
     getDependencies
 };

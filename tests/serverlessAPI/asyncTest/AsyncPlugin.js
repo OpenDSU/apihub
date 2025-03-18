@@ -190,10 +190,6 @@ function AsyncPlugin() {
     };
 }
 
-function getName() {
-    return "AsyncPlugin";
-}
-
 function getDependencies() {
     return []; // No dependencies for this plugin
 }
@@ -209,7 +205,6 @@ function getAllow() {
 }
 
 module.exports = {
-    getName,
     getDependencies,
     getInstance,
     getAllow
