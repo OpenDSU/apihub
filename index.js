@@ -448,57 +448,86 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
         const {fork} = require('child_process');
         const path = require('path');
 
-        // Spawn child process
-        const serverlessAPIPath = path.resolve(path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, `.${__dirname}`, 'serverlessAPI', 'index.js'))
-        const serverProcess = fork(serverlessAPIPath);
+        function getRandomPort() {
+            const min = 9000;
+            const max = 65535;
+            return Math.floor(Math.random() * (max - min) + min);
+        }
 
-        // Return a promise that resolves with the server proxy
-        return new Promise((resolve, reject) => {
-            // Handle messages from child process
-            serverProcess.on('message', (message) => {
-                if (message.type === 'ready') {
-                    // Server is ready, create a proxy object with the same interface
-                    const serverProxy = {
-                        url: message.url,
-                        port: message.port,
+        function startServerlessAPIProcess(attemptConfig) {
+            // Spawn child process
+            const serverlessAPIPath = path.resolve(path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, `.${__dirname}`, 'serverlessAPI', 'index.js'))
+            const serverProcess = fork(serverlessAPIPath);
 
-                        // Method to terminate the server
-                        close: () => {
-                            return new Promise((resolveClose) => {
-                                serverProcess.send({type: 'shutdown'});
-                                serverProcess.on('exit', () => {
-                                    resolveClose();
+            // Return a promise that resolves with the server proxy
+            return new Promise((resolve, reject) => {
+                // Handle messages from child process
+                serverProcess.on('message', (message) => {
+                    if (message.type === 'ready') {
+                        // Server is ready, create a proxy object with the same interface
+                        const serverProxy = {
+                            url: message.url,
+                            port: message.port,
+
+                            // Method to terminate the server
+                            close: () => {
+                                return new Promise((resolveClose) => {
+                                    serverProcess.send({type: 'shutdown'});
+                                    serverProcess.on('exit', () => {
+                                        resolveClose();
+                                    });
                                 });
-                            });
-                        },
+                            },
 
-                        // Expose the serverless API URL
-                        getUrl: () => message.url,
+                            // Expose the serverless API URL
+                            getUrl: () => message.url,
 
-                        // Keep reference to the process
-                        process: serverProcess,
+                            // Keep reference to the process
+                            process: serverProcess,
 
-                        // Method to terminate the server immediately if needed
-                        kill: () => {
-                            serverProcess.kill('SIGTERM');
+                            // Method to terminate the server immediately if needed
+                            kill: () => {
+                                serverProcess.kill('SIGTERM');
+                            }
+                        };
+
+                        resolve(serverProxy);
+                    } else if (message.type === 'error') {
+                        // Check if the error is due to a busy port
+                        if (message.error.includes('EADDRINUSE')) {
+                            // Kill the failed process
+                            serverProcess.kill();
+                            
+                            // Try with a new random port
+                            const newConfig = {
+                                ...attemptConfig,
+                                port: getRandomPort(),
+                                dynamicPort: true
+                            };
+                            
+                            // Retry with new port
+                            startServerlessAPIProcess(newConfig)
+                                .then(resolve)
+                                .catch(reject);
+                        } else {
+                            reject(new Error(message.error));
                         }
-                    };
+                    }
+                });
 
-                    resolve(serverProxy);
-                } else if (message.type === 'error') {
-                    reject(new Error(message.error));
-                }
+                // Handle child process errors
+                serverProcess.on('error', (err) => {
+                    console.error('Failed to start child process:', err);
+                    reject(err);
+                });
+
+                // Start the server by sending the configuration
+                serverProcess.send({type: 'start', config: attemptConfig});
             });
+        }
 
-            // Handle child process errors
-            serverProcess.on('error', (err) => {
-                console.error('Failed to start child process:', err);
-                reject(err);
-            });
-
-            // Start the server by sending the configuration
-            serverProcess.send({type: 'start', config});
-        });
+        // Start with initial config
+        return startServerlessAPIProcess(config);
     };
 
     return server;
