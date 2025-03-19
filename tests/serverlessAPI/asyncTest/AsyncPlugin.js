@@ -1,4 +1,3 @@
-const DelayedResponse = require('./DelayedResponse');
 const InternalService = require('./InternalService').getInstance();
 const InternalWebhook = require('./InternalWebhook').getInstance();
 
@@ -33,11 +32,11 @@ function AsyncPlugin() {
         console.log(`AsyncPlugin: processDataAsync called with data:`, data);
         console.log(`Using webhook URL: ${WEBHOOK_URL}`);
 
-        // Create a DelayedResponse to track progress
-        const delayedResponse = new DelayedResponse((progressUpdate) => {
-            // When the internal service reports progress or completion,
-            // this callback will be invoked
+        // Get a DelayedResponse from the internal service
+        const delayedResponse = InternalService.processOperation('processData', data);
 
+        // Set up a progress callback to store results in the webhook
+        delayedResponse.progressCallback = (progressUpdate) => {
             if (progressUpdate.status === 'completed') {
                 // When the operation is complete, store the result in the webhook
                 InternalWebhook.storeResult(delayedResponse.getCallId(), progressUpdate.result);
@@ -45,18 +44,7 @@ function AsyncPlugin() {
                 // Optionally post directly to the webhook URL for redundancy
                 postResultToWebhook(delayedResponse.getCallId(), progressUpdate.result);
             }
-        });
-
-        // Start the internal service operation without awaiting its completion
-        InternalService.processOperation('processData', data, (update) => {
-            if (update.status === 'in_progress') {
-                delayedResponse.updateProgress(update.progress, `Processing data: ${update.progress}%`);
-            } else if (update.status === 'completed') {
-                delayedResponse.complete(update.result);
-            } else if (update.status === 'failed') {
-                delayedResponse.fail(new Error(update.error || 'Operation failed'));
-            }
-        });
+        };
 
         // Return just the call ID immediately
         return delayedResponse.getCallId();
@@ -71,24 +59,18 @@ function AsyncPlugin() {
         console.log(`AsyncPlugin: generateReportAsync called with parameters:`, parameters);
         console.log(`Using webhook URL: ${WEBHOOK_URL}`);
 
-        const delayedResponse = new DelayedResponse((progressUpdate) => {
+        // Get a DelayedResponse from the internal service
+        const delayedResponse = InternalService.processOperation('generateReport', parameters);
+
+        // Set up a progress callback to store results in the webhook
+        delayedResponse.progressCallback = (progressUpdate) => {
             if (progressUpdate.status === 'completed') {
                 InternalWebhook.storeResult(delayedResponse.getCallId(), progressUpdate.result);
 
                 // Also post directly to the webhook URL
                 postResultToWebhook(delayedResponse.getCallId(), progressUpdate.result);
             }
-        });
-
-        InternalService.processOperation('generateReport', parameters, (update) => {
-            if (update.status === 'in_progress') {
-                delayedResponse.updateProgress(update.progress, `Generating report: ${update.progress}%`);
-            } else if (update.status === 'completed') {
-                delayedResponse.complete(update.result);
-            } else if (update.status === 'failed') {
-                delayedResponse.fail(new Error(update.error || 'Report generation failed'));
-            }
-        });
+        };
 
         return delayedResponse.getCallId();
     };
@@ -158,24 +140,18 @@ function AsyncPlugin() {
         console.log(`AsyncPlugin: genericOperation called with operation: ${operationType}`, params);
         console.log(`Using webhook URL: ${WEBHOOK_URL}`);
 
-        const delayedResponse = new DelayedResponse((progressUpdate) => {
+        // Get a DelayedResponse from the internal service
+        const delayedResponse = InternalService.processOperation(operationType, params);
+
+        // Set up a progress callback to store results in the webhook
+        delayedResponse.progressCallback = (progressUpdate) => {
             if (progressUpdate.status === 'completed') {
                 InternalWebhook.storeResult(delayedResponse.getCallId(), progressUpdate.result);
 
                 // Also post directly to the webhook URL
                 postResultToWebhook(delayedResponse.getCallId(), progressUpdate.result);
             }
-        });
-
-        InternalService.processOperation(operationType, params, (update) => {
-            if (update.status === 'in_progress') {
-                delayedResponse.updateProgress(update.progress, `Operation ${operationType}: ${update.progress}%`);
-            } else if (update.status === 'completed') {
-                delayedResponse.complete(update.result);
-            } else if (update.status === 'failed') {
-                delayedResponse.fail(new Error(update.error || 'Operation failed'));
-            }
-        });
+        };
 
         return delayedResponse.getCallId();
     };

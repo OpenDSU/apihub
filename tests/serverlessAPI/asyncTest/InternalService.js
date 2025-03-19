@@ -1,3 +1,5 @@
+const DelayedResponse = require('./DelayedResponse');
+
 /**
  * InternalService - Mock implementation of an internal service
  * that performs long-running operations
@@ -11,19 +13,25 @@ class InternalService {
      * Process a long-running operation
      * @param {string} operationType - Type of operation to perform
      * @param {Object} data - Input data for the operation
-     * @param {Function} callback - Callback function to invoke when operation completes
+     * @returns {DelayedResponse} A DelayedResponse instance for tracking the operation
      */
-    processOperation(operationType, data, callback) {
+    processOperation(operationType, data) {
         console.log(`InternalService: Starting ${operationType} operation`, data);
 
-        // Simulate a long-running operation
-        const operationId = `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Create a DelayedResponse instance to track this operation
+        const delayedResponse = new DelayedResponse((progressUpdate) => {
+            // This callback will be called whenever we update progress
+            console.log(`InternalService: Progress update for ${operationType}:`, progressUpdate);
+        });
 
+        // Store the operation details
+        const operationId = delayedResponse.getCallId();
         this.operations.set(operationId, {
             type: operationType,
             data,
             status: 'running',
-            startTime: Date.now()
+            startTime: Date.now(),
+            delayedResponse
         });
 
         // Simulate progress updates
@@ -33,11 +41,7 @@ class InternalService {
             console.log(`InternalService: Operation ${operationId} progress: ${progress}%`);
 
             if (progress < 100) {
-                callback({
-                    status: 'in_progress',
-                    progress,
-                    operationId
-                });
+                delayedResponse.updateProgress(progress, `Processing ${operationType}: ${progress}%`);
             } else {
                 clearInterval(progressInterval);
 
@@ -53,6 +57,7 @@ class InternalService {
                         break;
                     case 'generateReport':
                         result = {
+                            success: true,
                             reportId: `report_${Date.now()}`,
                             generatedAt: new Date().toISOString(),
                             parameters: data
@@ -73,17 +78,13 @@ class InternalService {
                     result
                 });
 
-                // Call the callback with the final result
-                callback({
-                    status: 'completed',
-                    operationId,
-                    result
-                });
+                // Complete the DelayedResponse with the result
+                delayedResponse.complete(result);
             }
         }, 1000); // Update progress every second
 
-        // Return the operation ID immediately
-        return operationId;
+        // Return the DelayedResponse instance immediately
+        return delayedResponse;
     }
 
     /**

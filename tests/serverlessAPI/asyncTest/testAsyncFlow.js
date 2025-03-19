@@ -18,7 +18,6 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
 
         // Configure the serverless API
         const serverlessId = "test";
-        const coreConfigs = {};
 
         // Create plugins directory
         const pluginsDir = path.join(folder, 'plugins');
