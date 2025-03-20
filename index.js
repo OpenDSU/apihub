@@ -10,8 +10,6 @@ process.on('SIGTERM', (signal) => {
 });
 
 const httpWrapper = require('./http-wrapper');
-const {createServerlessAPIProxy} = require("./components/serverlessAPIProxy");
-const {createServerlessAPI} = require("./serverlessAPI");
 const Server = httpWrapper.Server;
 
 const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
@@ -36,6 +34,8 @@ const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
     require('./components/stream');
     require('./components/requestForwarder');
     require('./components/lightDBEnclave');
+    require('./components/webhook');
+    require('./components/serverlessAPIProxy');
     require("./components/activeComponents");
     //end
 })();
