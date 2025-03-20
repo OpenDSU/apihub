@@ -35,21 +35,25 @@ assert.callback("Test serverless API", async (testFinished) => {
         // Initialize plugins from the directory structure
         const serverUrl = serverlessAPI.getUrl();
         server.registerServerlessProcessUrl(serverlessId, serverUrl);
-        
+
+        const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
+        const defaultClient = createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");
+
         // Test DefaultMockPlugin (should be loaded first due to dependencies)
-        let client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");
-        let res = await client.helloWorld();
+        let res = await defaultClient.helloWorld();
         assert.true(res === "Hello World Core1!", `Expected "Hello World Core1!", got "${res}"`);
         
-        res = await client.hello();
+        res = await defaultClient.hello();
         assert.true(res === "Hello Core1!", `Expected "Hello Core1!", got "${res}"`);
         
+        // Create enhanced client for RuntimeMockPlugin
+        const runtimeClient = createServerlessAPIClient("admin", result.url, serverlessId, "RuntimeMockPlugin");
+        
         // Test RuntimeMockPlugin (depends on DefaultMockPlugin)
-        client = require("opendsu").loadAPI("serverless").createServerlessAPIClient("admin", result.url, serverlessId, "RuntimeMockPlugin");
-        res = await client.helloWorld();
+        res = await runtimeClient.helloWorld();
         assert.true(res === "Hello World Core2!", `Expected "Hello World Core2!", got "${res}"`);
         
-        res = await client.hello();
+        res = await runtimeClient.hello();
         assert.true(res === "Hello Core2!", `Expected "Hello Core2!", got "${res}"`);
 
         testFinished();

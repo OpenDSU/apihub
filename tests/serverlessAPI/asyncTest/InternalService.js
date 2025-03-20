@@ -1,4 +1,4 @@
-const DelayedResponse = require('./DelayedResponse');
+const DelayedResponse = require('../../../serverlessAPI/lib/DelayedResponse');
 
 /**
  * InternalService - Mock implementation of an internal service

@@ -1,10 +1,5 @@
 const InternalService = require('./InternalService').getInstance();
-const InternalWebhook = require('./InternalWebhook').getInstance();
 
-// Get the webhook URL from environment variables
-const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://localhost:8090/webhook/result';
-
-// Optional: Set up an HTTP client for webhook if needed to post results directly
 const http = require('http');
 const url = require('url');
 
@@ -30,7 +25,7 @@ function AsyncPlugin() {
      */
     this.processDataAsync = async function (data) {
         console.log(`AsyncPlugin: processDataAsync called with data:`, data);
-        console.log(`Using webhook URL: ${WEBHOOK_URL}`);
+        console.log(`Using webhook URL: ${process.env.WEBHOOK_URL}`);
 
         // Get a DelayedResponse from the internal service
         const delayedResponse = InternalService.processOperation('processData', data);
@@ -39,15 +34,11 @@ function AsyncPlugin() {
         delayedResponse.progressCallback = (progressUpdate) => {
             if (progressUpdate.status === 'completed') {
                 // When the operation is complete, store the result in the webhook
-                InternalWebhook.storeResult(delayedResponse.getCallId(), progressUpdate.result);
-
-                // Optionally post directly to the webhook URL for redundancy
                 postResultToWebhook(delayedResponse.getCallId(), progressUpdate.result);
             }
         };
 
-        // Return just the call ID immediately
-        return delayedResponse.getCallId();
+        return delayedResponse;
     };
 
     /**
@@ -57,7 +48,7 @@ function AsyncPlugin() {
      */
     this.generateReportAsync = async function (parameters) {
         console.log(`AsyncPlugin: generateReportAsync called with parameters:`, parameters);
-        console.log(`Using webhook URL: ${WEBHOOK_URL}`);
+        console.log(`Using webhook URL: ${process.env.WEBHOOK_URL}`);
 
         // Get a DelayedResponse from the internal service
         const delayedResponse = InternalService.processOperation('generateReport', parameters);
@@ -65,14 +56,11 @@ function AsyncPlugin() {
         // Set up a progress callback to store results in the webhook
         delayedResponse.progressCallback = (progressUpdate) => {
             if (progressUpdate.status === 'completed') {
-                InternalWebhook.storeResult(delayedResponse.getCallId(), progressUpdate.result);
-
-                // Also post directly to the webhook URL
                 postResultToWebhook(delayedResponse.getCallId(), progressUpdate.result);
             }
         };
 
-        return delayedResponse.getCallId();
+        return delayedResponse;
     };
 
     /**
@@ -83,8 +71,8 @@ function AsyncPlugin() {
      */
     const postResultToWebhook = (callId, result) => {
         try {
-            const parsedUrl = url.parse(WEBHOOK_URL);
-            const webhookStoreUrl = WEBHOOK_URL.replace('/result', '/store');
+            const parsedUrl = url.parse(process.env.WEBHOOK_URL);
+            const webhookStoreUrl = process.env.WEBHOOK_URL.replace('/result', '/store');
 
             console.log(`Posting result for ${callId} to webhook: ${webhookStoreUrl}`);
 
@@ -138,7 +126,7 @@ function AsyncPlugin() {
      */
     this.genericOperation = async function (operationType, params) {
         console.log(`AsyncPlugin: genericOperation called with operation: ${operationType}`, params);
-        console.log(`Using webhook URL: ${WEBHOOK_URL}`);
+        console.log(`Using webhook URL: ${process.env.WEBHOOK_URL}`);
 
         // Get a DelayedResponse from the internal service
         const delayedResponse = InternalService.processOperation(operationType, params);
@@ -146,14 +134,11 @@ function AsyncPlugin() {
         // Set up a progress callback to store results in the webhook
         delayedResponse.progressCallback = (progressUpdate) => {
             if (progressUpdate.status === 'completed') {
-                InternalWebhook.storeResult(delayedResponse.getCallId(), progressUpdate.result);
-
-                // Also post directly to the webhook URL
                 postResultToWebhook(delayedResponse.getCallId(), progressUpdate.result);
             }
         };
 
-        return delayedResponse.getCallId();
+        return delayedResponse;
     };
 
     /**

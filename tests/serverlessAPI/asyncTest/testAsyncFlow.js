@@ -3,18 +3,12 @@ const tir = require("../../../../../psknode/tests/util/tir");
 const path = require("path");
 const dc = require("double-check");
 const {assert} = dc;
-const WebhookServer = require('./WebhookServer');
 const fs = require('fs');
 
 assert.callback("Test Serverless API Async Flow", async (testFinished) => {
     dc.createTestFolder('serverlessAPIAsync', async (err, folder) => {
         const result = await tir.launchApiHubTestNodeAsync({rootFolder: folder});
         const server = result.node;
-
-        // Start the webhook server for async results
-        const webhookServer = new WebhookServer(8090);
-        await webhookServer.start();
-        console.log(`Webhook server started at ${webhookServer.getUrl()}`);
 
         // Configure the serverless API
         const serverlessId = "test";
@@ -37,42 +31,33 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
         const serverUrl = serverlessAPI.getUrl();
         console.log(`Serverless API started at ${serverUrl}`);
         server.registerServerlessProcessUrl(serverlessId, serverUrl);
-
-        // Create the enhanced serverless client that supports async operations
-        const {createEnhancedServerlessClient} = require('./EnhancedServerlessClient');
+        const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
 
         // Set the webhook URL as an environment variable for the serverless API process
-        process.env.WEBHOOK_URL = `${webhookServer.getUrl()}/result`;
+        process.env.WEBHOOK_URL = `${result.url}/webhook/result`;
 
-        const client = createEnhancedServerlessClient("admin", `${result.url}/proxy`, serverlessId, "AsyncPlugin", process.env.WEBHOOK_URL);
+        const client = createServerlessAPIClient("admin", result.url, serverlessId, "AsyncPlugin", process.env.WEBHOOK_URL);
 
         // Test synchronous operation first
+        console.log("Testing synchronous operation...");
         const syncResult = await client.syncOperation();
         assert.true(typeof syncResult === 'string', "Sync operation should return a string");
+        assert.true(syncResult === "This is a synchronous operation response", 
+            `Expected "This is a synchronous operation response", got "${syncResult}"`);
         console.log("Sync operation result:", syncResult);
 
-        // Test asynchronous operation
-        console.log("Starting async operation...");
-
-        // Optional: Set up a progress listener if needed
-        const progressUpdates = [];
-        const unsubscribeProgress = client.onProgress((progressEvent) => {
-            console.log(`Progress update for ${progressEvent.commandName}: ${JSON.stringify(progressEvent.data)}`);
-            progressUpdates.push(progressEvent);
-        });
-
-        // Call the method - the API is the same whether it's sync or async
+        // Call the async method
         const asyncResult = await client.processDataAsync({
             items: 100,
             type: "test-data"
         });
 
-        // Verify the result
+        // Verify the async result
         assert.true(asyncResult.processed === true, "Result should indicate processing completed");
         assert.true(asyncResult.items === 100, "Result should include processed items count");
 
-        // Test another async operation
-        console.log("Starting report generation...");
+        // Test another async operation without progress tracking
+        console.log("Starting report generation without progress tracking...");
         const reportResult = await client.generateReportAsync({
             reportType: "test",
             format: "json",
@@ -84,6 +69,19 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
 
         // Verify report result
         assert.true(reportResult.success === true, "Report should have been generated successfully");
+        assert.true(typeof reportResult.reportId === 'string', "Report should have a reportId");
+        assert.true(typeof reportResult.generatedAt === 'string', "Report should have a generation timestamp");
+
+        // Test generic async operation
+        console.log("Testing generic async operation...");
+        const genericResult = await client.genericOperation("testOperation", {
+            param1: "value1",
+            param2: "value2"
+        });
+
+        // Verify generic operation result
+        assert.true(genericResult.completed === true, "Generic operation should indicate completion");
+        assert.true(genericResult.operationType === "testOperation", "Result should include the operation type");
 
         server.close();
         testFinished();
