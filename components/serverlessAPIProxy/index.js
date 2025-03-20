@@ -7,7 +7,13 @@ const createServerlessAPIProxy = async (server) => {
         let protocol = serverlessApiAddress.indexOf("https://") === 0 ? "https" : "http";
         protocol = require(protocol);
 
-        let request = protocol.request(serverlessApiAddress, {method: "PUT"}, (resp) => {
+        let request = protocol.request(serverlessApiAddress, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Environment-Variables': JSON.stringify(process.env)
+            }
+        }, (resp) => {
             resp.body = [];
 
             // A chunk of data has been received.
