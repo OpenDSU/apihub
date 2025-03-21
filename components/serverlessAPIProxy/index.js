@@ -11,8 +11,7 @@ const createServerlessAPIProxy = async (server) => {
             method: "PUT",
             headers: {
                 'Content-Type': 'application/json',
-                'X-Environment-Variables': JSON.stringify(process.env)
-            }
+q            }
         }, (resp) => {
             resp.body = [];
 
@@ -90,6 +89,19 @@ const createServerlessAPIProxy = async (server) => {
 
     server.registerServerlessProcessUrl = (serverlessId, serverlessApiUrl) => {
         registeredServerlessProcessesUrls[serverlessId] = serverlessApiUrl;
+    }
+
+    // Method to pass environment variables to a serverless process
+    server.setServerlessProcessEnv = (process, envVars) => {
+        if (!process || !process.send) {
+            throw new Error('Invalid process provided');
+        }
+
+        // Send environment variables to the process
+        process.send({
+            type: 'setEnv',
+            envVars: envVars
+        });
     }
 
     return server;

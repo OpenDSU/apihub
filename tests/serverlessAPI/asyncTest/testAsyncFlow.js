@@ -31,6 +31,10 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
         const serverUrl = serverlessAPI.getUrl();
         console.log(`Serverless API started at ${serverUrl}`);
         server.registerServerlessProcessUrl(serverlessId, serverUrl);
+        server.registerServerlessProcessUrl(serverlessId, serverUrl);
+        server.setServerlessProcessEnv(serverlessAPI.process, {
+            WEBHOOK_URL: `${result.url}/webhook/result`
+        });
         const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
 
         // Set the webhook URL as an environment variable for the serverless API process
