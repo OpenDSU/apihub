@@ -10,8 +10,8 @@ const createServerlessAPIProxy = async (server) => {
         let request = protocol.request(serverlessApiAddress, {
             method: "PUT",
             headers: {
-                'Content-Type': 'application/json',
-q            }
+                'Content-Type': 'application/json'
+            }
         }, (resp) => {
             resp.body = [];
 
@@ -23,9 +23,9 @@ q            }
             // The whole response has been received. Print out the result.
             resp.on("end", () => {
                 let body;
-                try{
+                try {
                     body = JSON.parse(Buffer.concat(resp.body).toString());
-                } catch (e){
+                } catch (e) {
                     return callback(e);
                 }
                 callback(undefined, body);
@@ -59,30 +59,6 @@ q            }
 
             res.statusCode = response.statusCode;
             res.write(JSON.stringify(response));
-            res.end();
-        });
-    });
-
-    server.put(`${urlPrefix}/registerPlugin/:serverlessId`, httpWrapper.bodyParser);
-    server.put(`${urlPrefix}/registerPlugin/:serverlessId`, function (req, res) {
-        const serverlessId = req.params.serverlessId;
-        if (!registeredServerlessProcessesUrls[serverlessId]) {
-            res.statusCode = 404;
-            res.write("Serverless process not found");
-            return res.end();
-        }
-
-        const serverlessApiUrl = registeredServerlessProcessesUrls[serverlessId];
-        forwardRequest(`${serverlessApiUrl}/registerPlugin`, req.body, (err, response) => {
-            if (err) {
-                res.statusCode = 500;
-                console.error(`Error while registering plugin ${req.body.namespace}`, err);
-                res.write(err.message);
-                return res.end();
-            }
-
-            res.statusCode = response.statusCode;
-            res.write(response.result);
             res.end();
         });
     });
