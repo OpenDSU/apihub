@@ -455,7 +455,7 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
         // Return a promise that resolves with the server proxy
         return new Promise((resolve, reject) => {
             // Handle messages from child process
-            serverProcess.on('message', (message) => {
+            serverProcess.on('message', async (message) => {
                 if (message.type === 'ready') {
                     // Server is ready, create a proxy object with the same interface
                     const serverProxy = {
@@ -483,6 +483,26 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
                             serverProcess.kill('SIGTERM');
                         }
                     };
+
+                    // Set initial environment variables if provided in config
+                    if (config.env) {
+                        try {
+                            const response = await fetch(`${message.url}/setEnv`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(config.env)
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`Failed to set environment variables: ${response.statusText}`);
+                            }
+                        } catch (error) {
+                            console.error('Failed to set environment variables:', error);
+                            // Don't reject here, just log the error as the server is still functional
+                        }
+                    }
 
                     resolve(serverProxy);
                 } else if (message.type === 'error') {

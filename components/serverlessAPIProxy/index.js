@@ -63,21 +63,32 @@ const createServerlessAPIProxy = async (server) => {
         });
     });
 
-    server.registerServerlessProcessUrl = (serverlessId, serverlessApiUrl) => {
-        registeredServerlessProcessesUrls[serverlessId] = serverlessApiUrl;
-    }
-
-    // Method to pass environment variables to a serverless process
-    server.setServerlessProcessEnv = (process, envVars) => {
-        if (!process || !process.send) {
-            throw new Error('Invalid process provided');
+    // Add proxy endpoint for restarting plugins
+    server.put(`${urlPrefix}/restart/:serverlessId`, function (req, res) {
+        const serverlessId = req.params.serverlessId;
+        if (!registeredServerlessProcessesUrls[serverlessId]) {
+            res.statusCode = 404;
+            res.write("Serverless process not found");
+            return res.end();
         }
 
-        // Send environment variables to the process
-        process.send({
-            type: 'setEnv',
-            envVars: envVars
+        const serverlessApiUrl = registeredServerlessProcessesUrls[serverlessId];
+        forwardRequest(`${serverlessApiUrl}/restart`, "{}", (err, response) => {
+            if (err) {
+                res.statusCode = 500;
+                console.error("Error while restarting plugins", err);
+                res.write(err.message);
+                return res.end();
+            }
+
+            res.statusCode = response.statusCode;
+            res.write(JSON.stringify(response));
+            res.end();
         });
+    });
+
+    server.registerServerlessProcessUrl = (serverlessId, serverlessApiUrl) => {
+        registeredServerlessProcessesUrls[serverlessId] = serverlessApiUrl;
     }
 
     return server;
