@@ -1,5 +1,9 @@
 function SlowLambdaPlugin() {
-    const SlowResponse = require('../../../serverlessAPI/lib/SlowResponse');
+    const path  = require('path');
+    const slowResponsePath = path.join(__dirname, '../../../serverlessAPI/lib/SlowResponse.js');
+    console.log('SlowLambdaPlugin: __dirname', __dirname);
+    console.log('slowResponsePath', slowResponsePath);
+    const SlowResponse = require(slowResponsePath);
     this.processDataAsyncTest = async function (data) {
         const slowResponse = new SlowResponse();
         let count = 0;

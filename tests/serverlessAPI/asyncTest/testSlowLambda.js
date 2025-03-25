@@ -16,8 +16,10 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
         fs.mkdirSync(pluginsDir, {recursive: true});
 
         const asyncPluginSrc = path.join(__dirname, "SlowLambdaPlugin.js");
-        const asyncPluginDest = path.join(pluginsDir, "SlowLambdaPlugin.js");
-        fs.copyFileSync(asyncPluginSrc, asyncPluginDest);
+
+        // Create a new file that requires the original plugin
+        const asyncPluginContent = `module.exports = require("${asyncPluginSrc}");`;
+        fs.writeFileSync(path.join(pluginsDir, "SlowLambdaPlugin.js"), asyncPluginContent);
 
         const serverlessAPI = await server.createServerlessAPI({
             urlPrefix: serverlessId,
