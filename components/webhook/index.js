@@ -1,53 +1,40 @@
-const InternalWebhook = require('./InternalWebhook').getInstance();
+const WebhookProgressTracker = require('./WebhookProgressTracker').getInstance();
 const logger = $$.getLogger("WebhookComponent", "apihub");
 
 function Webhook(server) {
     try {
         logger.info("Initializing Webhook component...");
         
-        function requestServerMiddleware(request, response, next) {
-            request.server = server;
+        function requestServerMiddleware(req, res, next) {
+            req.server = server;
             next();
         }
 
         const {responseModifierMiddleware, requestBodyJSONMiddleware} = require("../../http-wrapper/utils/middlewares");
 
-        // Register webhook endpoints
         server.use('/webhook/*', requestServerMiddleware);
         server.use('/webhook/*', responseModifierMiddleware);
 
-        // Result endpoint
-        server.get('/webhook/result', (req, res) => {
-            const callId = req.query.callId;
+        server.get('/webhook/:callId', (req, res) => {
+            const callId = req.params.callId;
             if (!callId) {
                 res.statusCode = 400;
                 return res.end(JSON.stringify({ error: 'Missing callId parameter' }));
             }
 
-            const result = InternalWebhook.getResult(callId);
+            const result = WebhookProgressTracker.getResult(callId);
+            const progress = WebhookProgressTracker.getProgress(callId);
             if (result) {
                 res.statusCode = 200;
-                res.end(JSON.stringify({ status: 'completed', result }));
+                res.end(JSON.stringify({status: 'completed', result, progress }));
             } else {
                 res.statusCode = 200;
-                res.end(JSON.stringify({ status: 'pending', message: 'Result not available yet' }));
+                res.end(JSON.stringify({status: 'pending', progress}));
             }
         });
 
-        // Status endpoint
-        server.get('/webhook/status', (req, res) => {
-            const status = {
-                uptime: process.uptime(),
-                resultsCount: InternalWebhook.getAllResults().length,
-                timestamp: new Date().toISOString()
-            };
-            res.statusCode = 200;
-            res.end(JSON.stringify(status));
-        });
-
-        // Store endpoint
-        server.post('/webhook/store', requestBodyJSONMiddleware);
-        server.post('/webhook/store', (req, res) => {
+        server.put('/webhook/result', requestBodyJSONMiddleware);
+        server.put('/webhook/result', (req, res) => {
             const data = req.body;
             if (!data.callId) {
                 res.statusCode = 400;
@@ -59,9 +46,35 @@ function Webhook(server) {
                 return res.end(JSON.stringify({ error: 'Missing result parameter' }));
             }
 
-            InternalWebhook.storeResult(data.callId, data.result);
+            WebhookProgressTracker.storeResult(data.callId, data.result);
             res.statusCode = 200;
             res.end(JSON.stringify({ success: true, message: 'Result stored successfully' }));
+        });
+
+        server.put('/webhook/progress', requestBodyJSONMiddleware);
+        server.put('/webhook/progress', (req, res) => {
+            const data = req.body;
+            if (!data.callId) {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: 'Missing callId parameter' }));
+            }
+
+            if (typeof data.progress === 'undefined') {
+                res.statusCode = 400;
+                return res.end(JSON.stringify({ error: 'Missing progress parameter' }));
+            }
+
+            WebhookProgressTracker.storeProgress(data.callId, data.progress);
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, message: 'Progress stored successfully' }));
+        });
+
+        server.put('/webhook/expiryTime', requestBodyJSONMiddleware);
+        server.put('/webhook/expiryTime', (req, res) => {
+            const data = req.body;
+            WebhookProgressTracker.setExpiryTime(data.callId, data.expiryTime);
+            res.statusCode = 200;
+            res.end(JSON.stringify({ success: true, message: 'Expiry time set successfully' }));
         });
 
         logger.info("Webhook component initialized successfully");
