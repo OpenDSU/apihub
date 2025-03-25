@@ -43,8 +43,9 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
             console.log("On Progress", progress);
         });
         
-        const res = await slowResponse;
-        console.log(res);
-        testFinished();
+        slowResponse.then((result) => {
+            console.log("On End", result);
+            testFinished();
+        });
     });
 }, 50000);

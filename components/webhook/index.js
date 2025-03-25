@@ -41,12 +41,7 @@ function Webhook(server) {
                 return res.end(JSON.stringify({ error: 'Missing callId parameter' }));
             }
 
-            if (!data.result) {
-                res.statusCode = 400;
-                return res.end(JSON.stringify({ error: 'Missing result parameter' }));
-            }
-
-            WebhookProgressTracker.storeResult(data.callId, data.result);
+            WebhookProgressTracker.storeResult(data.callId, data.result || true);
             res.statusCode = 200;
             res.end(JSON.stringify({ success: true, message: 'Result stored successfully' }));
         });
@@ -57,11 +52,6 @@ function Webhook(server) {
             if (!data.callId) {
                 res.statusCode = 400;
                 return res.end(JSON.stringify({ error: 'Missing callId parameter' }));
-            }
-
-            if (typeof data.progress === 'undefined') {
-                res.statusCode = 400;
-                return res.end(JSON.stringify({ error: 'Missing progress parameter' }));
             }
 
             WebhookProgressTracker.storeProgress(data.callId, data.progress);
