@@ -4,7 +4,6 @@ const path = require("path");
 const dc = require("double-check");
 const {assert} = dc;
 const fs = require('fs');
-const SlowLambdaClientResponse = require('../../../../opendsu/serverless/SlowLambdaClientResponse');
 
 assert.callback("Test Serverless API Async Flow", async (testFinished) => {
     dc.createTestFolder('serverlessAPIAsync', async (err, folder) => {
@@ -39,12 +38,7 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
         const fastResponse = await client.fastOperationTest();
         console.log(fastResponse);
 
-        const slowResponse = client.processDataAsyncTest();
-        console.log('Response type:', slowResponse.constructor.name);
-        console.log('Response properties:', Object.keys(slowResponse));
-        console.log('Is Promise?', slowResponse instanceof Promise);
-        console.log('Is SlowLambdaClientResponse?', slowResponse instanceof SlowLambdaClientResponse);
-
+        const slowResponse = client.processDataAsyncTest()
         slowResponse.onProgress((progress) => {
             console.log("On Progress", progress);
         });
