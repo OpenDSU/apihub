@@ -11,15 +11,15 @@ assert.callback("Test serverless API", async (testFinished) => {
         const pluginsDir = path.join(folder, 'plugins');
         fs.mkdirSync(pluginsDir, { recursive: true });
         
-        // Copy plugin files directly to the plugins directory
+        // Create files that require the original plugins
         const defaultPluginSrc = path.join(__dirname, "DefaultMockPlugin.js");
         const runtimePluginSrc = path.join(__dirname, "RuntimeMockPlugin.js");
         
-        const defaultPluginDest = path.join(pluginsDir, "DefaultMockPlugin.js");
-        const runtimePluginDest = path.join(pluginsDir, "RuntimeMockPlugin.js");
+        const defaultPluginContent = `module.exports = require("${defaultPluginSrc}");`;
+        const runtimePluginContent = `module.exports = require("${runtimePluginSrc}");`;
         
-        fs.copyFileSync(defaultPluginSrc, defaultPluginDest);
-        fs.copyFileSync(runtimePluginSrc, runtimePluginDest);
+        fs.writeFileSync(path.join(pluginsDir, "DefaultMockPlugin.js"), defaultPluginContent);
+        fs.writeFileSync(path.join(pluginsDir, "RuntimeMockPlugin.js"), runtimePluginContent);
         
         // Launch API Hub test node
         const result = await tir.launchApiHubTestNodeAsync({rootFolder: folder});
