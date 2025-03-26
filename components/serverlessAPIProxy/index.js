@@ -61,6 +61,9 @@ const createServerlessAPIProxy = async (server) => {
             }
 
             res.statusCode = response.statusCode;
+            if(response.statusCode === 500) {
+                console.error(`Error while executing command ${JSON.parse(req.body).name}`, response);
+            }
             res.write(JSON.stringify(response));
             res.end();
         });
@@ -85,6 +88,9 @@ const createServerlessAPIProxy = async (server) => {
             }
 
             res.statusCode = response.statusCode;
+            if(response.statusCode === 500) {
+                console.error("Error while restarting plugins", response);
+            }
             res.write(JSON.stringify(response));
             res.end();
         });
