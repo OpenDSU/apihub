@@ -63,15 +63,15 @@ assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
         });
         
         try {
-            await observableResponse;
-            console.log("Observable operation completed");
-            
-            // Verify we got all progress updates
-            assert.true(progressUpdates.length > 0, "Should have received progress updates");
-            console.log(progressUpdates[progressUpdates.length - 1]);
-            assert.true(progressUpdates[progressUpdates.length - 1].percent >= 80, "Should have reached near 100% progress");
-            
-            testFinished();
+            observableResponse.onEnd(()=>{
+                console.log("Observable operation completed");
+                // Verify we got all progress updates
+                assert.true(progressUpdates.length > 0, "Should have received progress updates");
+                console.log(progressUpdates[progressUpdates.length - 1]);
+                assert.true(progressUpdates[progressUpdates.length - 1].percent >= 80, "Should have reached near 100% progress");
+                
+                testFinished();
+            });
         } catch (error) {
             assert.fail(error.message);
         }
