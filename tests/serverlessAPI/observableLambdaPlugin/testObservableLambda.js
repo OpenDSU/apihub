@@ -2,17 +2,17 @@ require("../../../../../builds/output/testsRuntime");
 const tir = require("../../../../../psknode/tests/util/tir");
 const path = require("path");
 const dc = require("double-check");
-const { assert } = dc;
+const {assert} = dc;
 const fs = require('fs');
 
 assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
     dc.createTestFolder('serverlessAPIObservable', async (err, folder) => {
-        const result = await tir.launchApiHubTestNodeAsync({ rootFolder: folder });
+        const result = await tir.launchApiHubTestNodeAsync({rootFolder: folder});
         const server = result.node;
 
         const serverlessId = "observableTest";
         const pluginsDir = path.join(folder, 'plugins');
-        fs.mkdirSync(pluginsDir, { recursive: true });
+        fs.mkdirSync(pluginsDir, {recursive: true});
 
         // Set up the plugin
         const observablePluginSrc = path.join(__dirname, "ObservableLambdaPlugin.js");
@@ -21,9 +21,7 @@ assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
 
         // Create and configure the serverless API
         const serverlessAPI = await server.createServerlessAPI({
-            urlPrefix: serverlessId,
-            storage: folder,
-            env: {
+            urlPrefix: serverlessId, storage: folder, env: {
                 WEBHOOK_URL: `${result.url}/webhook`
             }
         });
@@ -32,16 +30,10 @@ assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
         console.log(`Serverless API started at ${serverUrl}`);
         server.registerServerlessProcessUrl(serverlessId, serverUrl);
 
-        const { createServerlessAPIClient } = require("opendsu").loadAPI("serverless");
+        const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
 
         // Create client and run tests
-        const client = await createServerlessAPIClient(
-            "admin",
-            result.url,
-            serverlessId,
-            "ObservableLambdaPlugin",
-            `${result.url}/webhook`
-        );
+        const client = await createServerlessAPIClient("admin", result.url, serverlessId, "ObservableLambdaPlugin");
 
         // Test quick synchronous operation
         const quickResponse = await client.quickObservableTest();
