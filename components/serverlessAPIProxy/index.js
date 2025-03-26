@@ -3,12 +3,12 @@ const createServerlessAPIProxy = async (server) => {
     const urlPrefix = '/proxy'
     const registeredServerlessProcessesUrls = {};
 
-    function forwardRequest(serverlessApiAddress, data, callback) {
+    function forwardRequest(serverlessApiAddress, data, callback, method = 'PUT') {
         let protocol = serverlessApiAddress.indexOf("https://") === 0 ? "https" : "http";
         protocol = require(protocol);
 
         let request = protocol.request(serverlessApiAddress, {
-            method: "PUT",
+            method: method,
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -34,7 +34,10 @@ const createServerlessAPIProxy = async (server) => {
 
         request.on("error", callback);
 
-        request.write(data);
+        if (data) {
+            request.write(data);
+        }
+
         request.end();
     }
 
@@ -85,6 +88,29 @@ const createServerlessAPIProxy = async (server) => {
             res.write(JSON.stringify(response));
             res.end();
         });
+    });
+
+    server.get(`${urlPrefix}/ready/:serverlessId`, function (req, res) {
+        const serverlessId = req.params.serverlessId;
+        if (!registeredServerlessProcessesUrls[serverlessId]) {
+            res.statusCode = 404;
+            res.write("Serverless process not found");
+            return res.end();
+        }
+
+        const serverlessApiUrl = registeredServerlessProcessesUrls[serverlessId];
+        forwardRequest(`${serverlessApiUrl}/ready`, null, (err, response) => {
+            if (err) {
+                res.statusCode = 500;
+                console.error("Error checking serverless process readiness", err);
+                res.write(err.message);
+                return res.end();
+            }
+
+            res.statusCode = response.statusCode;
+            res.write(JSON.stringify(response));
+            res.end();
+        }, 'GET');
     });
 
     server.registerServerlessProcessUrl = (serverlessId, serverlessApiUrl) => {

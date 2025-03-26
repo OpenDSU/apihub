@@ -37,7 +37,7 @@ assert.callback("Test serverless API", async (testFinished) => {
         server.registerServerlessProcessUrl(serverlessId, serverUrl);
 
         const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
-        const defaultClient = createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");
+        const defaultClient = await createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");
 
         // Test DefaultMockPlugin (should be loaded first due to dependencies)
         let res = await defaultClient.helloWorld();
@@ -47,7 +47,7 @@ assert.callback("Test serverless API", async (testFinished) => {
         assert.true(res === "Hello Core1!", `Expected "Hello Core1!", got "${res}"`);
         
         // Create enhanced client for RuntimeMockPlugin
-        const runtimeClient = createServerlessAPIClient("admin", result.url, serverlessId, "RuntimeMockPlugin");
+        const runtimeClient = await createServerlessAPIClient("admin", result.url, serverlessId, "RuntimeMockPlugin");
         
         // Test RuntimeMockPlugin (depends on DefaultMockPlugin)
         res = await runtimeClient.helloWorld();

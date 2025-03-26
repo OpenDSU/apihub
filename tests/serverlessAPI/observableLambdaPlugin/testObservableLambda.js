@@ -35,7 +35,7 @@ assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
         const { createServerlessAPIClient } = require("opendsu").loadAPI("serverless");
 
         // Create client and run tests
-        const client = createServerlessAPIClient(
+        const client = await createServerlessAPIClient(
             "admin",
             result.url,
             serverlessId,

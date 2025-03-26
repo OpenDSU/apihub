@@ -34,7 +34,7 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
 
         const { createServerlessAPIClient } = require("opendsu").loadAPI("serverless");
 
-        const client = createServerlessAPIClient("admin", result.url, serverlessId, "SlowLambdaPlugin", `${result.url}/webhook`);
+        const client = await createServerlessAPIClient("admin", result.url, serverlessId, "SlowLambdaPlugin", `${result.url}/webhook`);
         const fastResponse = await client.fastOperationTest();
         console.log(fastResponse);
 
