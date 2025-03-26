@@ -4,6 +4,10 @@ const createServerlessAPIProxy = async (server) => {
     const registeredServerlessProcessesUrls = {};
 
     function forwardRequest(serverlessApiAddress, data, callback, method = 'PUT') {
+        if (typeof data === 'function') {
+            callback = data;
+            data = null;
+        }
         let protocol = serverlessApiAddress.indexOf("https://") === 0 ? "https" : "http";
         protocol = require(protocol);
 
@@ -79,7 +83,7 @@ const createServerlessAPIProxy = async (server) => {
         }
 
         const serverlessApiUrl = registeredServerlessProcessesUrls[serverlessId];
-        forwardRequest(`${serverlessApiUrl}/restart`, "{}", (err, response) => {
+        forwardRequest(`${serverlessApiUrl}/restart`, (err, response) => {
             if (err) {
                 res.statusCode = 500;
                 console.error("Error while restarting plugins", err);
