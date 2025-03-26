@@ -2,17 +2,17 @@ require("../../../../../builds/output/testsRuntime");
 const tir = require("../../../../../psknode/tests/util/tir");
 const path = require("path");
 const dc = require("double-check");
-const {assert} = dc;
+const { assert } = dc;
 const fs = require('fs');
 
 assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
     dc.createTestFolder('serverlessAPIObservable', async (err, folder) => {
-        const result = await tir.launchApiHubTestNodeAsync({rootFolder: folder});
+        const result = await tir.launchApiHubTestNodeAsync({ rootFolder: folder });
         const server = result.node;
 
         const serverlessId = "observableTest";
         const pluginsDir = path.join(folder, 'plugins');
-        fs.mkdirSync(pluginsDir, {recursive: true});
+        fs.mkdirSync(pluginsDir, { recursive: true });
 
         // Set up the plugin
         const observablePluginSrc = path.join(__dirname, "ObservableLambdaPlugin.js");
@@ -31,15 +31,15 @@ assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
         const serverUrl = serverlessAPI.getUrl();
         console.log(`Serverless API started at ${serverUrl}`);
         server.registerServerlessProcessUrl(serverlessId, serverUrl);
-        
-        const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
+
+        const { createServerlessAPIClient } = require("opendsu").loadAPI("serverless");
 
         // Create client and run tests
         const client = createServerlessAPIClient(
-            "admin", 
-            result.url, 
-            serverlessId, 
-            "ObservableLambdaPlugin", 
+            "admin",
+            result.url,
+            serverlessId,
+            "ObservableLambdaPlugin",
             `${result.url}/webhook`
         );
 
@@ -51,25 +51,25 @@ assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
         // Test observable async operation
         const progressUpdates = [];
         const observableResponse = client.processDataObservableTest();
-        
+
         observableResponse.onProgress((progress) => {
             console.log("Progress Update:", progress);
             progressUpdates.push(progress);
-            
+
             // Verify progress object structure
             assert.true(typeof progress.percent === 'number', "Progress percent should be a number");
             assert.true(typeof progress.status === 'string', "Progress status should be a string");
             assert.true(typeof progress.details === 'string', "Progress details should be a string");
         });
-        
+
         try {
-            observableResponse.onEnd(()=>{
+            observableResponse.onEnd(() => {
                 console.log("Observable operation completed");
                 // Verify we got all progress updates
                 assert.true(progressUpdates.length > 0, "Should have received progress updates");
                 console.log(progressUpdates[progressUpdates.length - 1]);
                 assert.true(progressUpdates[progressUpdates.length - 1].percent >= 80, "Should have reached near 100% progress");
-                
+
                 testFinished();
             });
         } catch (error) {
