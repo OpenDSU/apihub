@@ -41,8 +41,8 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         server.registerServerlessProcessUrl(serverlessId, serverUrl);
         
         const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
-        const defaultClient = createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");
-        const runtimeClient = createServerlessAPIClient("admin", result.url, serverlessId, "RuntimeMockPlugin");
+        const defaultClient = await createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");
+        const runtimeClient = await createServerlessAPIClient("admin", result.url, serverlessId, "RuntimeMockPlugin");
 
         // Test initial state
         let res = await defaultClient.helloWorld();
