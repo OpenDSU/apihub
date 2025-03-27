@@ -53,10 +53,17 @@ assert.callback("Test serverless API restart functionality", async (testFinished
 
         // Test restart with new environment variables
         const newEnvVars = {
-            WEBHOOK_URL: `${result.url}/webhook/new-result`,
             NEW_VAR: "new_value",
             INITIAL_VAR: "updated_value"
         };
+
+        // Start multiple concurrent requests that will be queued during restart
+        const concurrentRequests = [
+            defaultClient.helloWorld(),
+            runtimeClient.helloWorld(),
+            defaultClient.hello(),
+            runtimeClient.hello()
+        ];
 
         // Call restart endpoint with new environment variables
         const response = await fetch(`${serverUrl}/restart`, {
@@ -71,7 +78,16 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         const responseBody = await response.json();
         assert.true(responseBody.statusCode === 200, `Expected statusCode 200, got ${responseBody.statusCode}`);
 
-        // Verify plugins still work after restart
+        // Wait for all queued requests to complete
+        const results = await Promise.all(concurrentRequests);
+        
+        // Verify all queued requests executed successfully after restart
+        assert.true(results[0] === "Hello World Core1!", `Expected "Hello World Core1!", got "${results[0]}"`);
+        assert.true(results[1] === "Hello World Core2!", `Expected "Hello World Core2!", got "${results[1]}"`);
+        assert.true(results[2] === "Hello Core1!", `Expected "Hello Core1!", got "${results[2]}"`);
+        assert.true(results[3] === "Hello Core2!", `Expected "Hello Core2!", got "${results[3]}"`);
+
+        // Verify plugins still work after restart with new requests
         res = await defaultClient.helloWorld();
         assert.true(res === "Hello World Core1!", `Expected "Hello World Core1!", got "${res}"`);
         
