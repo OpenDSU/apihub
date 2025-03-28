@@ -34,7 +34,7 @@ const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
     require('./components/stream');
     require('./components/requestForwarder');
     require('./components/lightDBEnclave');
-    require('./components/webhook');
+    require('./components/internalWebhook');
     require('./components/serverlessAPIProxy');
     require("./components/activeComponents");
     //end

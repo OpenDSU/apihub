@@ -31,7 +31,7 @@ assert.callback("Test serverless API restart functionality", async (testFinished
             urlPrefix: serverlessId,
             storage: folder,
             env: {
-                WEBHOOK_URL: `${result.url}/webhook/result`,
+                INTERNAL_WEBHOOK_URL: `${result.url}/internalWebhook/result`,
                 INITIAL_VAR: "initial_value"
             }
         });

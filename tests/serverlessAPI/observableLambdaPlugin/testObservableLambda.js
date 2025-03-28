@@ -22,7 +22,7 @@ assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
         // Create and configure the serverless API
         const serverlessAPI = await server.createServerlessAPI({
             urlPrefix: serverlessId, storage: folder, env: {
-                WEBHOOK_URL: `${result.url}/webhook`
+                INTERNAL_WEBHOOK_URL: `${result.url}/internalWebhook`
             }
         });
 

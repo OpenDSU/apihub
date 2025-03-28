@@ -24,7 +24,7 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
             urlPrefix: serverlessId,
             storage: folder,
             env: {
-                WEBHOOK_URL: `${result.url}/webhook`
+                INTERNAL_WEBHOOK_URL: `${result.url}/internalWebhook`
             }
         });
 
