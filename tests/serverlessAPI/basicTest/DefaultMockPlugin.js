@@ -1,16 +1,4 @@
 function DefaultMockPlugin() {
-    this.allow = function (asUser) {
-        return true;
-    }
-
-    this.start = async function () {
-        console.log("Starting core1...");
-    }
-
-    this.stop = async function () {
-        console.log("Stopping core1...");
-    }
-
     this.helloWorld = async function () {
         console.log("Hello World Core1!");
         return "Hello World Core1!"
@@ -20,17 +8,16 @@ function DefaultMockPlugin() {
         console.log("Hello Core1!");
         return "Hello Core1!"
     }
+
+    this.getEnvironmentVariable = async function (varName) {
+        return process.env[varName];
+    }
 }
 
 function getInstance() {
-    return {
-        helloWorld: function () {
-            return "Hello World Core1!";
-        },
-        hello: function () {
-            return "Hello Core1!";
-        }
-    }
+    return new Promise((resolve, reject) => {
+        resolve(new DefaultMockPlugin());
+    });
 }
 
 /**
@@ -42,7 +29,7 @@ function getDependencies() {
 }
 
 function getAllow() {
-    return function () {
+    return async function (globalUserId, email, command, ...args) {
         return true;
     }
 }

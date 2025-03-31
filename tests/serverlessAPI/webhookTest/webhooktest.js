@@ -17,7 +17,7 @@ assert.callback("Test serverless API with webhook integration", async (testFinis
         let receivedWebhooks = [];
 
         const webhookServer = http.createServer((req, res) => {
-            if (req.method === 'POST' && req.url === '/webhook') {
+            if (req.method === 'POST' && req.url === '/internalWebhook') {
                 let body = '';
                 req.on('data', chunk => {
                     body += chunk.toString();
@@ -84,7 +84,7 @@ assert.callback("Test serverless API with webhook integration", async (testFinis
             console.log("Starting webhook integration test...");
 
             // Register a webhook endpoint
-            const webhookUrl = `http://${webhookHost}:${webhookPort}/webhook`;
+            const webhookUrl = `http://${webhookHost}:${webhookPort}/internalWebhook`;
             const events = ["event.created", "event.updated", "event.deleted"];
             const webhookId = await client.registerWebhook(webhookUrl, events);
 

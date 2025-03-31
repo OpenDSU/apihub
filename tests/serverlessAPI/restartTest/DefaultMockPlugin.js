@@ -6,12 +6,8 @@ function getInstance() {
         hello: function() {
             return "Hello Core1!";
         },
-        getEnv: function(...vars) {
-            const result = {};
-            vars.forEach(varName => {
-                result[varName] = process.env[varName];
-            });
-            return result;
+        getEnvironmentVariable: async function(varName) {
+            return process.env[varName];
         },
         shutdown: async function() {
             console.log("DefaultMockPlugin shutting down");

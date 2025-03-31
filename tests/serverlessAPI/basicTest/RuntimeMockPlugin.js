@@ -1,16 +1,4 @@
 function RuntimeMockPlugin() {
-    this.allow = function (asUser) {
-        return true;
-    }
-
-    this.start = async function () {
-        console.log("Starting core2 ...");
-    }
-
-    this.stop = async function () {
-        console.log("Stopping core2 ...");
-    }
-
     this.helloWorld = async function () {
         console.log("Hello World Core2!");
         return "Hello World Core2!"
@@ -38,11 +26,11 @@ function getInstance() {
  * @returns {Array<string>} - Array of plugin names this plugin depends on
  */
 function getDependencies() {
-    return ["DefaultMockPlugin"]; // Depends on DefaultMockPlugin
+    return ["DefaultMockPlugin"];
 }
 
 function getAllow() {
-    return function () {
+    return async function (globalUserId, email, command, ...args) {
         return true;
     }
 }

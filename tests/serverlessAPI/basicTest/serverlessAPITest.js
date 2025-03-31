@@ -7,6 +7,7 @@ const fs = require("fs");
 
 assert.callback("Test serverless API", async (testFinished) => {
     dc.createTestFolder('serverlessAPI', async (err, folder) => {
+        process.env.SSO_SECRETS_ENCRYPTION_KEY = "QJvA2CnpD7NTXWDWmm754KY4x6fyxVOk/1r3N0z8NQA=";
         // Create plugins directory
         const pluginsDir = path.join(folder, 'plugins');
         fs.mkdirSync(pluginsDir, { recursive: true });
@@ -24,6 +25,15 @@ assert.callback("Test serverless API", async (testFinished) => {
         // Launch API Hub test node
         const result = await tir.launchApiHubTestNodeAsync({rootFolder: folder});
         const server = result.node;
+        // process.env.SSO_SECRETS_ENCRYPTION_KEY = require("crypto").randomBytes(32).toString("base64");
+        const apiHub = require('apihub');
+        const secretsService = await apiHub.getSecretsServiceInstanceAsync(folder);
+        const testEnvVars = {
+            TEST_VAR1: "test_value1",
+            TEST_VAR2: "test_value2"
+        };
+        await secretsService.putSecretsAsync('env', testEnvVars);
+        
         const serverlessId = "test";
         
         // Create serverless API with the folder containing plugin structure
@@ -56,7 +66,12 @@ assert.callback("Test serverless API", async (testFinished) => {
         res = await runtimeClient.hello();
         assert.true(res === "Hello Core2!", `Expected "Hello Core2!", got "${res}"`);
 
+        // Test environment variables were properly set
+        // You may need to add methods to your plugins to verify the environment variables
+        // For example:
+        res = await defaultClient.getEnvironmentVariable('TEST_VAR1');
+        assert.true(res === "test_value1", `Expected "test_value1", got "${res}"`);
+
         testFinished();
-        console.log("======>>>>>>>>>>")
     })
 }, 50000);

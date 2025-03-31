@@ -79,7 +79,7 @@ const createServerlessAPIProxy = async (server) => {
     });
 
     // Add proxy endpoint for restarting plugins
-    server.put(`${urlPrefix}/restart/:serverlessId`, function (req, res) {
+    server.put(`${urlPrefix}/restart/:serverlessId`, async (req, res) => {
         const serverlessId = req.params.serverlessId;
         if (!registeredServerlessProcessesUrls[serverlessId]) {
             res.statusCode = 404;
@@ -88,7 +88,27 @@ const createServerlessAPIProxy = async (server) => {
         }
 
         const serverlessApiUrl = registeredServerlessProcessesUrls[serverlessId];
-        forwardRequest(`${serverlessApiUrl}/restart`, (err, response) => {
+        
+        // Get env variables from secrets if not provided in request body
+        let envVars;
+        if (!req.body) {
+            try {
+                const apiHub = require('apihub');
+                const secretsService = await apiHub.getSecretsServiceInstanceAsync(server.rootFolder);
+                envVars = await secretsService.getSecretsAsync('env');
+            } catch (err) {
+                // If secret not found or service in readonly mode, continue with empty env
+                console.log('No environment variables found in secrets service, continuing with empty env');
+            }
+        } else {
+            try {
+                envVars = JSON.parse(req.body);
+            } catch (e) {
+                // If body parsing fails, continue with env from secrets
+            }
+        }
+
+        forwardRequest(`${serverlessApiUrl}/restart`, JSON.stringify(envVars), (err, response) => {
             if (err) {
                 res.statusCode = 500;
                 console.error("Error while restarting plugins", err);

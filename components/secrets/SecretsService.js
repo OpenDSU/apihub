@@ -211,6 +211,12 @@ function SecretsService(serverRootFolder) {
         return await this.putSecretAsync(DEFAULT_CONTAINER_NAME, secretName, secret);
     }
 
+    this.putSecretsAsync = async (secretsContainerName, secrets) => {
+        for (const [key, value] of Object.entries(secrets)) {
+            await this.putSecretAsync(secretsContainerName, key, value);
+        }
+    }
+
     this.getSecretSync = (secretsContainerName, secretName) => {
         if (readonlyMode) {
             throw createError(555, `Secrets Service is in readonly mode`);
@@ -228,6 +234,10 @@ function SecretsService(serverRootFolder) {
     }
 
     this.readSecretSync = this.getSecretSync;
+
+    this.getSecretsAsync = async (containerName) => {
+        return await getDecryptedSecretsAsync(containerName);
+    }
 
     this.getSecretFromDefaultContainerSync = (secretName) => {
         return this.getSecretSync(DEFAULT_CONTAINER_NAME, secretName);

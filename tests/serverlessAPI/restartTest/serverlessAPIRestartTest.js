@@ -7,33 +7,41 @@ const fs = require("fs");
 
 assert.callback("Test serverless API restart functionality", async (testFinished) => {
     dc.createTestFolder('serverlessAPI', async (err, folder) => {
+        // Set encryption key for SecretsService
+        process.env.SSO_SECRETS_ENCRYPTION_KEY = "QJvA2CnpD7NTXWDWmm754KY4x6fyxVOk/1r3N0z8NQA=";
+        
         // Create plugins directory
         const pluginsDir = path.join(folder, 'plugins');
         fs.mkdirSync(pluginsDir, { recursive: true });
         
-        // Copy plugin files directly to the plugins directory
         const defaultPluginSrc = path.join(__dirname, "DefaultMockPlugin.js");
         const runtimePluginSrc = path.join(__dirname, "RuntimeMockPlugin.js");
-        
-        const defaultPluginDest = path.join(pluginsDir, "DefaultMockPlugin.js");
-        const runtimePluginDest = path.join(pluginsDir, "RuntimeMockPlugin.js");
-        
-        fs.copyFileSync(defaultPluginSrc, defaultPluginDest);
-        fs.copyFileSync(runtimePluginSrc, runtimePluginDest);
-        
+
+        const defaultPluginContent = `module.exports = require("${defaultPluginSrc}");`;
+        const runtimePluginContent = `module.exports = require("${runtimePluginSrc}");`;
+
+        fs.writeFileSync(path.join(pluginsDir, "DefaultMockPlugin.js"), defaultPluginContent);
+        fs.writeFileSync(path.join(pluginsDir, "RuntimeMockPlugin.js"), runtimePluginContent);
+
         // Launch API Hub test node
         const result = await tir.launchApiHubTestNodeAsync({rootFolder: folder});
         const server = result.node;
+
+        // Initialize SecretsService and store initial environment variables
+        const apiHub = require('apihub');
+        const secretsService = await apiHub.getSecretsServiceInstanceAsync(folder);
+        const initialEnvVars = {
+            INTERNAL_WEBHOOK_URL: `${result.url}/internalWebhook/result`,
+            INITIAL_VAR: "initial_value"
+        };
+        await secretsService.putSecretsAsync('env', initialEnvVars);
+        
         const serverlessId = "test";
         
-        // Create serverless API with the folder containing plugin structure
+        // Create serverless API without explicitly providing env variables
         const serverlessAPI = await server.createServerlessAPI({
             urlPrefix: serverlessId,
-            storage: folder,
-            env: {
-                INTERNAL_WEBHOOK_URL: `${result.url}/internalWebhook/result`,
-                INITIAL_VAR: "initial_value"
-            }
+            storage: folder
         });
         
         // Initialize plugins from the directory structure
@@ -51,11 +59,18 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         res = await runtimeClient.helloWorld();
         assert.true(res === "Hello World Core2!", `Expected "Hello World Core2!", got "${res}"`);
 
-        // Test restart with new environment variables
+        const initialDefaultEnvResult = await defaultClient.getEnvironmentVariable("INITIAL_VAR");
+        assert.true(initialDefaultEnvResult === "initial_value", `Expected "initial_value", got "${initialDefaultEnvResult}"`);
+
+        const runtimeInitialEnvResult = await runtimeClient.getEnvironmentVariable("INTERNAL_WEBHOOK_URL");
+        assert.true(runtimeInitialEnvResult === `${result.url}/internalWebhook/result`, `Expected "INTERNAL_WEBHOOK_URL" to be "${result.url}/internalWebhook/result", got "${runtimeInitialEnvResult}"`);
+
+        // Update environment variables in SecretsService
         const newEnvVars = {
             NEW_VAR: "new_value",
             INITIAL_VAR: "updated_value"
         };
+        await secretsService.putSecretsAsync('env', newEnvVars);
 
         // Start multiple concurrent requests that will be queued during restart
         const concurrentRequests = [
@@ -65,13 +80,12 @@ assert.callback("Test serverless API restart functionality", async (testFinished
             runtimeClient.hello()
         ];
 
-        // Call restart endpoint with new environment variables
-        const response = await fetch(`${serverUrl}/restart`, {
+        // Call restart endpoint without providing env variables (should use SecretsService)
+        const response = await fetch(`${result.url}/proxy/restart/${serverlessId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newEnvVars)
+            }
         });
 
         assert.true(response.status === 200, `Expected status 200, got ${response.status}`);
@@ -94,25 +108,9 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         res = await runtimeClient.helloWorld();
         assert.true(res === "Hello World Core2!", `Expected "Hello World Core2!", got "${res}"`);
 
-        // Test that environment variables were updated
-        const envResponse = await fetch(`${serverUrl}/executeCommand`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                forWhom: "admin",
-                name: "getEnv",
-                pluginName: "DefaultMockPlugin",
-                args: ["NEW_VAR", "INITIAL_VAR"]
-            })
-        });
-
-        const envResult = await envResponse.json();
-        assert.true(envResult.statusCode === 200, `Expected statusCode 200, got ${envResult.statusCode}`);
-        assert.true(envResult.result.NEW_VAR === "new_value", `Expected "new_value", got "${envResult.result.NEW_VAR}"`);
-        assert.true(envResult.result.INITIAL_VAR === "updated_value", `Expected "updated_value", got "${envResult.result.INITIAL_VAR}"`);
-
+        // Test that environment variables were updated from SecretsService
+        const envResponse = await runtimeClient.getEnvironmentVariable("NEW_VAR");
+        assert.true(envResponse === "new_value", `Expected "new_value", got "${envResponse}"`);
         testFinished();
     });
 }, 50000); 

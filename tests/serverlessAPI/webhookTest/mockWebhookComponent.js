@@ -1,6 +1,6 @@
 const webhookComponent = async(server) => {
     const receivedWebhooks = [];
-    server.post("/webhook", (req, res) => {
+    server.post("/internalWebhook", (req, res) => {
         let body = '';
         req.on('data', chunk => {
             body += chunk.toString();
@@ -20,7 +20,7 @@ const webhookComponent = async(server) => {
         });
     })
 
-    server.get("/webhook", (req, res) => {
+    server.get("/internalWebhook", (req, res) => {
         res.statusCode = 200;
         res.end(JSON.stringify(receivedWebhooks));
     })

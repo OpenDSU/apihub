@@ -448,6 +448,19 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
         const {fork} = require('child_process');
         const path = require('path');
 
+        // Get env variables from secrets if not provided in config
+        if (!config.env) {
+            try {
+                const secretsService = await require('./components/secrets/SecretsService').getSecretsServiceInstanceAsync(config.storage);
+                config.env = await secretsService.getSecretsAsync('env');
+                console.log('Loaded environment variables from secrets service');
+            } catch (err) {
+                // If secret not found or service in readonly mode, continue with empty env
+                console.log('No environment variables found in secrets service, continuing with empty env');
+                config.env = {};
+            }
+        }
+
         // Spawn child process
         const serverlessAPIPath = path.resolve(path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, `.${__dirname}`, 'serverlessAPI', 'index.js'))
         const serverProcess = fork(serverlessAPIPath);
