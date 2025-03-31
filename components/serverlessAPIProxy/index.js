@@ -45,7 +45,12 @@ const createServerlessAPIProxy = async (server) => {
         request.end();
     }
 
-    server.put(`${urlPrefix}/executeCommand/:serverlessId`, httpWrapper.bodyParser);
+    server.put(`${urlPrefix}/executeCommand/:serverlessId`, (req,res, next)=>{
+        if(req.body){
+            return next();
+        }
+        httpWrapper.bodyParser(req, res, next);
+    });
 
     server.put(`${urlPrefix}/executeCommand/:serverlessId`, function (req, res) {
         const serverlessId = req.params.serverlessId;
