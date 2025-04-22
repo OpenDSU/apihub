@@ -78,8 +78,7 @@ const createServerlessAPIProxy = async (server) => {
         });
     });
 
-    // Add proxy endpoint for restarting plugins
-    server.put(`${urlPrefix}/restart/:serverlessId`, async (req, res) => {
+    server.put(`${urlPrefix}/setEnv/:serverlessId`, async (req, res) => {
         const serverlessId = req.params.serverlessId;
         if (!registeredServerlessProcessesUrls[serverlessId]) {
             res.statusCode = 404;
@@ -108,17 +107,17 @@ const createServerlessAPIProxy = async (server) => {
             }
         }
 
-        forwardRequest(`${serverlessApiUrl}/restart`, JSON.stringify(envVars), (err, response) => {
+        forwardRequest(`${serverlessApiUrl}/setEnv`, JSON.stringify(envVars), (err, response) => {
             if (err) {
                 res.statusCode = 500;
-                console.error("Error while restarting plugins", err);
+                console.error("Error while setting env variables", err);
                 res.write(err.message);
                 return res.end();
             }
 
             res.statusCode = response.statusCode;
             if(response.statusCode === 500) {
-                console.error("Error while restarting plugins", response);
+                console.error("Error while setting env variables", response);
             }
             res.write(JSON.stringify(response));
             res.end();
