@@ -28,8 +28,7 @@ assert.callback("Test serverless API with slow initialization", async (testFinis
         });
         
         // Initialize plugins from the directory structure
-        const serverUrl = serverlessAPI.getUrl();
-        server.registerServerlessProcessUrl(serverlessId, serverUrl);
+        server.registerServerlessProcess(serverlessId, serverlessAPI);
 
         const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
 

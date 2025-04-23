@@ -42,9 +42,7 @@ assert.callback("Test serverless API", async (testFinished) => {
             storage: folder // Pass the root folder to the serverless API
         });
         
-        // Initialize plugins from the directory structure
-        const serverUrl = serverlessAPI.getUrl();
-        server.registerServerlessProcessUrl(serverlessId, serverUrl);
+        server.registerServerlessProcess(serverlessId, serverlessAPI);
 
         const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
         const defaultClient = await createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");

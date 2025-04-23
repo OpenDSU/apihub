@@ -53,8 +53,7 @@ assert.callback("Test serverless API", async (testFinished) => {
         });
 
         // Initialize plugins from the directory structure
-        const serverUrl = serverlessAPI.getUrl();
-        server.registerServerlessProcessUrl(serverlessId, serverUrl);
+        server.registerServerlessProcess(serverlessId, serverlessAPI);
 
         try {
             // Create and initialize BasePlugin client

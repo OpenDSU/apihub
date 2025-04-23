@@ -449,34 +449,53 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
         const {fork} = require('child_process');
         const path = require('path');
 
-        // Get env variables from secrets if not provided in config
-        if (!config.env) {
+        // Define the script path first
+        const serverlessAPIPath = path.resolve(path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, `.${__dirname}`, 'serverlessAPI', 'index.js'))
+
+        let initialEnv = {};
+        // Get env variables from config first
+        if (config.env && typeof config.env === 'object') {
+            initialEnv = { ...config.env };
+            console.log('Using provided environment variables for initial start.');
+        } else {
+             // If not in config, try secrets
             try {
                 const secretsService = await require('./components/secrets/SecretsService').getSecretsServiceInstanceAsync(config.storage);
-                config.env = await secretsService.getSecretsAsync('env');
-                console.log('Loaded environment variables from secrets service');
+                initialEnv = await secretsService.getSecretsAsync('env');
+                 // Ensure secretsEnv is an object
+                 if (typeof initialEnv !== 'object' || initialEnv === null) {
+                     console.log('Environment variables from secrets service were not an object, using empty env for initial start.');
+                     initialEnv = {};
+                 }
+                console.log('Loaded environment variables from secrets service for initial start.');
             } catch (err) {
                 // If secret not found or service in readonly mode, continue with empty env
-                console.log('No environment variables found in secrets service, continuing with empty env');
-                config.env = {};
+                console.log('No environment variables found in config or secrets service, continuing with empty env for initial start:', err.message);
+                initialEnv = {};
             }
         }
 
-        // Spawn child process
-        const serverlessAPIPath = path.resolve(path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, `.${__dirname}`, 'serverlessAPI', 'index.js'))
-        const serverProcess = fork(serverlessAPIPath);
+        // Prepare fork options with merged environment variables
+        const forkOptions = {
+            env: { ...process.env, ...initialEnv },
+        };
 
-        // Return a promise that resolves with the server proxy
+        // Spawn child process with the initial environment
+        const serverProcess = fork(serverlessAPIPath, [], forkOptions);
+
+        // Return a promise that resolves with the server proxy containing necessary info
         return new Promise((resolve, reject) => {
             // Handle messages from child process
             serverProcess.on('message', async (message) => {
                 if (message.type === 'ready') {
-                    // Server is ready, create a proxy object with the same interface
+                    // Server is ready, create a proxy object with the same interface + required info
                     const serverProxy = {
                         url: message.url,
                         port: message.port,
+                        process: serverProcess,
+                        config: config,
+                        scriptPath: serverlessAPIPath,
 
-                        // Method to terminate the server
                         close: () => {
                             return new Promise((resolveClose) => {
                                 serverProcess.send({type: 'shutdown'});
@@ -489,34 +508,11 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
                         // Expose the serverless API URL
                         getUrl: () => message.url,
 
-                        // Keep reference to the process
-                        process: serverProcess,
-
                         // Method to terminate the server immediately if needed
                         kill: () => {
                             serverProcess.kill('SIGTERM');
                         }
                     };
-
-                    // Set initial environment variables if provided in config
-                    if (config.env) {
-                        try {
-                            const response = await fetch(`${message.url}/setEnv`, {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify(config.env)
-                            });
-                            
-                            if (!response.ok) {
-                                throw new Error(`Failed to set environment variables: ${response.statusText}`);
-                            }
-                        } catch (error) {
-                            console.error('Failed to set environment variables:', error);
-                            // Don't reject here, just log the error as the server is still functional
-                        }
-                    }
 
                     resolve(serverProxy);
                 } else if (message.type === 'error') {
@@ -526,9 +522,15 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
 
             // Handle child process errors
             serverProcess.on('error', (err) => {
-                console.error('Failed to start child process:', err);
+                console.error('Failed to start or communicate with child process:', err);
                 reject(err);
             });
+
+             // Handle child process exit before ready
+             serverProcess.on('exit', (code, signal) => {
+                 console.error(`Child process exited prematurely with code ${code}, signal ${signal}.`);
+                 reject(new Error(`Child process exited prematurely with code ${code}, signal ${signal}.`));
+             });
 
             // Start the server by sending the configuration
             serverProcess.send({type: 'start', config});

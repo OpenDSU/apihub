@@ -45,8 +45,7 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         });
         
         // Initialize plugins from the directory structure
-        const serverUrl = serverlessAPI.getUrl();
-        server.registerServerlessProcessUrl(serverlessId, serverUrl);
+        server.registerServerlessProcess(serverlessId, serverlessAPI);
         
         const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
         const defaultClient = await createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");

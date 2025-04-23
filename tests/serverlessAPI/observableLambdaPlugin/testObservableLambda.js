@@ -26,9 +26,8 @@ assert.callback("Test Serverless API Observable Flow", async (testFinished) => {
             }
         });
 
-        const serverUrl = serverlessAPI.getUrl();
-        console.log(`Serverless API started at ${serverUrl}`);
-        server.registerServerlessProcessUrl(serverlessId, serverUrl);
+        console.log(`Serverless API started at ${serverlessAPI.url}`);
+        server.registerServerlessProcess(serverlessId, serverlessAPI);
 
         const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
 
