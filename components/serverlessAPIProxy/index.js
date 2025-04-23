@@ -125,22 +125,47 @@ const createServerlessAPIProxy = async (server) => {
 
         if (oldProcess && !oldProcess.killed) {
              oldProcess.kill('SIGTERM');
+             // Wait for the old process to potentially release resources before forking anew
+             await new Promise(resolve => setTimeout(resolve, 200));
         }
         delete registeredServerlessProcesses[serverlessId]; 
 
         const forkOptions = {
             env: { ...process.env, ...envVars },
+            // Explicitly configure stdio streams and IPC channel
+            stdio: ['pipe', 'pipe', 'pipe', 'ipc'] 
         };
 
         try {
             const newProcess = fork(scriptPath, [], forkOptions);
             
+            // Add defensive check for stdout/stderr
+            if (!newProcess || !newProcess.stdout || !newProcess.stderr) {
+                console.error(`[${serverlessId}] Forked process object is missing stdout/stderr streams! Killing potentially orphaned process.`);
+                if(newProcess && typeof newProcess.kill === 'function') {
+                    newProcess.kill();
+                }
+                throw new Error("Forked child process object is invalid (missing stdio streams).");
+            }
+
+            // Capture stdout and stderr from the child process
+            newProcess.stdout.on('data', (data) => {
+                console.log(`[${serverlessId} PID:${newProcess.pid} STDOUT]: ${data.toString().trim()}`);
+            });
+
+            newProcess.stderr.on('data', (data) => {
+                console.error(`[${serverlessId} PID:${newProcess.pid} STDERR]: ${data.toString().trim()}`);
+            });
+
             registeredServerlessProcesses[serverlessId] = { 
                 process: newProcess, 
                 config: config, 
                 scriptPath: scriptPath,
                 url: null
             };
+
+            // Send the start message to the new process with its config
+            newProcess.send({ type: 'start', config: config });
 
             console.log(`Forked new process for ${serverlessId} with PID: ${newProcess.pid}`);
 
@@ -154,7 +179,7 @@ const createServerlessAPIProxy = async (server) => {
                      }
                      if (!res.headersSent) {
                          res.statusCode = 200;
-                         res.write(JSON.stringify({ message: `Serverless process ${serverlessId} restarted successfully with new environment.`, newUrl: message.url }));
+                         res.write(JSON.stringify({ statusCode: 200, message: `Serverless process ${serverlessId} restarted successfully with new environment.`, newUrl: message.url }));
                          res.end();
                      }
                 } else if (message.type === 'error') {
@@ -188,7 +213,7 @@ const createServerlessAPIProxy = async (server) => {
             });
 
             const readyTimeout = setTimeout(() => {
-                if (newProcess && !newProcess.killed && (!registeredServerlessProcesses[serverlessId] || !registeredServerlessProcesses[serverlessId].serverlessApiUrl)) {
+                if (newProcess && !newProcess.killed && (!registeredServerlessProcesses[serverlessId])) {
                      console.error(`Timeout waiting for new serverless process ${serverlessId} (PID: ${newProcess.pid}) to become ready. Killing process.`);
                      newProcess.kill();
                      delete registeredServerlessProcesses[serverlessId];
@@ -209,7 +234,7 @@ const createServerlessAPIProxy = async (server) => {
 
 
         } catch (err) {
-            console.error(`Error trying to fork new process for ${serverlessId}:`, err);
+            console.error(`Error trying to fork or setup new process for ${serverlessId}:`, err.message); 
             delete registeredServerlessProcesses[serverlessId];
             if (!res.headersSent) {
                  res.statusCode = 500;

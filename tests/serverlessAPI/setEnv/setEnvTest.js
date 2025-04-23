@@ -80,7 +80,7 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         ];
 
         // Call restart endpoint without providing env variables (should use SecretsService)
-        const response = await fetch(`${result.url}/proxy/restart/${serverlessId}`, {
+        const response = await fetch(`${result.url}/proxy/setEnv/${serverlessId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
