@@ -204,7 +204,7 @@ const createServerlessAPIProxy = async (server) => {
             try {
                 const apiHub = require('apihub');
                 const secretsService = await apiHub.getSecretsServiceInstanceAsync(server.rootFolder);
-                const secretsEnv = await secretsService.getSecretsAsync('env');
+                const secretsEnv = await secretsService.getSecretsAsync(serverlessId);
                  if (typeof secretsEnv === 'object' && secretsEnv !== null) {
                      envVars = secretsEnv;
                      console.log(`Loaded env vars from secrets service for ${serverlessId}.`);
