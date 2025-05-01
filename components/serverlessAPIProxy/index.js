@@ -1,5 +1,5 @@
 const httpWrapper = require("../../http-wrapper/src/httpUtils");
-const ProcessManager = require("../../serverlessAPI/lib/ProcessManager");
+const ProcessManager = require("../../serverlessAPI/ProcessManager");
 
 const createServerlessAPIProxy = async (server) => {
     const urlPrefix = '/proxy';

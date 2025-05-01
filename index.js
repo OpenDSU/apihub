@@ -468,7 +468,7 @@ function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restart
 
     server.createServerlessAPI = async (config) => {
         if (!server.processManager) {
-            const ProcessManager = require('./serverlessAPI/lib/ProcessManager');
+            const ProcessManager = require('./serverlessAPI/ProcessManager');
             server.processManager = new ProcessManager();
         }
 
@@ -500,7 +500,7 @@ module.exports.getHttpWrapper = function () {
     return require('./http-wrapper');
 };
 
-module.exports.ProcessManager = require('./serverlessAPI/lib/ProcessManager');
+module.exports.ProcessManager = require('./serverlessAPI/ProcessManager');
 
 module.exports.getServerConfig = function () {
     logger.debug(`apihub.getServerConfig() method is deprecated, please use server.config to retrieve necessary info.`);
