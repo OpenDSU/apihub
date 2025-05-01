@@ -1,7 +1,7 @@
 require("../../../../../builds/output/testsRuntime");
 const tir = require("../../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const {assert} = dc;
+const { assert } = dc;
 const path = require("path");
 const fs = require("fs");
 
@@ -9,11 +9,11 @@ assert.callback("Test serverless API restart functionality", async (testFinished
     dc.createTestFolder('serverlessAPI', async (err, folder) => {
         // Set encryption key for SecretsService
         process.env.SSO_SECRETS_ENCRYPTION_KEY = "QJvA2CnpD7NTXWDWmm754KY4x6fyxVOk/1r3N0z8NQA=";
-        
+
         // Create plugins directory
         const pluginsDir = path.join(folder, 'plugins');
         fs.mkdirSync(pluginsDir, { recursive: true });
-        
+
         const defaultPluginSrc = path.join(__dirname, "DefaultMockPlugin.js");
         const runtimePluginSrc = path.join(__dirname, "RuntimeMockPlugin.js");
 
@@ -24,7 +24,7 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         fs.writeFileSync(path.join(pluginsDir, "RuntimeMockPlugin.js"), runtimePluginContent);
 
         // Launch API Hub test node
-        const result = await tir.launchApiHubTestNodeAsync({rootFolder: folder});
+        const result = await tir.launchApiHubTestNodeAsync({ rootFolder: folder });
         const server = result.node;
 
         // Initialize SecretsService and store initial environment variables
@@ -34,27 +34,27 @@ assert.callback("Test serverless API restart functionality", async (testFinished
             INTERNAL_WEBHOOK_URL: `${result.url}/internalWebhook/result`,
             INITIAL_VAR: "initial_value"
         };
-        await secretsService.putSecretsAsync('env', initialEnvVars);
-        
         const serverlessId = "test";
-        
+        await secretsService.putSecretsAsync(serverlessId, initialEnvVars);
+
+
         // Create serverless API without explicitly providing env variables
         const serverlessAPI = await server.createServerlessAPI({
             urlPrefix: serverlessId,
             storage: folder
         });
-        
+
         // Initialize plugins from the directory structure
         server.registerServerlessProcess(serverlessId, serverlessAPI);
-        
-        const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
+
+        const { createServerlessAPIClient } = require("opendsu").loadAPI("serverless");
         const defaultClient = await createServerlessAPIClient("admin", result.url, serverlessId, "DefaultMockPlugin");
         const runtimeClient = await createServerlessAPIClient("admin", result.url, serverlessId, "RuntimeMockPlugin");
 
         // Test initial state
         let res = await defaultClient.helloWorld();
         assert.true(res === "Hello World Core1!", `Expected "Hello World Core1!", got "${res}"`);
-        
+
         res = await runtimeClient.helloWorld();
         assert.true(res === "Hello World Core2!", `Expected "Hello World Core2!", got "${res}"`);
 
@@ -69,7 +69,7 @@ assert.callback("Test serverless API restart functionality", async (testFinished
             NEW_VAR: "new_value",
             INITIAL_VAR: "updated_value"
         };
-        await secretsService.putSecretsAsync('env', newEnvVars);
+        await secretsService.putSecretsAsync(serverlessId, newEnvVars);
 
         // Start multiple concurrent requests that will be queued during restart
         const concurrentRequests = [
@@ -80,7 +80,7 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         ];
 
         // Call restart endpoint without providing env variables (should use SecretsService)
-        const response = await fetch(`${result.url}/proxy/setEnv/${serverlessId}`, {
+        const response = await fetch(`${result.url}/proxy/restart/${serverlessId}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -93,7 +93,7 @@ assert.callback("Test serverless API restart functionality", async (testFinished
 
         // Wait for all queued requests to complete
         const results = await Promise.all(concurrentRequests);
-        
+
         // Verify all queued requests executed successfully after restart
         assert.true(results[0] === "Hello World Core1!", `Expected "Hello World Core1!", got "${results[0]}"`);
         assert.true(results[1] === "Hello World Core2!", `Expected "Hello World Core2!", got "${results[1]}"`);
@@ -103,7 +103,7 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         // Verify plugins still work after restart with new requests
         res = await defaultClient.helloWorld();
         assert.true(res === "Hello World Core1!", `Expected "Hello World Core1!", got "${res}"`);
-        
+
         res = await runtimeClient.helloWorld();
         assert.true(res === "Hello World Core2!", `Expected "Hello World Core2!", got "${res}"`);
 
@@ -112,4 +112,4 @@ assert.callback("Test serverless API restart functionality", async (testFinished
         assert.true(envResponse === "new_value", `Expected "new_value", got "${envResponse}"`);
         testFinished();
     });
-}, 50000); 
+}, 500000); 

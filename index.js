@@ -41,7 +41,7 @@ const CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL = 500;
     //end
 })();
 
-function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartIntervalCheck, retryTimeout}, callback) {
+function HttpServer({ listeningPort, rootFolder, sslConfig, dynamicPort, restartIntervalCheck, retryTimeout }, callback) {
     if (typeof restartIntervalCheck === "undefined") {
         restartIntervalCheck = CHECK_FOR_RESTART_COMMAND_FILE_INTERVAL;
     }
@@ -79,12 +79,12 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
 
     let permanentWarnings = [];
     server.registerPermanentWarning = (componentName, error) => {
-        permanentWarnings.push({componentName, error});
+        permanentWarnings.push({ componentName, error });
     }
 
     let displayPermanentWarnings = function () {
         for (let warning of permanentWarnings) {
-            let {error, componentName} = warning;
+            let { error, componentName } = warning;
             logger.warning(`Component ${componentName} has an permanent warning!`, error);
         }
     }
@@ -195,6 +195,28 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
             }
             return;
         }
+
+        // Override the server's close method to terminate child processes
+        const originalClose = server.close;
+        server.close = function (cb) {
+            const closeCallback = cb || function () { };
+
+            // If we have a process manager, terminate all processes first
+            if (server.processManager) {
+                server.processManager.terminateAll()
+                    .then(() => {
+                        logger.info("All child processes terminated gracefully");
+                        originalClose.call(server, closeCallback);
+                    })
+                    .catch((err) => {
+                        logger.error("Error terminating child processes:", err);
+                        originalClose.call(server, closeCallback);
+                    });
+            } else {
+                // No process manager, proceed with normal close
+                originalClose.call(server, closeCallback);
+            }
+        };
 
         registerEndpoints(callback);
     }
@@ -372,7 +394,7 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
         function addComponents(cb) {
             const requiredComponentNames = ["config"];
             //addComponent("config", {module: "./components/config"});
-            addComponent("activeComponents", {module: "./components/activeComponents"});
+            addComponent("activeComponents", { module: "./components/activeComponents" });
 
             // take only the components that have configurations and that are not part of the required components
             const middlewareList = [...conf.activeComponents]
@@ -432,7 +454,6 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
 
         addRootMiddlewares();
         addComponents(() => {
-            //at this point all components were installed and we need to register the fallback handler
             logger.debug("Registering the fallback handler. Any endpoint registered after this one will have zero changes to be executed.");
             server.use(function (req, res) {
                 logger.debug("Response handled by fallback handler.");
@@ -446,95 +467,17 @@ function HttpServer({listeningPort, rootFolder, sslConfig, dynamicPort, restartI
     }
 
     server.createServerlessAPI = async (config) => {
-        const {fork} = require('child_process');
-        const path = require('path');
-
-        // Define the script path first
-        const serverlessAPIPath = path.resolve(path.join(process.env.PSK_ROOT_INSTALATION_FOLDER, `.${__dirname}`, 'serverlessAPI', 'index.js'))
-
-        let initialEnv = {};
-        // Get env variables from config first
-        if (config.env && typeof config.env === 'object') {
-            initialEnv = { ...config.env };
-            console.log('Using provided environment variables for initial start.');
-        } else {
-             // If not in config, try secrets
-            try {
-                const secretsService = await require('./components/secrets/SecretsService').getSecretsServiceInstanceAsync(config.storage);
-                initialEnv = await secretsService.getSecretsAsync('env');
-                 // Ensure secretsEnv is an object
-                 if (typeof initialEnv !== 'object' || initialEnv === null) {
-                     console.log('Environment variables from secrets service were not an object, using empty env for initial start.');
-                     initialEnv = {};
-                 }
-                console.log('Loaded environment variables from secrets service for initial start.');
-            } catch (err) {
-                // If secret not found or service in readonly mode, continue with empty env
-                console.log('No environment variables found in config or secrets service, continuing with empty env for initial start:', err.message);
-                initialEnv = {};
-            }
+        if (!server.processManager) {
+            const ProcessManager = require('./serverlessAPI/lib/ProcessManager');
+            server.processManager = new ProcessManager();
         }
 
-        // Prepare fork options with merged environment variables
-        const forkOptions = {
-            env: { ...process.env, ...initialEnv },
-        };
-
-        // Spawn child process with the initial environment
-        const serverProcess = fork(serverlessAPIPath, [], forkOptions);
-
-        // Return a promise that resolves with the server proxy containing necessary info
-        return new Promise((resolve, reject) => {
-            // Handle messages from child process
-            serverProcess.on('message', async (message) => {
-                if (message.type === 'ready') {
-                    // Server is ready, create a proxy object with the same interface + required info
-                    const serverProxy = {
-                        url: message.url,
-                        port: message.port,
-                        process: serverProcess,
-                        config: config,
-                        scriptPath: serverlessAPIPath,
-
-                        close: () => {
-                            return new Promise((resolveClose) => {
-                                serverProcess.send({type: 'shutdown'});
-                                serverProcess.on('exit', () => {
-                                    resolveClose();
-                                });
-                            });
-                        },
-
-                        // Expose the serverless API URL
-                        getUrl: () => message.url,
-
-                        // Method to terminate the server immediately if needed
-                        kill: () => {
-                            serverProcess.kill('SIGTERM');
-                        }
-                    };
-
-                    resolve(serverProxy);
-                } else if (message.type === 'error') {
-                    reject(new Error(message.error));
-                }
-            });
-
-            // Handle child process errors
-            serverProcess.on('error', (err) => {
-                console.error('Failed to start or communicate with child process:', err);
-                reject(err);
-            });
-
-             // Handle child process exit before ready
-             serverProcess.on('exit', (code, signal) => {
-                 console.error(`Child process exited prematurely with code ${code}, signal ${signal}.`);
-                 reject(new Error(`Child process exited prematurely with code ${code}, signal ${signal}.`));
-             });
-
-            // Start the server by sending the configuration
-            serverProcess.send({type: 'start', config});
-        });
+        try {
+            return await server.processManager.createServerlessAPI(config);
+        } catch (error) {
+            console.error('Failed to create serverless API:', error);
+            throw error;
+        }
     };
 
     return server;
@@ -546,7 +489,7 @@ module.exports.createInstance = function (port, folder, sslConfig, callback) {
         sslConfig = undefined;
     }
 
-    return new HttpServer({listeningPort: port, rootFolder: folder, sslConfig}, callback);
+    return new HttpServer({ listeningPort: port, rootFolder: folder, sslConfig }, callback);
 };
 
 module.exports.start = function (options, callback) {
@@ -556,6 +499,8 @@ module.exports.start = function (options, callback) {
 module.exports.getHttpWrapper = function () {
     return require('./http-wrapper');
 };
+
+module.exports.ProcessManager = require('./serverlessAPI/lib/ProcessManager');
 
 module.exports.getServerConfig = function () {
     logger.debug(`apihub.getServerConfig() method is deprecated, please use server.config to retrieve necessary info.`);
