@@ -230,7 +230,7 @@ function SecretsService(serverRootFolder) {
             throw createError(404, `Secret ${secretName} not found`);
         }
 
-        return secret;
+        return JSON.parse(JSON.stringify(secret));
     }
 
     this.readSecretSync = this.getSecretSync;
