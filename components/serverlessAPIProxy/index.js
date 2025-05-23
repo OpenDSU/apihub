@@ -69,12 +69,21 @@ const createServerlessAPIProxy = async (server) => {
             if (err) {
                 res.statusCode = 500;
                 console.error(`Error while executing command ${JSON.parse(req.body).name}`, err);
-                res.write(err.message);
+                const errorResponse = {
+                    statusCode: 500,
+                    result: {
+                        message: err.message,
+                        stack: err.stack
+                    }
+                };
+                res.write(JSON.stringify(errorResponse));
                 return res.end();
             }
 
-            res.statusCode = response.statusCode;
-            if (response.statusCode === 500) {
+            // Use the statusCode from response body if available (this is what the serverless process wants to communicate)
+            const statusCode = (response && typeof response === 'object' && response.statusCode) ? response.statusCode : 200;
+            res.statusCode = statusCode;
+            if (statusCode === 500) {
                 console.error(`Error while executing command ${JSON.parse(req.body).name}`, response);
             }
             res.write(JSON.stringify(response));
@@ -165,11 +174,20 @@ const createServerlessAPIProxy = async (server) => {
             if (err) {
                 res.statusCode = 500;
                 console.error("Error checking serverless process readiness", err);
-                res.write(err.message);
+                const errorResponse = {
+                    statusCode: 500,
+                    result: {
+                        message: err.message,
+                        stack: err.stack
+                    }
+                };
+                res.write(JSON.stringify(errorResponse));
                 return res.end();
             }
 
-            res.statusCode = response.statusCode;
+            // Use the statusCode from response body if available (this is what the serverless process wants to communicate)
+            const statusCode = (response && typeof response === 'object' && response.statusCode) ? response.statusCode : 200;
+            res.statusCode = statusCode;
             res.write(JSON.stringify(response));
             res.end();
         }, 'GET');
