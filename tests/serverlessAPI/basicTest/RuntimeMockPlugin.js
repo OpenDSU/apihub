@@ -8,6 +8,10 @@ function RuntimeMockPlugin() {
         console.log("Hello Core2!");
         return "Hello Core2!"
     }
+
+    this.getPublicMethods = function () {
+        return ["helloWorld", "hello"];
+    }
 }
 
 function getInstance() {
@@ -17,6 +21,9 @@ function getInstance() {
         },
         hello: function () {
             return "Hello Core2!";
+        },
+        getPublicMethods: function () {
+            return ["helloWorld", "hello"];
         }
     }
 }

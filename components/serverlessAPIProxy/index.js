@@ -193,6 +193,38 @@ const createServerlessAPIProxy = async (server) => {
         }, 'GET');
     });
 
+    server.get(`${urlPrefix}/getPublicMethods/:serverlessId/:pluginName`, async (req, res) => {
+        const serverlessId = req.params.serverlessId;
+        const pluginName = req.params.pluginName;
+        const processInfo = processManager.getProcessInfo(serverlessId);
+        if (!processInfo) {
+            res.statusCode = 404;
+            res.write("Serverless process not found");
+            return res.end();
+        }
+
+        const serverlessApiUrl = processInfo.url;
+        forwardRequest(`${serverlessApiUrl}/getPublicMethods/${pluginName}`, null, (err, response) => {
+            if (err) {
+                res.statusCode = 500;
+                console.error("Error getting public methods", err);
+                const errorResponse = {
+                    statusCode: 500,
+                    result: {
+                        message: err.message,
+                        stack: err.stack
+                    }
+                };
+                res.write(JSON.stringify(errorResponse));
+                return res.end();
+            }
+
+            res.statusCode = 200;
+            res.write(JSON.stringify(response));
+            res.end();
+        }, 'GET');
+    });
+
     server.registerServerlessProcess = (serverlessId, processInfo) => {
         const processData = {
             process: processInfo.process,

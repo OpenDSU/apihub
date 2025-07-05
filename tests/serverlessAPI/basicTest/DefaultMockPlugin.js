@@ -12,6 +12,10 @@ function DefaultMockPlugin() {
     this.getEnvironmentVariable = async function (varName) {
         return process.env[varName];
     }
+
+    this.getPublicMethods = function () {
+        return ["helloWorld", "hello", "getEnvironmentVariable"];
+    }
 }
 
 function getInstance() {
