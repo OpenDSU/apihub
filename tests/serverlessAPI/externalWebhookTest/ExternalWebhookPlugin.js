@@ -4,7 +4,7 @@ function ExternalWebhookPlugin() {
     this.slowOperation = function () {
         const response = new CMBSlowResponse();
 
-        // put request to external webhook after 5 seconds
+        // put request to external webhook after 100ms (was 5 seconds)
         setTimeout(async () => {
             const url = `${process.env.EXTERNAL_WEBHOOK_URL}/result`;
             const res = await fetch(url, {
@@ -20,7 +20,7 @@ function ExternalWebhookPlugin() {
             if (!res.ok) {
                 throw new Error(`Failed to send data to external webhook: ${res.statusText}`);
             }
-        }, 5000);
+        }, 100);
 
         // Simulate progress updates
         let percent = 0;

@@ -6,7 +6,7 @@ function ObservableLambdaPlugin() {
     this.processDataObservableTest = async function (data) {
         const observableResponse = new ObservableResponse();
         let count = 0;
-        
+
         await observableResponse.progress({
             percent: count * 10,
             status: 'Starting process',
@@ -20,7 +20,7 @@ function ObservableLambdaPlugin() {
                 await observableResponse.end();
                 return;
             }
-            
+
             await observableResponse.progress({
                 percent: count * 10,
                 status: 'Processing',

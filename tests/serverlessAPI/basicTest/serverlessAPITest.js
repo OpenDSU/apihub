@@ -63,8 +63,6 @@ assert.callback("Test serverless API", async (testFinished) => {
         assert.true(res === "Hello Core2!", `Expected "Hello Core2!", got "${res}"`);
 
         // Test environment variables were properly set
-        // You may need to add methods to your plugins to verify the environment variables
-        // For example:
         res = await defaultClient.getEnvironmentVariable('TEST_VAR1');
         assert.true(res === "test_value1", `Expected "test_value1", got "${res}"`);
 

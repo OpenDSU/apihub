@@ -61,16 +61,16 @@ assert.callback("Test serverless API with external webhook", async (testFinished
         const webhookClient = await createServerlessAPIClient("admin", result.url, serverlessId, "ExternalWebhookPlugin");
 
         // Test slow operation with external webhook
-        const slowOperation = webhookClient.slowOperation();
+        const slowOperation = await webhookClient.slowOperation();
         slowOperation.onProgress((progress) => {
             assert.true(progress.percent >= 0 && progress.percent <= 100,
                 `Progress should be between 0 and 100, got ${progress.percent}`);
         });
 
-        const slowResult = await slowOperation;
-        assert.true(slowResult === 'test',
-            `test", got "${slowResult}"`);
-
-        testFinished();
+        slowOperation.onEnd((result) => {
+            assert.true(result === 'test',
+                `test", got "${result}"`);
+            testFinished();
+        });
     });
 }, 150000);
