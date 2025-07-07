@@ -15,7 +15,9 @@ function WebhookProgressTracker() {
         if (typeof progressStorage[callId] === 'undefined') {
             return undefined;
         }
-        return progressStorage[callId].progress;
+        let progress = progressStorage[callId].progress;
+        delete progressStorage[callId];
+        return progress;
     }
 
     this.storeResult = (callId, result) => {
