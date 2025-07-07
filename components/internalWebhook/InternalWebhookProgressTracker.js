@@ -8,15 +8,20 @@ function WebhookProgressTracker() {
     }
 
     this.storeProgress = (callId, progress) => {
-        progressStorage[callId] = {progress, timestamp: Date.now()};
+        if(!progressStorage[callId]) {
+            progressStorage[callId] = [];
+        }
+        progressStorage[callId].push({progress, timestamp: Date.now()});
     }
 
     this.getProgress = (callId) => {
         if (typeof progressStorage[callId] === 'undefined') {
             return undefined;
         }
-        let progress = progressStorage[callId].progress;
-        delete progressStorage[callId];
+        let progress = progressStorage[callId].shift().progress;
+        if(progressStorage[callId].length === 0) {
+            delete progressStorage[callId];
+        }
         return progress;
     }
 
