@@ -124,9 +124,16 @@ const createServerlessAPIProxy = async (server) => {
         if (Object.keys(envVars).length === 0) {
             envVars = await processManager._loadEnvironmentFromSecrets(serverlessId, server.rootFolder);
         }
-
+        let flattenedEnvVars = {};
+        for(let key in envVars) {
+            if (typeof envVars[key] === 'object') {
+                flattenedEnvVars = {...flattenedEnvVars, ...envVars[key]};
+            } else {
+                flattenedEnvVars[key] = envVars[key];
+            }
+        }
         try {
-            const newProcessInfo = await processManager.restartProcess(serverlessId, envVars);
+            const newProcessInfo = await processManager.restartProcess(serverlessId, flattenedEnvVars);
 
             if (!res.headersSent) {
                 res.statusCode = 200;
