@@ -36,7 +36,7 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
         const fastResponse = await client.fastOperationTest();
         console.log(fastResponse);
 
-        const slowResponse = await client.processDataAsyncTest();
+        const slowResponse = client.processDataAsyncTest()
         slowResponse.onProgress((progress) => {
             console.log("On Progress", progress);
         });

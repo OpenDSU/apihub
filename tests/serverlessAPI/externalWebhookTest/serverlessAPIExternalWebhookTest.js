@@ -1,7 +1,7 @@
 require("../../../../../builds/output/testsRuntime");
 const tir = require("../../../../../psknode/tests/util/tir");
 const dc = require("double-check");
-const {assert} = dc;
+const { assert } = dc;
 const path = require("path");
 const fs = require("fs");
 const http = require('http');
@@ -10,14 +10,14 @@ assert.callback("Test serverless API with external webhook", async (testFinished
     dc.createTestFolder('serverlessAPI', async (err, folder) => {
         // Create plugins directory
         const pluginsDir = path.join(folder, 'plugins');
-        fs.mkdirSync(pluginsDir, {recursive: true});
+        fs.mkdirSync(pluginsDir, { recursive: true });
 
         // Create external webhook mock server
         let webhookData = null;
         const externalWebhook = http.createServer((req, res) => {
             if (req.method === 'GET' && req.url === '/webhook') {
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify(webhookData || {status: 'pending'}));
+                res.end(JSON.stringify(webhookData || { status: 'pending' }));
             } else {
                 res.statusCode = 404;
                 res.end();
@@ -54,7 +54,7 @@ assert.callback("Test serverless API with external webhook", async (testFinished
         // Initialize plugins from the directory structure
         server.registerServerlessProcess(serverlessId, serverlessAPI);
 
-        const {createServerlessAPIClient} = require("opendsu").loadAPI("serverless");
+        const { createServerlessAPIClient } = require("opendsu").loadAPI("serverless");
 
         // Test ExternalWebhookPlugin
         console.log("Creating client for ExternalWebhookPlugin...");
@@ -63,6 +63,7 @@ assert.callback("Test serverless API with external webhook", async (testFinished
         // Test slow operation with external webhook
         const slowOperation = await webhookClient.slowOperation();
         slowOperation.onProgress((progress) => {
+            console.log("Progress:", progress);
             assert.true(progress.percent >= 0 && progress.percent <= 100,
                 `Progress should be between 0 and 100, got ${progress.percent}`);
         });
