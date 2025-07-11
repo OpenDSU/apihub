@@ -46,8 +46,11 @@ function InternalWebhook(server) {
             }
         };
 
+        const WEBHOOK_EXPIRY_TIME = parseInt(process.env.WEBHOOK_EXPIRY_TIME) || 5 * 60 * 1000; // 5 minutes default
+        const WEBHOOK_EXPIRY_MINUTES = WEBHOOK_EXPIRY_TIME / 1000 / 60;
+
         const handleCallIdExpiry = (callId) => {
-            console.log(`CallId ${callId} expired after 3 minutes of inactivity`);
+            console.log(`CallId ${callId} expired after ${WEBHOOK_EXPIRY_MINUTES} minutes of inactivity`);
 
             respondToWaitingConnections(callId, 'expired');
 
@@ -57,7 +60,7 @@ function InternalWebhook(server) {
                     clearTimeout(timeout);
                     if (!res.headersSent) {
                         res.writeHead(408, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ error: 'Request expired after 3 minutes of inactivity' }));
+                        res.end(JSON.stringify({ error: `Request expired after ${WEBHOOK_EXPIRY_MINUTES} minutes of inactivity` }));
                     }
                 });
                 waitingConnections.delete(callId);
@@ -122,6 +125,10 @@ function InternalWebhook(server) {
                 }
                 if (connections.length === 0) {
                     waitingConnections.delete(callId);
+                    // Ensure expiry callback is still registered when connection closes
+                    // This handles the case where client disconnects but data should still expire
+                    console.log(`Connection closed for callId: ${callId}, ensuring expiry callback is registered`);
+                    InternalWebhookStatusTracker.onExpiry(callId, handleCallIdExpiry);
                 }
             });
 
