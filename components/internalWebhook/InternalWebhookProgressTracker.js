@@ -20,6 +20,22 @@ function WebhookProgressTracker() {
         expiryCallbacks[callId] = callback;
         console.log(`[WEBHOOK] Registered expiry callback for callId: ${callId.substring(0, 8)}...`);
         debugLog(`[DEBUG] Registered expiry callback for callId: ${callId}`);
+
+        // Set registration timestamp to track when the callId was first registered
+        if (!expiryTime[callId]) {
+            expiryTime[callId] = DEFAULT_EXPIRY_TIME;
+        }
+
+        // Track when this callId was registered if no data exists yet
+        if (!progressStorage[callId] && !results[callId]) {
+            // Create an initial timestamp to track when this callId became active
+            const timestamp = Date.now();
+            if (!progressStorage[callId]) {
+                progressStorage[callId] = [];
+            }
+            // Add a placeholder entry to track the registration time
+            progressStorage[callId].push({ progress: null, timestamp, isRegistration: true });
+        }
     }
 
     this.storeProgress = (callId, progress) => {
@@ -39,18 +55,41 @@ function WebhookProgressTracker() {
         if (typeof progressStorage[callId] === 'undefined' || progressStorage[callId].length === 0) {
             return undefined;
         }
-        // Return the first progress without consuming it
-        return progressStorage[callId][0].progress;
+        // Skip placeholder registration entries when getting progress
+        const realProgress = progressStorage[callId].filter(entry => !entry.isRegistration);
+        if (realProgress.length === 0) {
+            return undefined;
+        }
+        // Return the first real progress without consuming it
+        return realProgress[0].progress;
     }
 
     this.consumeProgress = (callId) => {
         if (typeof progressStorage[callId] === 'undefined' || progressStorage[callId].length === 0) {
             return undefined;
         }
-        let progress = progressStorage[callId].shift().progress;
-        if (progressStorage[callId].length === 0) {
-            delete progressStorage[callId];
+
+        // Find the first real progress entry (not a registration placeholder)
+        const realProgressIndex = progressStorage[callId].findIndex(entry => !entry.isRegistration);
+        if (realProgressIndex === -1) {
+            return undefined;
         }
+
+        // Remove and return the first real progress entry
+        const progress = progressStorage[callId].splice(realProgressIndex, 1)[0].progress;
+
+        // Clean up if only registration entries remain or array is empty
+        const hasRealProgress = progressStorage[callId].some(entry => !entry.isRegistration);
+        if (!hasRealProgress) {
+            // Keep only registration entries for tracking, or delete if none
+            const registrationEntries = progressStorage[callId].filter(entry => entry.isRegistration);
+            if (registrationEntries.length === 0) {
+                delete progressStorage[callId];
+            } else {
+                progressStorage[callId] = registrationEntries;
+            }
+        }
+
         return progress;
     }
 
@@ -114,7 +153,12 @@ function WebhookProgressTracker() {
                 const progressArray = progressStorage[callId];
                 const latestProgress = Math.max(...progressArray.map(entry => entry.timestamp));
                 mostRecentActivity = Math.max(mostRecentActivity, latestProgress);
-                hasActiveData = true;
+
+                // Only consider it as having active data if there are non-registration entries
+                const hasRealProgress = progressArray.some(entry => !entry.isRegistration);
+                if (hasRealProgress) {
+                    hasActiveData = true;
+                }
 
                 // Clean up old progress entries but keep the most recent ones
                 const validProgress = progressArray.filter(entry =>
@@ -144,8 +188,10 @@ function WebhookProgressTracker() {
                     expiredCallIds.add(callId);
                     console.log(`[WEBHOOK] CallId ${callId} expired after ${Math.round(age / 1000)}s (threshold: ${Math.round(expiryTimeout / 1000)}s)`);
                 }
-            } else if (expiryCallbacks[callId]) {
-                expiredCallIds.add(callId);
+            } else if (expiryCallbacks[callId] && !hasActiveData) {
+                // Only expire if the callback was registered long enough ago
+                // This prevents immediate expiry of newly registered callIds
+                debugLog(`[DEBUG] CallId ${callId} has callback but no active data - not expiring immediately`);
             }
         }
 
