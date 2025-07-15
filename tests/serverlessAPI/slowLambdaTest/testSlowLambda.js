@@ -52,8 +52,8 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
             console.log("Error code:", error.code);
 
             // Verify we got the expected error
-            if (error.code === 'PROCESS_DOWN') {
-                console.log("✅ SUCCESS: Received expected PROCESS_DOWN error");
+            if (error.code === 'PROCESS_UNAVAILABLE') {
+                console.log("✅ SUCCESS: Received expected PROCESS_UNAVAILABLE error");
                 console.log("✅ ServerlessId:", error.serverlessId);
                 testFinished();
                 testFinished();
