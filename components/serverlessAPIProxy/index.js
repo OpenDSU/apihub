@@ -101,6 +101,17 @@ const createServerlessAPIProxy = async (server) => {
             return res.end();
         }
 
+        // Immediately trigger webhook cleanup BEFORE starting the actual restart
+        // This ensures we clean up while the process is still being tracked
+        if (server.triggerProcessAvailabilityCheck) {
+            server.triggerProcessAvailabilityCheck();
+        }
+
+        // Also directly trigger cleanup for this specific serverlessId
+        if (server.cleanupCallIdsForServerlessId) {
+            server.cleanupCallIdsForServerlessId(serverlessId);
+        }
+
         let envVars = {};
         if (req.body) {
             try {
@@ -125,9 +136,9 @@ const createServerlessAPIProxy = async (server) => {
             envVars = await processManager._loadEnvironmentFromSecrets(serverlessId, server.rootFolder);
         }
         let flattenedEnvVars = {};
-        for(let key in envVars) {
+        for (let key in envVars) {
             if (typeof envVars[key] === 'object') {
-                flattenedEnvVars = {...flattenedEnvVars, ...envVars[key]};
+                flattenedEnvVars = { ...flattenedEnvVars, ...envVars[key] };
             } else {
                 flattenedEnvVars[key] = envVars[key];
             }

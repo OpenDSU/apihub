@@ -43,7 +43,36 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
 
         slowResponse.onEnd((result) => {
             console.log("On End", result);
+            console.log("ERROR: Test should have failed due to process being killed, but it completed successfully");
             testFinished();
         });
+
+        slowResponse.onError((error) => {
+            console.log("On Error - Expected behavior:", error.message);
+            console.log("Error code:", error.code);
+
+            // Verify we got the expected error
+            if (error.code === 'PROCESS_DOWN') {
+                console.log("✅ SUCCESS: Received expected PROCESS_DOWN error");
+                console.log("✅ ServerlessId:", error.serverlessId);
+                testFinished();
+                testFinished();
+            } else {
+                console.log("❌ UNEXPECTED: Got different error code:", error.code);
+                console.error(error);
+                testFinished();
+            }
+        });
+
+        // Simulate process crash after a short delay to trigger error
+        setTimeout(() => {
+            console.log("🔥 Simulating serverless process crash...");
+            if (serverlessAPI && serverlessAPI.process && !serverlessAPI.process.killed) {
+                console.log("Killing serverless process with PID:", serverlessAPI.process.pid);
+                serverlessAPI.process.kill('SIGTERM');
+            } else {
+                console.log("Process already dead or not found");
+            }
+        }, 2000); // Kill process after 2 seconds
     });
 }, 50000);
