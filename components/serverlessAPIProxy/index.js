@@ -265,6 +265,7 @@ const createServerlessAPIProxy = async (server) => {
     };
 
     server.processManager = processManager;
+    server.serverlessProcessManager = processManager;
 
     return server;
 };
