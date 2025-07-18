@@ -56,7 +56,6 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
                 console.log("✅ SUCCESS: Received expected PROCESS_UNAVAILABLE error");
                 console.log("✅ ServerlessId:", error.serverlessId);
                 testFinished();
-                testFinished();
             } else {
                 console.log("❌ UNEXPECTED: Got different error code:", error.code);
                 console.error(error);
@@ -66,13 +65,13 @@ assert.callback("Test Serverless API Async Flow", async (testFinished) => {
 
         // Simulate process crash after a short delay to trigger error
         setTimeout(() => {
-            console.log("🔥 Simulating serverless process crash...");
+            console.log("Simulating serverless process crash...");
             if (serverlessAPI && serverlessAPI.process && !serverlessAPI.process.killed) {
                 console.log("Killing serverless process with PID:", serverlessAPI.process.pid);
                 serverlessAPI.process.kill('SIGTERM');
             } else {
                 console.log("Process already dead or not found");
             }
-        }, 2000); // Kill process after 2 seconds
+        }, 2000);
     });
 }, 50000);
