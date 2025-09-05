@@ -38,7 +38,10 @@ const createServerlessAPIProxy = async (server) => {
             });
         });
 
-        request.on("error", callback);
+        request.on("error", (err) => {
+            console.error(`[ServerlessAPIProxy] Forward request error to ${serverlessApiAddress}:`, err);
+            callback(err);
+        });
 
         if (data) {
             request.write(data);
@@ -60,6 +63,7 @@ const createServerlessAPIProxy = async (server) => {
 
         if (!processInfo) {
             res.statusCode = 404;
+            console.error(`[ServerlessAPIProxy] Execute command failed: Serverless process not found or not ready for ID ${serverlessId}`);
             res.write("Serverless process not found or not ready");
             return res.end();
         }
@@ -97,6 +101,7 @@ const createServerlessAPIProxy = async (server) => {
 
         if (!processInfo) {
             res.statusCode = 404;
+            console.error(`[ServerlessAPIProxy] Restart failed: Serverless process not found for ID ${serverlessId}`);
             res.write("Serverless process not found");
             return res.end();
         }
@@ -174,6 +179,7 @@ const createServerlessAPIProxy = async (server) => {
 
         if (!processInfo) {
             res.statusCode = 404;
+            console.error(`[ServerlessAPIProxy] Ready check failed: Serverless process not found or not ready for ID ${serverlessId}`);
             res.write("Serverless process not found or not ready");
             return res.end();
         }
@@ -217,6 +223,7 @@ const createServerlessAPIProxy = async (server) => {
         const processInfo = processManager.getProcessInfo(serverlessId);
         if (!processInfo) {
             res.statusCode = 404;
+            console.error(`[ServerlessAPIProxy] Get public methods failed: Serverless process not found for ID ${serverlessId}`);
             res.write("Serverless process not found");
             return res.end();
         }
